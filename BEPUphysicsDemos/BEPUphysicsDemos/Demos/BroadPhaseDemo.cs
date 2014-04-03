@@ -1,8 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -43,8 +42,8 @@ namespace BEPUphysicsDemos.Demos
                         Space.Add(toAdd);
                     }
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 3, -10);
-            game.Camera.Yaw = -(float)Math.PI;
+            game.Camera.Position = new Vector3(0, 3, -10);
+            game.Camera.ViewDirection = new Vector3(0, 0, 1);
         }
 
         /// <summary>

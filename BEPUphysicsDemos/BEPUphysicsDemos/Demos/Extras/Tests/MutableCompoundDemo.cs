@@ -1,13 +1,10 @@
-﻿using BEPUphysics.Entities.Prefabs;
+﻿using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using BEPUphysics.CollisionShapes;
 using System.Collections.Generic;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Collidables.MobileCollidables;
 using BEPUphysics.Entities;
-using System;
-using System.Diagnostics;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -37,7 +34,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     new BoxShape(1, 1, 2),
                     new RigidTransform(
                     new Vector3(-.5f + i * 1, 0, 15),
-                    Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2 * 2))
+                    Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2 * 2))
                     //Quaternion.Identity)
                     , weight));
             }
@@ -122,7 +119,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
             Box ground = new Box(new Vector3(0, -4.5f, 0), 50, 1, 50);
             Space.Add(ground);
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 6, 15);
+            game.Camera.Position = new Vector3(0, 6, 15);
         }
 
         /// <summary>

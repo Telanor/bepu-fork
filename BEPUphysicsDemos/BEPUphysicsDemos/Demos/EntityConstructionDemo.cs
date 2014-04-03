@@ -1,14 +1,12 @@
 ﻿using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using BEPUphysics.Entities;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using System.Collections.Generic;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.MathExtensions;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.Materials;
-using BEPUphysics.Settings;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -57,7 +55,7 @@ namespace BEPUphysicsDemos.Demos
                               Position = new Vector3(-10, 1, 0)
                           });
 
-            //That's a bit unwieldy, but it works.  Directly constructing entities in this manner isn't common or generally necessary.
+            //That's a bit unwieldy<<>><>, but it works.  Directly constructing entities in this manner isn't common or generally necessary.
             //If you want to have a CollisionInformation property that returns a specific type but don't want to use a specific prefab type, this is the way to go.
 
             //Note that the constructor itself does not include any position/motion state parameters nor does it include any direct shape data.  The position and other auxiliary
@@ -110,11 +108,10 @@ namespace BEPUphysicsDemos.Demos
             //************************
             //That's it for the different types of entities.  Another very useful technique is to share shapes and initialization between entities.
             //Re-using convex hulls is a common use case.  They have a fairly expensive initialization, and they tend to be some of the larger shapes memory-wise.
-            //Rather than having a thousand redundant copies of identical geometry, one shape can be made, one entity can be initialized using it, and the same data can be reused
-            //for subsequent entities.
+            //Rather than having a thousand redundant copies of identical geometry, one shape can be made and reused for subsequent entities.
 
             //First, create the pointset that composes the convex hull.
-            Vector3[] vertices = new Vector3[] 
+            var vertices = new[] 
             {
                 new Vector3(-1,0,-1),
                 new Vector3(-1,0,1),
@@ -128,19 +125,23 @@ namespace BEPUphysicsDemos.Demos
             //Create an entity using the shape.
             var convexHull = new Entity(convexHullShape, 2) { Position = new Vector3(0, 1, 0) };
             Space.Add(convexHull);
-            //Create a bunch of other shapes using that first shape's properties.  Passing in the inertia and volume allows the new entities to avoid almost
-            //all of the initialization costs.  Instead of using a first entity's data, this could also be pulled in from some external source (deserialized save data or something).
+            //Create a bunch of other shapes using that first shape's properties.  
+            //Instead of using a first entity's data, this could also be pulled in from some external source (deserialized save data or something).
             for (int i = 1; i <= 10; i++)
             {
-                Space.Add(new Entity(convexHullShape, convexHull.Mass, convexHull.LocalInertiaTensor, convexHull.Volume) { Position = new Vector3(0, 1 + i * 3, 0) });
+                Space.Add(new Entity(convexHullShape, convexHull.Mass, convexHull.LocalInertiaTensor) { Position = new Vector3(0, 1 + i * 3, 0) });
             }
+
+            //In older versions, initializing the entity was a little expensive if the inertia tensor and some other data wasn't provided.
+            //These days, the cost is done once in the shape and the entity initialization is pretty much always super cheap.
+            //So, you don't need to share inertia tensors for performance reasons.
 
             //************************
             //All convex shapes are centered on their local origin.  If you create a box entity and assign its position to (0,1,0), the box shape's center will end up at (0,1,0).
             //For simple shapes like the box, that's always the case without doing any work just based on the definition of the shape.
 
             //More complicated shapes, like the ConvexHullShape, can be constructed from data which is not initially centered around the origin.  For example, consider these vertices:
-            vertices = new Vector3[] 
+            vertices = new[] 
             {
                 new Vector3(-5,15,-1),
                 new Vector3(-5,15,1),
@@ -168,7 +169,7 @@ namespace BEPUphysicsDemos.Demos
             //************************
             //Compound bodies are unique in that they allow you to specify groups of shapes to create a concave shape.
             //Here's the common simple approach to making a compound body, using a prefab type for now.
-            CompoundBody body = new CompoundBody(new List<CompoundShapeEntry>()
+            CompoundBody body = new CompoundBody(new List<CompoundShapeEntry>
             {
                 new CompoundShapeEntry(new BoxShape(1, 1, 1), new Vector3(-7, 3, 8), 1),
                 new CompoundShapeEntry(new BoxShape(1, 3, 1), new Vector3(-8, 2, 8), 5),
@@ -183,10 +184,10 @@ namespace BEPUphysicsDemos.Demos
 
             //************************
             //Just like shapes can be shared between entities, you can re-use a shape for multiple entries within a compound body.
-            var compoundShape = new CompoundShape(new List<CompoundShapeEntry>()
+            var compoundShape = new CompoundShape(new List<CompoundShapeEntry>
             {
                 new CompoundShapeEntry(convexHullShape, new Vector3(7, 3, 8), 1),
-                new CompoundShapeEntry(convexHullShape, new RigidTransform(new Vector3(8, 2, 8), Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2)), 5),
+                new CompoundShapeEntry(convexHullShape, new RigidTransform(new Vector3(8, 2, 8), Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2)), 5),
                 new CompoundShapeEntry(convexHullShape, new Vector3(9, 1, 8), 1)
             });
 
@@ -196,7 +197,7 @@ namespace BEPUphysicsDemos.Demos
 
             //************************
             //You can also use compound shapes as subshapes, creating nested compounds.
-            Space.Add(new Entity(new CompoundShape(new List<CompoundShapeEntry>()
+            Space.Add(new Entity(new CompoundShape(new List<CompoundShapeEntry>
             {
                 new CompoundShapeEntry(compoundShape, new Vector3(7, 5, 8), 1),
                 new CompoundShapeEntry(compoundShape, new Vector3(9, 1, 8), 1)
@@ -210,16 +211,48 @@ namespace BEPUphysicsDemos.Demos
             //CompoundChildData objects contain CompoundShapeEntry objects as well as other data to be used by a Collidable instance.
             //That extra data includes material, events, and collision rules.
 
-            var compoundBody = new CompoundBody(new List<CompoundChildData>()
+            var compoundBody = new CompoundBody(new List<CompoundChildData>
             {
-                new CompoundChildData() { Entry = new CompoundShapeEntry(new CylinderShape(1, 1), new Vector3(0, 2, 8)), CollisionRules = new CollisionRules() { Personal = CollisionRule.NoBroadPhase } },
-                new CompoundChildData() { Entry = new CompoundShapeEntry(new BoxShape(3, 1, 3), new Vector3(0, 1, 8)), Material = new Material(3, 3, 0) }
+                new CompoundChildData { Entry = new CompoundShapeEntry(new CylinderShape(1, 1), new Vector3(0, 2, 8)), CollisionRules = new CollisionRules { Personal = CollisionRule.NoBroadPhase } },
+                new CompoundChildData { Entry = new CompoundShapeEntry(new BoxShape(3, 1, 3), new Vector3(0, 1, 8)), Material = new Material(3, 3, 0) }
             }, 10);
             Space.Add(compoundBody);
 
             //In this example, one of the two blocks doesn't collide with anything.  The other does collide, and has a very high friction material.
 
-            Game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 3, 25);
+            //************************
+            //While sharing shapes can help reduce load times, sometimes it's useful to eliminate the shape's initialization cost too.
+            //For this purpose, all shapes have a constructor which takes a bunch of data that fully defines the shape.
+            //The constructor assumes that all of it is correct; it won't catch any errors or do any additional preprocessing.
+
+            //For example, let's construct a ConvexHullShape from the our earlier ConvexHullShape.
+            //We'll need a ConvexShapeDescription that defines the data common to all convex shapes.
+            var shapeDescription = new ConvexShapeDescription
+                {
+                    CollisionMargin = convexHullShape.CollisionMargin,
+                    MinimumRadius = convexHullShape.MinimumRadius,
+                    MaximumRadius = convexHullShape.MaximumRadius,
+                    EntityShapeVolume = new EntityShapeVolumeDescription
+                    {
+                        Volume = convexHullShape.Volume,
+                        VolumeDistribution = convexHullShape.VolumeDistribution
+                    }
+                };
+
+            //Now, along with the surface vertices from the previous shape, the new shape can be created:
+            var shapeFromCachedData = new ConvexHullShape(convexHullShape.Vertices, shapeDescription);
+
+            //Usually, the data for these constructors will come from some cache or storage. For example,
+            //a game could store out the above information to disk from a content development tool.
+            //At load time, the matching shape can be created at virtually no cost.
+
+            //Stuff the shape into the world!
+            Space.Add(new Entity(shapeFromCachedData, 10)
+                {
+                    Position = new Vector3(-10, 5, -5)
+                });
+
+            Game.Camera.Position = new Vector3(0, 3, 25);
         }
 
         /// <summary>

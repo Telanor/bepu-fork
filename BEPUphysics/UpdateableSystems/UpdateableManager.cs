@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using BEPUphysics.Threading;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.UpdateableSystems
 {
@@ -28,10 +28,10 @@ namespace BEPUphysics.UpdateableSystems
             Enabled = true;
         }
 
-        protected UpdateableManager(TimeStepSettings timeStepSettings, IThreadManager threadManager)
+        protected UpdateableManager(TimeStepSettings timeStepSettings, IParallelLooper parallelLooper)
             : this(timeStepSettings)
         {
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
 
@@ -45,7 +45,7 @@ namespace BEPUphysics.UpdateableSystems
         ///<summary>
         /// Gets or sets the owning space.
         ///</summary>
-        public ISpace Space { get; set; }
+        public Space Space { get; set; }
     }
 
     ///<summary>
@@ -63,8 +63,8 @@ namespace BEPUphysics.UpdateableSystems
             multithreadedUpdateDelegate = MultithreadedUpdate;
         }
 
-        protected UpdateableManager(TimeStepSettings timeStepSettings, IThreadManager threadManager)
-            : base(timeStepSettings, threadManager)
+        protected UpdateableManager(TimeStepSettings timeStepSettings, IParallelLooper parallelLooper)
+            : base(timeStepSettings, parallelLooper)
         {
             multithreadedUpdateDelegate = MultithreadedUpdate;
         }
@@ -93,7 +93,7 @@ namespace BEPUphysics.UpdateableSystems
             }
             else
             {
-                throw new Exception("Updateable does not belong to this manager.");
+                throw new ArgumentException("Updateable does not belong to this manager.");
             }
         }
 
@@ -101,7 +101,7 @@ namespace BEPUphysics.UpdateableSystems
         /// Adds an updateable to the manager.
         ///</summary>
         ///<param name="updateable">Updateable to add.</param>
-        ///<exception cref="Exception">Thrown if the manager already contains the updateable.</exception>
+        ///<exception cref="ArgumentException">Thrown if the manager already contains the updateable.</exception>
         public void Add(T updateable)
         {
             if (!updateable.Managers.Contains(this))
@@ -114,7 +114,7 @@ namespace BEPUphysics.UpdateableSystems
             }
             else
             {
-                throw new Exception("Updateable already belongs to the manager, cannot re-add.");
+                throw new ArgumentException("Updateable already belongs to the manager, cannot re-add.");
             }
         }
 
@@ -122,7 +122,7 @@ namespace BEPUphysics.UpdateableSystems
         /// Removes an updateable from the manager.
         ///</summary>
         ///<param name="updateable">Updateable to remove.</param>
-        ///<exception cref="Exception">Thrown if the manager does not contain the updateable.</exception>
+        ///<exception cref="ArgumentException">Thrown if the manager does not contain the updateable.</exception>
         public void Remove(T updateable)
         {
             if (updateable.Managers.Contains(this))
@@ -135,7 +135,7 @@ namespace BEPUphysics.UpdateableSystems
             }
             else
             {
-                throw new Exception("Updateable does not belong to this manager; cannot remove.");
+                throw new ArgumentException("Updateable does not belong to this manager; cannot remove.");
             }
 
         }
@@ -146,7 +146,7 @@ namespace BEPUphysics.UpdateableSystems
             {
                 SequentialUpdate(i);
             }
-            ThreadManager.ForLoop(0, simultaneouslyUpdatedUpdateables.Count, multithreadedUpdateDelegate);
+            ParallelLooper.ForLoop(0, simultaneouslyUpdatedUpdateables.Count, multithreadedUpdateDelegate);
         }
 
         protected override void UpdateSingleThreaded()

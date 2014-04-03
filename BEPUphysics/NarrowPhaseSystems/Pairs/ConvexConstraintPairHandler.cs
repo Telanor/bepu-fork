@@ -1,16 +1,16 @@
 ﻿using System;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
 using BEPUphysics.CollisionTests.Manifolds;
 using BEPUphysics.Constraints.Collision;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
-using SharpDX;
+ 
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -44,7 +44,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
             //Find the contact's normal force.
             float totalNormalImpulse = 0;
             info.NormalImpulse = 0;
-            for (int i = 0; i < contactConstraint.penetrationConstraints.count; i++)
+            for (int i = 0; i < contactConstraint.penetrationConstraints.Count; i++)
             {
                 totalNormalImpulse += contactConstraint.penetrationConstraints.Elements[i].accumulatedImpulse;
                 if (contactConstraint.penetrationConstraints.Elements[i].contact == info.Contact)
@@ -54,7 +54,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
             }
             //Compute friction force.  Since we are using central friction, this is 'faked.'
             float radius;
-            Vector3Ex.Distance(ref contactConstraint.slidingFriction.manifoldCenter, ref info.Contact.Position, out radius);
+            Vector3.Distance(ref contactConstraint.slidingFriction.manifoldCenter, ref info.Contact.Position, out radius);
             if (totalNormalImpulse > 0)
                 info.FrictionImpulse = (info.NormalImpulse / totalNormalImpulse) * (contactConstraint.slidingFriction.accumulatedImpulse.Length() + contactConstraint.twistFriction.accumulatedImpulse * radius);
             else

@@ -1,8 +1,7 @@
 ﻿using BEPUphysics.Constraints;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
-using System;
+
+using BEPUutilities;
 
 namespace BEPUphysics.Vehicle
 {
@@ -52,8 +51,8 @@ namespace BEPUphysics.Vehicle
         /// <param name="localAttachmentPoint">Place where the suspension hooks up to the body of the vehicle.</param>
         public WheelSuspension(float stiffnessConstant, float dampingConstant, Vector3 localDirection, float restLength, Vector3 localAttachmentPoint)
         {
-            SpringSettings.StiffnessConstant = stiffnessConstant;
-            SpringSettings.DampingConstant = dampingConstant;
+            SpringSettings.Stiffness = stiffnessConstant;
+            SpringSettings.Damping = dampingConstant;
             LocalDirection = localDirection;
             RestLength = restLength;
             LocalAttachmentPoint = localAttachmentPoint;
@@ -71,12 +70,12 @@ namespace BEPUphysics.Vehicle
         public float AllowedCompression
         {
             get { return allowedCompression; }
-            set { allowedCompression = Math.Max(0, value); }
+            set { allowedCompression = MathHelper.Max(0, value); }
         }
 
         /// <summary>
         /// Gets the the current length of the suspension.
-        /// This will be less than the restLength if the suspension is compressed.
+        /// This will be less than the RestLength if the suspension is compressed.
         /// </summary>
         public float CurrentLength
         {
@@ -95,28 +94,14 @@ namespace BEPUphysics.Vehicle
                 if (wheel != null && wheel.vehicle != null)
                 {
                     RigidTransform.Transform(ref localAttachmentPoint, ref wheel.vehicle.Body.CollisionInformation.worldTransform, out worldAttachmentPoint);
+
                 }
                 else
                     worldAttachmentPoint = localAttachmentPoint;
             }
         }
 
-        /// <summary>
-        /// Gets or sets the direction of the wheel suspension in the local space of the vehicle body.
-        /// A normal, straight suspension would be (0,-1,0).
-        /// </summary>
-        public Vector3 LocalDirection
-        {
-            get { return localDirection; }
-            set
-            {
-                localDirection = Vector3.Normalize(value);
-                if (wheel != null && wheel.vehicle != null)
-                    Matrix3X3.Transform(ref localDirection, ref wheel.vehicle.Body.orientationMatrix, out worldDirection);
-                else
-                    worldDirection = localDirection;
-            }
-        }
+
 
         /// <summary>
         /// Gets or sets the maximum speed at which the suspension will try to return the suspension to rest length.
@@ -124,7 +109,7 @@ namespace BEPUphysics.Vehicle
         public float MaximumSpringCorrectionSpeed
         {
             get { return maximumSpringCorrectionSpeed; }
-            set { maximumSpringCorrectionSpeed = Math.Max(0, value); }
+            set { maximumSpringCorrectionSpeed = MathHelper.Max(0, value); }
         }
 
         /// <summary>
@@ -133,7 +118,7 @@ namespace BEPUphysics.Vehicle
         public float MaximumSpringForce
         {
             get { return maximumSpringForce; }
-            set { maximumSpringForce = Math.Max(0, value); }
+            set { maximumSpringForce = MathHelper.Max(0, value); }
         }
 
         /// <summary>
@@ -142,7 +127,12 @@ namespace BEPUphysics.Vehicle
         public float RestLength
         {
             get { return restLength; }
-            set { restLength = value; }
+            set
+            {
+                restLength = value;
+                if (wheel != null)
+                    wheel.shape.Initialize();
+            }
         }
 
         /// <summary>
@@ -181,6 +171,25 @@ namespace BEPUphysics.Vehicle
         }
 
         /// <summary>
+        /// Gets or sets the direction of the wheel suspension in the local space of the vehicle body.
+        /// A normal, straight suspension would be (0,-1,0).
+        /// </summary>
+        public Vector3 LocalDirection
+        {
+            get { return localDirection; }
+            set
+            {
+                localDirection = Vector3.Normalize(value);
+                if (wheel != null)
+                    wheel.shape.Initialize();
+                if (wheel != null && wheel.vehicle != null)
+                    Matrix3x3.Transform(ref localDirection, ref wheel.vehicle.Body.orientationMatrix, out worldDirection);
+                else
+                    worldDirection = localDirection;
+            }
+        }
+
+        /// <summary>
         /// Gets or sets the direction of the wheel suspension in the world space of the vehicle body.
         /// </summary>
         public Vector3 WorldDirection
@@ -189,10 +198,10 @@ namespace BEPUphysics.Vehicle
             set
             {
                 worldDirection = Vector3.Normalize(value);
+                if (wheel != null)
+                    wheel.shape.Initialize();
                 if (wheel != null && wheel.vehicle != null)
-                {
-                    Matrix3X3.TransformTranspose(ref worldDirection, ref wheel.Vehicle.Body.orientationMatrix, out localDirection);
-                }
+                    Matrix3x3.TransformTranspose(ref worldDirection, ref wheel.Vehicle.Body.orientationMatrix, out localDirection);
                 else
                     localDirection = worldDirection;
             }
@@ -242,7 +251,7 @@ namespace BEPUphysics.Vehicle
         internal float ApplyImpulse()
         {
             //Compute relative velocity
-            float lambda = (RelativeVelocity 
+            float lambda = (RelativeVelocity
                             + bias //Add in position correction
                             + softness * accumulatedImpulse) //Add in squishiness
                            * velocityToImpulse; //convert to impulse
@@ -290,7 +299,7 @@ namespace BEPUphysics.Vehicle
         {
             //Transform local space vectors to world space.
             RigidTransform.Transform(ref localAttachmentPoint, ref wheel.vehicle.Body.CollisionInformation.worldTransform, out worldAttachmentPoint);
-            Matrix3X3.Transform(ref localDirection, ref wheel.vehicle.Body.orientationMatrix, out worldDirection);
+            Matrix3x3.Transform(ref localDirection, ref wheel.vehicle.Body.orientationMatrix, out worldDirection);
         }
 
         internal void OnAdditionToVehicle()
@@ -356,12 +365,12 @@ namespace BEPUphysics.Vehicle
 
             //Convert spring constant and damping constant into ERP and CFM.
             float biasFactor;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out biasFactor, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out biasFactor, out softness);
 
             velocityToImpulse = -1 / (entryA + entryB + softness);
 
             //Correction velocity
-            bias = Math.Min(Math.Max(0, (restLength - currentLength) - allowedCompression) * biasFactor, maximumSpringCorrectionSpeed);
+            bias = MathHelper.Min(MathHelper.Max(0, (restLength - currentLength) - allowedCompression) * biasFactor, maximumSpringCorrectionSpeed);
 
 
         }

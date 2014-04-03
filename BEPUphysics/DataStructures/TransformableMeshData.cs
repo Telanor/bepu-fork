@@ -1,5 +1,5 @@
-﻿using BEPUphysics.MathExtensions;
-using SharpDX;
+﻿using BEPUutilities;
+ 
 
 namespace BEPUphysics.DataStructures
 {

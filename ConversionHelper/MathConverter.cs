@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
 
 namespace ConversionHelper
@@ -13,7 +9,7 @@ namespace ConversionHelper
     public static class MathConverter
     {
         //Vector2
-        public static Vector2 Convert(SharpDX.Vector2 bepuVector)
+        public static Vector2 Convert(BEPUutilities.Vector2 bepuVector)
         {
             Vector2 toReturn;
             toReturn.X = bepuVector.X;
@@ -21,28 +17,28 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Vector2 bepuVector, out Vector2 xnaVector)
+        public static void Convert(ref BEPUutilities.Vector2 bepuVector, out Vector2 xnaVector)
         {
             xnaVector.X = bepuVector.X;
             xnaVector.Y = bepuVector.Y;
         }
 
-        public static SharpDX.Vector2 Convert(Vector2 xnaVector)
+        public static BEPUutilities.Vector2 Convert(Vector2 xnaVector)
         {
-            SharpDX.Vector2 toReturn;
+            BEPUutilities.Vector2 toReturn;
             toReturn.X = xnaVector.X;
             toReturn.Y = xnaVector.Y;
             return toReturn;
         }
 
-        public static void Convert(ref Vector2 xnaVector, out SharpDX.Vector2 bepuVector)
+        public static void Convert(ref Vector2 xnaVector, out BEPUutilities.Vector2 bepuVector)
         {
             bepuVector.X = xnaVector.X;
             bepuVector.Y = xnaVector.Y;
         }
 
         //Vector3
-        public static Vector3 Convert(SharpDX.Vector3 bepuVector)
+        public static Vector3 Convert(BEPUutilities.Vector3 bepuVector)
         {
             Vector3 toReturn;
             toReturn.X = bepuVector.X;
@@ -51,30 +47,30 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Vector3 bepuVector, out Vector3 xnaVector)
+        public static void Convert(ref BEPUutilities.Vector3 bepuVector, out Vector3 xnaVector)
         {
             xnaVector.X = bepuVector.X;
             xnaVector.Y = bepuVector.Y;
             xnaVector.Z = bepuVector.Z;
         }
 
-        public static SharpDX.Vector3 Convert(Vector3 xnaVector)
+        public static BEPUutilities.Vector3 Convert(Vector3 xnaVector)
         {
-            SharpDX.Vector3 toReturn;
+            BEPUutilities.Vector3 toReturn;
             toReturn.X = xnaVector.X;
             toReturn.Y = xnaVector.Y;
             toReturn.Z = xnaVector.Z;
             return toReturn;
         }
 
-        public static void Convert(ref Vector3 xnaVector, out SharpDX.Vector3 bepuVector)
+        public static void Convert(ref Vector3 xnaVector, out BEPUutilities.Vector3 bepuVector)
         {
             bepuVector.X = xnaVector.X;
             bepuVector.Y = xnaVector.Y;
             bepuVector.Z = xnaVector.Z;
         }
 
-        public static Vector3[] Convert(SharpDX.Vector3[] bepuVectors)
+        public static Vector3[] Convert(BEPUutilities.Vector3[] bepuVectors)
         {
             Vector3[] xnaVectors = new Vector3[bepuVectors.Length];
             for (int i = 0; i < bepuVectors.Length; i++)
@@ -85,9 +81,9 @@ namespace ConversionHelper
 
         }
 
-        public static SharpDX.Vector3[] Convert(Vector3[] xnaVectors)
+        public static BEPUutilities.Vector3[] Convert(Vector3[] xnaVectors)
         {
-            var bepuVectors = new SharpDX.Vector3[xnaVectors.Length];
+            var bepuVectors = new BEPUutilities.Vector3[xnaVectors.Length];
             for (int i = 0; i < xnaVectors.Length; i++)
             {
                 Convert(ref xnaVectors[i], out bepuVectors[i]);
@@ -97,21 +93,21 @@ namespace ConversionHelper
         }
 
         //Matrix
-        public static Matrix Convert(SharpDX.Matrix matrix)
+        public static Matrix Convert(BEPUutilities.Matrix matrix)
         {
             Matrix toReturn;
             Convert(ref matrix, out toReturn);
             return toReturn;
         }
 
-        public static SharpDX.Matrix Convert(Matrix matrix)
+        public static BEPUutilities.Matrix Convert(Matrix matrix)
         {
-            SharpDX.Matrix toReturn;
+            BEPUutilities.Matrix toReturn;
             Convert(ref matrix, out toReturn);
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Matrix matrix, out Matrix xnaMatrix)
+        public static void Convert(ref BEPUutilities.Matrix matrix, out Matrix xnaMatrix)
         {
             xnaMatrix.M11 = matrix.M11;
             xnaMatrix.M12 = matrix.M12;
@@ -135,7 +131,7 @@ namespace ConversionHelper
 
         }
 
-        public static void Convert(ref Matrix matrix, out SharpDX.Matrix bepuMatrix)
+        public static void Convert(ref Matrix matrix, out BEPUutilities.Matrix bepuMatrix)
         {
             bepuMatrix.M11 = matrix.M11;
             bepuMatrix.M12 = matrix.M12;
@@ -159,8 +155,54 @@ namespace ConversionHelper
 
         }
 
+        public static Matrix Convert(BEPUutilities.Matrix3x3 matrix)
+        {
+            Matrix toReturn;
+            Convert(ref matrix, out toReturn);
+            return toReturn;
+        }
+
+        public static void Convert(ref BEPUutilities.Matrix3x3 matrix, out Matrix xnaMatrix)
+        {
+            xnaMatrix.M11 = matrix.M11;
+            xnaMatrix.M12 = matrix.M12;
+            xnaMatrix.M13 = matrix.M13;
+            xnaMatrix.M14 = 0;
+
+            xnaMatrix.M21 = matrix.M21;
+            xnaMatrix.M22 = matrix.M22;
+            xnaMatrix.M23 = matrix.M23;
+            xnaMatrix.M24 = 0;
+
+            xnaMatrix.M31 = matrix.M31;
+            xnaMatrix.M32 = matrix.M32;
+            xnaMatrix.M33 = matrix.M33;
+            xnaMatrix.M34 = 0;
+
+            xnaMatrix.M41 = 0;
+            xnaMatrix.M42 = 0;
+            xnaMatrix.M43 = 0;
+            xnaMatrix.M44 = 1;
+        }
+
+        public static void Convert(ref Matrix matrix, out BEPUutilities.Matrix3x3 bepuMatrix)
+        {
+            bepuMatrix.M11 = matrix.M11;
+            bepuMatrix.M12 = matrix.M12;
+            bepuMatrix.M13 = matrix.M13;
+
+            bepuMatrix.M21 = matrix.M21;
+            bepuMatrix.M22 = matrix.M22;
+            bepuMatrix.M23 = matrix.M23;
+
+            bepuMatrix.M31 = matrix.M31;
+            bepuMatrix.M32 = matrix.M32;
+            bepuMatrix.M33 = matrix.M33;
+
+        }
+
         //Quaternion
-        public static Quaternion Convert(SharpDX.Quaternion quaternion)
+        public static Quaternion Convert(BEPUutilities.Quaternion quaternion)
         {
             Quaternion toReturn;
             toReturn.X = quaternion.X;
@@ -170,9 +212,9 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static SharpDX.Quaternion Convert(Quaternion quaternion)
+        public static BEPUutilities.Quaternion Convert(Quaternion quaternion)
         {
-            SharpDX.Quaternion toReturn;
+            BEPUutilities.Quaternion toReturn;
             toReturn.X = quaternion.X;
             toReturn.Y = quaternion.Y;
             toReturn.Z = quaternion.Z;
@@ -180,7 +222,7 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Quaternion bepuQuaternion, out Quaternion quaternion)
+        public static void Convert(ref BEPUutilities.Quaternion bepuQuaternion, out Quaternion quaternion)
         {
             quaternion.X = bepuQuaternion.X;
             quaternion.Y = bepuQuaternion.Y;
@@ -188,7 +230,7 @@ namespace ConversionHelper
             quaternion.W = bepuQuaternion.W;
         }
 
-        public static void Convert(ref Quaternion quaternion, out  SharpDX.Quaternion bepuQuaternion)
+        public static void Convert(ref Quaternion quaternion, out  BEPUutilities.Quaternion bepuQuaternion)
         {
             bepuQuaternion.X = quaternion.X;
             bepuQuaternion.Y = quaternion.Y;
@@ -197,21 +239,21 @@ namespace ConversionHelper
         }
 
         //Ray
-        public static SharpDX.Ray Convert(Ray ray)
+        public static BEPUutilities.Ray Convert(Ray ray)
         {
-            SharpDX.Ray toReturn;
+            BEPUutilities.Ray toReturn;
             Convert(ref ray.Position, out toReturn.Position);
             Convert(ref ray.Direction, out toReturn.Direction);
             return toReturn;
         }
 
-        public static void Convert(ref Ray ray, out SharpDX.Ray bepuRay)
+        public static void Convert(ref Ray ray, out BEPUutilities.Ray bepuRay)
         {
             Convert(ref ray.Position, out bepuRay.Position);
             Convert(ref ray.Direction, out bepuRay.Direction);
         }
 
-        public static Ray Convert(SharpDX.Ray ray)
+        public static Ray Convert(BEPUutilities.Ray ray)
         {
             Ray toReturn;
             Convert(ref ray.Position, out toReturn.Position);
@@ -219,43 +261,43 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Ray ray, out Ray xnaRay)
+        public static void Convert(ref BEPUutilities.Ray ray, out Ray xnaRay)
         {
             Convert(ref ray.Position, out xnaRay.Position);
             Convert(ref ray.Direction, out xnaRay.Direction);
         }
 
         //BoundingBox
-        public static BoundingBox Convert(SharpDX.BoundingBox boundingBox)
+        public static BoundingBox Convert(BEPUutilities.BoundingBox boundingBox)
         {
             BoundingBox toReturn;
-            Convert(ref boundingBox.Minimum, out toReturn.Min);
-            Convert(ref boundingBox.Maximum, out toReturn.Max);
+            Convert(ref boundingBox.Min, out toReturn.Min);
+            Convert(ref boundingBox.Max, out toReturn.Max);
             return toReturn;
         }
 
-        public static SharpDX.BoundingBox Convert(BoundingBox boundingBox)
+        public static BEPUutilities.BoundingBox Convert(BoundingBox boundingBox)
         {
-            SharpDX.BoundingBox toReturn;
-            Convert(ref boundingBox.Min, out toReturn.Minimum);
-            Convert(ref boundingBox.Max, out toReturn.Maximum);
+            BEPUutilities.BoundingBox toReturn;
+            Convert(ref boundingBox.Min, out toReturn.Min);
+            Convert(ref boundingBox.Max, out toReturn.Max);
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.BoundingBox boundingBox, out BoundingBox xnaBoundingBox)
+        public static void Convert(ref BEPUutilities.BoundingBox boundingBox, out BoundingBox xnaBoundingBox)
         {
-            Convert(ref boundingBox.Minimum, out xnaBoundingBox.Min);
-            Convert(ref boundingBox.Maximum, out xnaBoundingBox.Max);
+            Convert(ref boundingBox.Min, out xnaBoundingBox.Min);
+            Convert(ref boundingBox.Max, out xnaBoundingBox.Max);
         }
 
-        public static void Convert(ref BoundingBox boundingBox, out SharpDX.BoundingBox bepuBoundingBox)
+        public static void Convert(ref BoundingBox boundingBox, out BEPUutilities.BoundingBox bepuBoundingBox)
         {
-            Convert(ref boundingBox.Min, out bepuBoundingBox.Minimum);
-            Convert(ref boundingBox.Max, out bepuBoundingBox.Maximum);
+            Convert(ref boundingBox.Min, out bepuBoundingBox.Min);
+            Convert(ref boundingBox.Max, out bepuBoundingBox.Max);
         }
 
         //BoundingSphere
-        public static BoundingSphere Convert(SharpDX.BoundingSphere boundingSphere)
+        public static BoundingSphere Convert(BEPUutilities.BoundingSphere boundingSphere)
         {
             BoundingSphere toReturn;
             Convert(ref boundingSphere.Center, out toReturn.Center);
@@ -263,28 +305,28 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static SharpDX.BoundingSphere Convert(BoundingSphere boundingSphere)
+        public static BEPUutilities.BoundingSphere Convert(BoundingSphere boundingSphere)
         {
-            SharpDX.BoundingSphere toReturn;
+            BEPUutilities.BoundingSphere toReturn;
             Convert(ref boundingSphere.Center, out toReturn.Center);
             toReturn.Radius = boundingSphere.Radius;
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.BoundingSphere boundingSphere, out BoundingSphere xnaBoundingSphere)
+        public static void Convert(ref BEPUutilities.BoundingSphere boundingSphere, out BoundingSphere xnaBoundingSphere)
         {
             Convert(ref boundingSphere.Center, out xnaBoundingSphere.Center);
             xnaBoundingSphere.Radius = boundingSphere.Radius;
         }
 
-        public static void Convert(ref BoundingSphere boundingSphere, out SharpDX.BoundingSphere bepuBoundingSphere)
+        public static void Convert(ref BoundingSphere boundingSphere, out BEPUutilities.BoundingSphere bepuBoundingSphere)
         {
             Convert(ref boundingSphere.Center, out bepuBoundingSphere.Center);
             bepuBoundingSphere.Radius = boundingSphere.Radius;
         }
 
         //Plane
-        public static Plane Convert(SharpDX.Plane plane)
+        public static Plane Convert(BEPUutilities.Plane plane)
         {
             Plane toReturn;
             Convert(ref plane.Normal, out toReturn.Normal);
@@ -292,21 +334,21 @@ namespace ConversionHelper
             return toReturn;
         }
 
-        public static SharpDX.Plane Convert(Plane plane)
+        public static BEPUutilities.Plane Convert(Plane plane)
         {
-            SharpDX.Plane toReturn;
+            BEPUutilities.Plane toReturn;
             Convert(ref plane.Normal, out toReturn.Normal);
             toReturn.D = plane.D;
             return toReturn;
         }
 
-        public static void Convert(ref SharpDX.Plane plane, out Plane xnaPlane)
+        public static void Convert(ref BEPUutilities.Plane plane, out Plane xnaPlane)
         {
             Convert(ref plane.Normal, out xnaPlane.Normal);
             xnaPlane.D = plane.D;
         }
 
-        public static void Convert(ref Plane plane, out SharpDX.Plane bepuPlane)
+        public static void Convert(ref Plane plane, out BEPUutilities.Plane bepuPlane)
         {
             Convert(ref plane.Normal, out bepuPlane.Normal);
             bepuPlane.D = plane.D;

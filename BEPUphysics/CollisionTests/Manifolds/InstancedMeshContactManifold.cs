@@ -1,11 +1,10 @@
 ﻿using System;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
-using SharpDX;
+using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.DataStructures;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.CollisionTests.CollisionAlgorithms;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.Manifolds
 {
@@ -16,7 +15,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
     {
         protected InstancedMesh mesh;
 
-        internal RawList<int> overlappedTriangles = new RawList<int>(4);
+        internal RawList<int> overlappedTriangles = new RawList<int>(8);
 
         ///<summary>
         /// Gets the mesh of the pair.
@@ -36,32 +35,32 @@ namespace BEPUphysics.CollisionTests.Manifolds
             if (convex.entity != null)
             {
                 Vector3 transformedVelocity;
-                Matrix3X3 inverse;
-                Matrix3X3.Invert(ref mesh.worldTransform.LinearTransform, out inverse);
-                Matrix3X3.Transform(ref convex.entity.linearVelocity, ref inverse, out transformedVelocity);
+                Matrix3x3 inverse;
+                Matrix3x3.Invert(ref mesh.worldTransform.LinearTransform, out inverse);
+                Matrix3x3.Transform(ref convex.entity.linearVelocity, ref inverse, out transformedVelocity);
                 Vector3.Multiply(ref transformedVelocity, dt, out transformedVelocity);
 
                 if (transformedVelocity.X > 0)
-                    boundingBox.Maximum.X += transformedVelocity.X;
+                    boundingBox.Max.X += transformedVelocity.X;
                 else
-                    boundingBox.Minimum.X += transformedVelocity.X;
+                    boundingBox.Min.X += transformedVelocity.X;
 
                 if (transformedVelocity.Y > 0)
-                    boundingBox.Maximum.Y += transformedVelocity.Y;
+                    boundingBox.Max.Y += transformedVelocity.Y;
                 else
-                    boundingBox.Minimum.Y += transformedVelocity.Y;
+                    boundingBox.Min.Y += transformedVelocity.Y;
 
                 if (transformedVelocity.Z > 0)
-                    boundingBox.Maximum.Z += transformedVelocity.Z;
+                    boundingBox.Max.Z += transformedVelocity.Z;
                 else
-                    boundingBox.Minimum.Z += transformedVelocity.Z;
+                    boundingBox.Min.Z += transformedVelocity.Z;
             }
 
             mesh.Shape.TriangleMesh.Tree.GetOverlaps(boundingBox, overlappedTriangles);
-            return overlappedTriangles.count;
+            return overlappedTriangles.Count;
         }
 
-        protected override bool ConfigureTriangle(int i, out TriangleIndices indices)
+        protected override bool ConfigureTriangle(int i, TriangleShape localTriangleShape, out TriangleIndices indices)
         {
             MeshBoundingBoxTreeData data = mesh.Shape.TriangleMesh.Data;
             int triangleIndex = overlappedTriangles.Elements[i];
@@ -130,7 +129,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
                 convex = newCollidableB as ConvexCollidable;
                 mesh = newCollidableA as InstancedMesh;
                 if (convex == null || mesh == null)
-                    throw new Exception("Inappropriate types used to initialize contact manifold.");
+                    throw new ArgumentException("Inappropriate types used to initialize contact manifold.");
             }
 
         }

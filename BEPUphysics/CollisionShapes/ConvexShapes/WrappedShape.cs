@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.MathExtensions;
-using SharpDX;
-using BEPUphysics.DataStructures;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUutilities;
+ 
+using BEPUutilities.DataStructures;
+using BEPUutilities.ResourceManagement;
 
 namespace BEPUphysics.CollisionShapes.ConvexShapes
 {
@@ -83,16 +84,6 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
             }
         }
 
-        void Recenter(out Vector3 center)
-        {
-            //When first constructed, a wrapped shape may not actually be centered on its local origin.
-            //It is helpful to many systems if this is addressed.
-            center = ComputeCenter();
-            for (int i = 0; i < shapes.Count; i++)
-            {
-                shapes.list.Elements[i].Transform.Position -= center;
-            }
-        }
 
         ///<summary>
         /// Constructs a wrapped shape.
@@ -106,8 +97,8 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
             shapes.Add(firstShape);
             shapes.Add(secondShape);
 
-            Vector3 v;
-            Recenter(out v);
+            Vector3 center;
+            UpdateConvexShapeInfo(out center);
 
             shapes.Changed += ShapesChanged;
         }
@@ -125,10 +116,9 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
             shapes.Add(firstShape);
             shapes.Add(secondShape);
 
-            Recenter(out center);
+            UpdateConvexShapeInfo(out center);
 
             shapes.Changed += ShapesChanged;
-            OnShapeChanged();
         }
 
         ///<summary>
@@ -140,16 +130,15 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
         public WrappedShape(IList<ConvexShapeEntry> shapeEntries)
         {
             if (shapeEntries.Count == 0)
-                throw new Exception("Cannot create a wrapped shape with no contained shapes.");
+                throw new ArgumentException("Cannot create a wrapped shape with no contained shapes.");
             for (int i = 0; i < shapeEntries.Count; i++)
             {
                 shapes.Add(shapeEntries[i]);
             }
-            Vector3 v;
-            Recenter(out v);
 
+            Vector3 center;
+            UpdateConvexShapeInfo(out center);
             shapes.Changed += ShapesChanged;
-            OnShapeChanged();
         }
 
         ///<summary>
@@ -162,21 +151,85 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
         public WrappedShape(IList<ConvexShapeEntry> shapeEntries, out Vector3 center)
         {
             if (shapeEntries.Count == 0)
-                throw new Exception("Cannot create a wrapped shape with no contained shapes.");
+                throw new ArgumentException("Cannot create a wrapped shape with no contained shapes.");
             for (int i = 0; i < shapeEntries.Count; i++)
             {
                 shapes.Add(shapeEntries[i]);
             }
-            Recenter(out center);
 
+            UpdateConvexShapeInfo(out center);
             shapes.Changed += ShapesChanged;
-            OnShapeChanged();
+        }
+
+        ///<summary>
+        /// Constructs a wrapped shape from cached data.
+        ///</summary>
+        ///<param name="shapeEntries">Already centered shape entries used to construct the shape.</param>
+        /// <param name="description">Cached information about the shape. Assumed to be correct; no extra processing or validation is performed.</param>
+        ///<exception cref="Exception">Thrown when the shape list is empty.</exception>
+        public WrappedShape(IList<ConvexShapeEntry> shapeEntries, ConvexShapeDescription description)
+        {
+            if (shapeEntries.Count == 0)
+                throw new ArgumentException("Cannot create a wrapped shape with no contained shapes."); 
+            for (int i = 0; i < shapeEntries.Count; i++)
+            {
+                shapes.Add(shapeEntries[i]);
+            }
+
+            UpdateConvexShapeInfo(description);
+            shapes.Changed += ShapesChanged;
+        }
+
+
+        protected override void OnShapeChanged()
+        {
+            Vector3 center;
+            UpdateConvexShapeInfo(out center);
+            base.OnShapeChanged();
         }
 
         void ShapesChanged(ObservableList<ConvexShapeEntry> list)
         {
             OnShapeChanged();
         }
+
+
+        /// <summary>
+        /// Computes and applies a convex shape description for this WrappedShape.
+        /// </summary>
+        /// <param name="center">Computed center of the shape before recentering.</param>
+        public void UpdateConvexShapeInfo(out Vector3 center)
+        {
+            //Compute the volume distribution.
+            var samples = CommonResources.GetVectorList();
+            if (samples.Capacity < InertiaHelper.SampleDirections.Length)
+                samples.Capacity = InertiaHelper.SampleDirections.Length;
+            samples.Count = InertiaHelper.SampleDirections.Length;
+            for (int i = 0; i < InertiaHelper.SampleDirections.Length; ++i)
+            {
+                GetLocalExtremePoint(InertiaHelper.SampleDirections[i], out samples.Elements[i]);
+            }
+
+            var triangles = CommonResources.GetIntList();
+            ConvexHullHelper.GetConvexHull(samples, triangles);
+
+            float volume;
+            InertiaHelper.ComputeShapeDistribution(samples, triangles, out center, out volume, out volumeDistribution);
+            Volume = volume;
+
+            CommonResources.GiveBack(samples);
+            CommonResources.GiveBack(triangles);
+
+            //Now recenter the shape and compute the radii estimates.
+            for (int i = 0; i < shapes.Count; i++)
+            {
+                shapes.WrappedList.Elements[i].Transform.Position -= center;
+            }
+            MinimumRadius = ComputeMinimumRadius();
+            MaximumRadius = ComputeMaximumRadius();
+
+        }
+
 
 
         /// <summary>
@@ -187,23 +240,23 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
         public override void GetBoundingBox(ref RigidTransform shapeTransform, out BoundingBox boundingBox)
         {
             RigidTransform subTransform;
-            RigidTransform.Transform(ref shapes.list.Elements[0].Transform, ref shapeTransform, out subTransform);
-            shapes.list.Elements[0].CollisionShape.GetBoundingBox(ref subTransform, out boundingBox);
-            for (int i = 1; i < shapes.list.count; i++)
+            RigidTransform.Transform(ref shapes.WrappedList.Elements[0].Transform, ref shapeTransform, out subTransform);
+            shapes.WrappedList.Elements[0].CollisionShape.GetBoundingBox(ref subTransform, out boundingBox);
+            for (int i = 1; i < shapes.WrappedList.Count; i++)
             {
-                RigidTransform.Transform(ref shapes.list.Elements[i].Transform, ref shapeTransform, out subTransform);
+                RigidTransform.Transform(ref shapes.WrappedList.Elements[i].Transform, ref shapeTransform, out subTransform);
                 BoundingBox toMerge;
-                shapes.list.Elements[i].CollisionShape.GetBoundingBox(ref subTransform, out toMerge);
-                BoundingBoxEx.Merge(ref boundingBox, ref toMerge, out boundingBox);
+                shapes.WrappedList.Elements[i].CollisionShape.GetBoundingBox(ref subTransform, out toMerge);
+                BoundingBox.CreateMerged(ref boundingBox, ref toMerge, out boundingBox);
             }
 
-            boundingBox.Minimum.X -= collisionMargin;
-            boundingBox.Minimum.Y -= collisionMargin;
-            boundingBox.Minimum.Z -= collisionMargin;
+            boundingBox.Min.X -= collisionMargin;
+            boundingBox.Min.Y -= collisionMargin;
+            boundingBox.Min.Z -= collisionMargin;
 
-            boundingBox.Maximum.X += collisionMargin;
-            boundingBox.Maximum.Y += collisionMargin;
-            boundingBox.Maximum.Z += collisionMargin;
+            boundingBox.Max.X += collisionMargin;
+            boundingBox.Max.Y += collisionMargin;
+            boundingBox.Max.Z += collisionMargin;
         }
 
 
@@ -214,16 +267,16 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
         ///<param name="extremePoint">Extreme point on the shape.</param>
         public override void GetLocalExtremePointWithoutMargin(ref Vector3 direction, out Vector3 extremePoint)
         {
-            shapes.list.Elements[0].CollisionShape.GetExtremePoint(direction, ref shapes.list.Elements[0].Transform, out extremePoint);
+            shapes.WrappedList.Elements[0].CollisionShape.GetExtremePoint(direction, ref shapes.WrappedList.Elements[0].Transform, out extremePoint);
             float maxDot;
-            Vector3Ex.Dot(ref extremePoint, ref direction, out maxDot);
-            for (int i = 1; i < shapes.list.count; i++)
+            Vector3.Dot(ref extremePoint, ref direction, out maxDot);
+            for (int i = 1; i < shapes.WrappedList.Count; i++)
             {
                 float dot;
                 Vector3 temp;
 
-                shapes.list.Elements[i].CollisionShape.GetExtremePoint(direction, ref shapes.list.Elements[i].Transform, out temp);
-                Vector3Ex.Dot(ref direction, ref temp, out dot);
+                shapes.WrappedList.Elements[i].CollisionShape.GetExtremePoint(direction, ref shapes.WrappedList.Elements[i].Transform, out temp);
+                Vector3.Dot(ref direction, ref temp, out dot);
                 if (dot > maxDot)
                 {
                     extremePoint = temp;
@@ -239,26 +292,32 @@ namespace BEPUphysics.CollisionShapes.ConvexShapes
         /// it is simply an approximation that avoids underestimating.
         /// </summary>
         /// <returns>Maximum radius of the shape.</returns>
-        public override float ComputeMaximumRadius()
+        public float ComputeMaximumRadius()
         {
             //This can overestimate the actual maximum radius, but such is the defined behavior of the ComputeMaximumRadius function.  It's not exact; it's an upper bound on the actual maximum.
             float maxRadius = 0;
             for (int i = 0; i < shapes.Count; i++)
             {
-                float radius = shapes.list.Elements[i].CollisionShape.ComputeMaximumRadius() +
-                               shapes.list.Elements[i].Transform.Position.Length();
+                float radius = shapes.WrappedList.Elements[i].CollisionShape.MaximumRadius +
+                               shapes.WrappedList.Elements[i].Transform.Position.Length();
                 if (radius > maxRadius)
                     maxRadius = radius;
             }
             return maxRadius + collisionMargin;
         }
-        public override float ComputeMinimumRadius()
+        /// <summary>
+        /// Computes the minimum radius of the shape.
+        /// This is often smaller than the actual minimum radius;
+        /// it is simply an approximation that avoids overestimating.
+        /// </summary>
+        /// <returns>Minimum radius of the shape.</returns>
+        public float ComputeMinimumRadius()
         {
             //Could also use the tetrahedron approximation approach.
             float minRadius = 0;
             for (int i = 0; i < shapes.Count; i++)
             {
-                float radius = shapes.list.Elements[i].CollisionShape.ComputeMinimumRadius();
+                float radius = shapes.WrappedList.Elements[i].CollisionShape.MinimumRadius;
                 if (radius < minRadius)
                     minRadius = radius;
             }

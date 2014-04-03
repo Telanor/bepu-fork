@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
 using BEPUphysics.DataStructures;
+using BEPUutilities.DataStructures;
 using BEPUphysics.Entities;
-using BEPUphysics.MathExtensions;
 using BEPUphysics.OtherSpaceStages;
-using BEPUphysics.Threading;
-using SharpDX;
+using BEPUutilities;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
-using Resources = BEPUphysics.ResourceManagement.Resources;
 
-namespace BEPUphysics.Collidables
+namespace BEPUphysics.BroadPhaseEntries
 {
     /// <summary>
     /// Stores flags regarding an object's degree of inclusion in a volume.
@@ -139,8 +137,8 @@ namespace BEPUphysics.Collidables
 
         
 
-        private ISpace space;
-        ISpace ISpaceObject.Space
+        private Space space;
+        Space ISpaceObject.Space
         {
             get
             {
@@ -155,7 +153,7 @@ namespace BEPUphysics.Collidables
         ///<summary>
         /// Space that owns the detector volume.
         ///</summary>
-        public ISpace Space
+        public Space Space
         {
             get
             {
@@ -172,9 +170,9 @@ namespace BEPUphysics.Collidables
         /// <returns>Whether or not the point is contained by the detector volume.</returns>
         public bool IsPointContained(Vector3 point)
         {
-            var triangles = Resources.GetIntList();
+            var triangles = CommonResources.GetIntList();
             bool contained = IsPointContained(ref point, triangles);
-            Resources.GiveBack(triangles);
+            CommonResources.GiveBack(triangles);
             return contained;
         }
 
@@ -183,12 +181,12 @@ namespace BEPUphysics.Collidables
             Vector3 rayDirection;
             //Point from the approximate center of the mesh outwards.
             //This is a cheap way to reduce the number of unnecessary checks when objects are external to the mesh.
-            Vector3.Add(ref boundingBox.Maximum, ref boundingBox.Minimum, out rayDirection);
+            Vector3.Add(ref boundingBox.Max, ref boundingBox.Min, out rayDirection);
             Vector3.Multiply(ref rayDirection, .5f, out rayDirection);
             Vector3.Subtract(ref point, ref rayDirection, out rayDirection);
             //If the point is right in the middle, we'll need a backup.
             if (rayDirection.LengthSquared() < .01f)
-                rayDirection = Vector3.UnitY;
+                rayDirection = Vector3.Up;
 
             var ray = new Ray(point, rayDirection);
             triangleMesh.Tree.GetOverlaps(ray, triangles);
@@ -196,7 +194,7 @@ namespace BEPUphysics.Collidables
             float minimumT = float.MaxValue;
             bool minimumIsClockwise = false;
 
-            for (int i = 0; i < triangles.count; i++)
+            for (int i = 0; i < triangles.Count; i++)
             {
                 Vector3 a, b, c;
                 triangleMesh.Data.GetTriangle(triangles.Elements[i], out a, out b, out c);
@@ -236,13 +234,13 @@ namespace BEPUphysics.Collidables
             return triangleMesh.RayCast(ray, maximumLength, TriangleSidedness.DoubleSided, out rayHit);
         }
 
-        public override bool ConvexCast(ConvexShape castShape, ref MathExtensions.RigidTransform startingTransform, ref Vector3 sweep, out RayHit hit)
+        public override bool ConvexCast(ConvexShape castShape, ref RigidTransform startingTransform, ref Vector3 sweep, out RayHit hit)
         {
             hit = new RayHit();
             BoundingBox boundingBox;
-            Toolbox.GetExpandedBoundingBox(ref castShape, ref startingTransform, ref sweep, out boundingBox);
-            var tri = Resources.GetTriangle();
-            var hitElements = Resources.GetIntList();
+            castShape.GetSweptBoundingBox(ref startingTransform, ref sweep, out boundingBox);
+            var tri = PhysicsThreadResources.GetTriangle();
+            var hitElements = CommonResources.GetIntList();
             if (triangleMesh.Tree.GetOverlaps(boundingBox, hitElements))
             {
                 hit.T = float.MaxValue;
@@ -256,14 +254,14 @@ namespace BEPUphysics.Collidables
                     Vector3.Subtract(ref tri.vA, ref center, out tri.vA);
                     Vector3.Subtract(ref tri.vB, ref center, out tri.vB);
                     Vector3.Subtract(ref tri.vC, ref center, out tri.vC);
-                    tri.maximumRadius = tri.vA.LengthSquared();
+                    tri.MaximumRadius = tri.vA.LengthSquared();
                     float radius = tri.vB.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
                     radius = tri.vC.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
-                    tri.maximumRadius = (float)Math.Sqrt(tri.maximumRadius);
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
+                    tri.MaximumRadius = (float)Math.Sqrt(tri.MaximumRadius);
                     tri.collisionMargin = 0;
                     var triangleTransform = new RigidTransform { Orientation = Quaternion.Identity, Position = center };
                     RayHit tempHit;
@@ -272,13 +270,13 @@ namespace BEPUphysics.Collidables
                         hit = tempHit;
                     }
                 }
-                tri.maximumRadius = 0;
-                Resources.GiveBack(tri);
-                Resources.GiveBack(hitElements);
+                tri.MaximumRadius = 0;
+                PhysicsThreadResources.GiveBack(tri);
+                CommonResources.GiveBack(hitElements);
                 return hit.T != float.MaxValue;
             }
-            Resources.GiveBack(tri);
-            Resources.GiveBack(hitElements);
+            PhysicsThreadResources.GiveBack(tri);
+            CommonResources.GiveBack(hitElements);
             return false;
         }
 
@@ -296,7 +294,7 @@ namespace BEPUphysics.Collidables
         public void Reinitialize()
         {
             //Pick a point that is known to be outside the mesh as the origin.
-            Vector3 origin = (triangleMesh.Tree.BoundingBox.Maximum - triangleMesh.Tree.BoundingBox.Minimum) * 1.5f + triangleMesh.Tree.BoundingBox.Minimum;
+            Vector3 origin = (triangleMesh.Tree.BoundingBox.Max - triangleMesh.Tree.BoundingBox.Min) * 1.5f + triangleMesh.Tree.BoundingBox.Min;
 
             //Pick a direction which will definitely hit the mesh.
             Vector3 a, b, c;
@@ -304,12 +302,12 @@ namespace BEPUphysics.Collidables
             var direction = (a + b + c) / 3 - origin;
 
             var ray = new Ray(origin, direction);
-            var triangles = Resources.GetIntList();
+            var triangles = CommonResources.GetIntList();
             triangleMesh.Tree.GetOverlaps(ray, triangles);
 
             float minimumT = float.MaxValue;
 
-            for (int i = 0; i < triangles.count; i++)
+            for (int i = 0; i < triangles.Count; i++)
             {
                 triangleMesh.Data.GetTriangle(triangles.Elements[i], out a, out b, out c);
 
@@ -324,16 +322,16 @@ namespace BEPUphysics.Collidables
                     }
                 }
             }
-            Resources.GiveBack(triangles);
+            CommonResources.GiveBack(triangles);
         }
 
 
-        void ISpaceObject.OnAdditionToSpace(ISpace newSpace)
+        void ISpaceObject.OnAdditionToSpace(Space newSpace)
         {
 
         }
 
-        void ISpaceObject.OnRemovalFromSpace(ISpace oldSpace)
+        void ISpaceObject.OnRemovalFromSpace(Space oldSpace)
         {
 
         }

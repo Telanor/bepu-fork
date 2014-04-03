@@ -1,3 +1,4 @@
+using System;
 using BEPUphysics;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
@@ -5,6 +6,7 @@ using BEPUphysics.Constraints;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos
 {
@@ -36,38 +38,35 @@ namespace BEPUphysicsDemos
         /// <param name="space">Space to configure.</param>
         public static void ApplyDefaultSettings(Space space)
         {
-            MotionSettings.ConserveAngularMomentum = false;
             MotionSettings.DefaultPositionUpdateMode = PositionUpdateMode.Discrete;
-            MotionSettings.UseRk4AngularIntegration = false;
-            SolverSettings.DefaultMinimumIterations = 1;
+            SolverSettings.DefaultMinimumIterationCount = 1;
             space.Solver.IterationLimit = 10;
             GeneralConvexPairTester.UseSimplexCaching = false;
             MotionSettings.UseExtraExpansionForContinuousBoundingBoxes = false;
 
             //Set all the scaling settings back to their defaults.
-            CollisionResponseSettings.MaximumPenetrationCorrectionSpeed = 2;
+            space.DeactivationManager.VelocityLowerLimit = 0.26f;
+            CollisionResponseSettings.MaximumPenetrationRecoverySpeed = 2;
             CollisionResponseSettings.BouncinessVelocityThreshold = 1;
             CollisionResponseSettings.StaticFrictionVelocityThreshold = .2f;
             CollisionDetectionSettings.ContactInvalidationLength = .1f;
-            CollisionDetectionSettings.ContactMinimumSeparationDistance = .1f;
+            CollisionDetectionSettings.ContactMinimumSeparationDistance = .03f;
             CollisionDetectionSettings.MaximumContactDistance = .1f;
             CollisionDetectionSettings.DefaultMargin = .04f;
             CollisionDetectionSettings.AllowedPenetration = .01f;
+            SolverSettings.DefaultMinimumImpulse = 0.001f;
+
+            //Adjust epsilons back to defaults.
+            Toolbox.Epsilon = 1e-7f;
+            Toolbox.BigEpsilon = 1e-5f;
+            MPRToolbox.DepthRefinementEpsilon = 1e-4f;
+            MPRToolbox.RayCastSurfaceEpsilon = 1e-9f;
+            MPRToolbox.SurfaceEpsilon = 1e-7f;
+            PairSimplex.DistanceConvergenceEpsilon = 1e-7f;
+            PairSimplex.ProgressionEpsilon = 1e-8f;
+
         }
 
-        /// <summary>
-        /// Applies some rotation-related settings.
-        /// With these settings enabled, rotation generally behaves better with long shapes.
-        /// Angular motion is more realistic since the momentum is conserved.
-        /// However, these settings can also cause some instability to sneak into the simulation.
-        /// Try using these settings on the Saw Contraption demo to see an example of what can go
-        /// wrong when conservation is enabled.
-        /// </summary>
-        public static void ApplyRotationSettings()
-        {
-            MotionSettings.ConserveAngularMomentum = true;
-            MotionSettings.UseRk4AngularIntegration = true;
-        }
 
         /// <summary>
         /// Applies slightly higher speed settings.
@@ -78,7 +77,7 @@ namespace BEPUphysicsDemos
         /// </summary>
         public static void ApplySemiSpeedySettings()
         {
-            SolverSettings.DefaultMinimumIterations = 0;
+            SolverSettings.DefaultMinimumIterationCount = 0;
         }
 
         /// <summary>
@@ -90,7 +89,7 @@ namespace BEPUphysicsDemos
         /// <param name="space">Space to configure.</param>
         public static void ApplySuperSpeedySettings(Space space)
         {
-            SolverSettings.DefaultMinimumIterations = 0;
+            SolverSettings.DefaultMinimumIterationCount = 0;
             space.Solver.IterationLimit = 5;
             GeneralConvexPairTester.UseSimplexCaching = true;
         }
@@ -105,7 +104,7 @@ namespace BEPUphysicsDemos
         public static void ApplyMediumHighStabilitySettings(Space space)
         {
             MotionSettings.DefaultPositionUpdateMode = PositionUpdateMode.Continuous;
-            SolverSettings.DefaultMinimumIterations = 2;
+            SolverSettings.DefaultMinimumIterationCount = 2;
             space.Solver.IterationLimit = 15;
 
         }
@@ -123,7 +122,7 @@ namespace BEPUphysicsDemos
         {
             MotionSettings.DefaultPositionUpdateMode = PositionUpdateMode.Continuous;
             MotionSettings.UseExtraExpansionForContinuousBoundingBoxes = true;
-            SolverSettings.DefaultMinimumIterations = 5;
+            SolverSettings.DefaultMinimumIterationCount = 5;
             space.Solver.IterationLimit = 50;
 
         }
@@ -133,33 +132,35 @@ namespace BEPUphysicsDemos
         /// a different scale interpretation.  For example, if you want to increase your gravity to -100 from -10 and consider a 5 unit wide box to be tiny,
         /// apply a scale of 10 to get the collision response and detection systems to match expectations.
         /// </summary>
+        /// <param name="space">Space to configure.</param>
         /// <param name="scale">Scale to apply to relevant configuration settings.</param>
-	   public static void ApplyScale(Space space, float scale)
+        public static void ApplyScale(Space space, float scale)
         {
-		   //Set all values to default values * scale.
-		   space.DeactivationManager.VelocityLowerLimit = 0.26f * scale;
-		   CollisionResponseSettings.MaximumPenetrationCorrectionSpeed = 2 * scale;
-		   CollisionResponseSettings.BouncinessVelocityThreshold = 1 * scale;
-		   CollisionResponseSettings.StaticFrictionVelocityThreshold = .2f * scale;
-		   CollisionDetectionSettings.ContactInvalidationLength = .1f * scale;
-		   CollisionDetectionSettings.ContactMinimumSeparationDistance = .03f * scale;
-		   CollisionDetectionSettings.MaximumContactDistance = .1f * scale;
-		   CollisionDetectionSettings.DefaultMargin = .04f * scale;
-		   CollisionDetectionSettings.AllowedPenetration = .01f * scale;
+            //Set all values to default values * scale.
+            space.DeactivationManager.VelocityLowerLimit = 0.26f * scale;
+            CollisionResponseSettings.MaximumPenetrationRecoverySpeed = 2 * scale;
+            CollisionResponseSettings.BouncinessVelocityThreshold = 1 * scale;
+            CollisionResponseSettings.StaticFrictionVelocityThreshold = .2f * scale;
+            CollisionDetectionSettings.ContactInvalidationLength = .1f * scale;
+            CollisionDetectionSettings.ContactMinimumSeparationDistance = .03f * scale;
+            CollisionDetectionSettings.MaximumContactDistance = .1f * scale;
+            CollisionDetectionSettings.DefaultMargin = .04f * scale;
+            CollisionDetectionSettings.AllowedPenetration = .01f * scale;
 
-		   //Adjust epsilons, too.
-		   Toolbox.Epsilon = 1e-7f * scale;
-		   Toolbox.BigEpsilon = 1e-5f * scale;
-		   MPRToolbox.DepthRefinementEpsilon = 1e-4f * scale;
-		   MPRToolbox.RayCastSurfaceEpsilon = 1e-9f * scale;
-		   MPRToolbox.SurfaceEpsilon = 1e-7f * scale;
-		   PairSimplex.DistanceConvergenceEpsilon = 1e-7f * scale;
-		   PairSimplex.ProgressionEpsilon = 1e-8f * scale;
+            //Adjust epsilons, too.
+            Toolbox.Epsilon = 1e-7f * scale;
+            Toolbox.BigEpsilon = 1e-5f * scale;
+            MPRToolbox.DepthRefinementEpsilon = 1e-4f * scale;
+            MPRToolbox.RayCastSurfaceEpsilon = 1e-9f * scale;
+            MPRToolbox.SurfaceEpsilon = 1e-7f * scale;
+            PairSimplex.DistanceConvergenceEpsilon = 1e-7f * scale;
+            PairSimplex.ProgressionEpsilon = 1e-8f * scale;
 
-		   //While not fully a size-related parameter, you may find that adjusting the SolverSettings.DefaultMinimumImpulse can help the simulation quality.
-		   //It is related to 'mass scale' instead of 'size scale.'
-		   //Heavy or effectively heavy objects will produce higher impulses and early out slower, taking more time than needed.
-		   //Light or effectively light objects will produce smaller impulses and early out faster, producing a lower quality result.
+            //While not fully a size-related parameter, you may find that adjusting the SolverSettings.DefaultMinimumImpulse can help the simulation quality.
+            //It is related to 'mass scale' instead of 'size scale.'
+            //Heavy or effectively heavy objects will produce higher impulses and early out slower, taking more time than needed.
+            //Light or effectively light objects will produce smaller impulses and early out faster, producing a lower quality result.
         }
     }
 }
+ 

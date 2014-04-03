@@ -1,15 +1,11 @@
-﻿using System.Collections.Generic;
-using BEPUphysics.Collidables;
-using BEPUphysics.CollisionShapes;
-using BEPUphysics.CollisionShapes.ConvexShapes;
+﻿using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
 using BEPUphysicsDrawer.Models;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -71,7 +67,7 @@ namespace BEPUphysicsDemos.Demos
             detectorVolume.VolumeBeganContainingEntity += BeganContaining;
             detectorVolume.VolumeStoppedContainingEntity += StoppedContaining;
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 0, 22);
+            game.Camera.Position = new Vector3(0, 0, 22);
             Space.ForceUpdater.Gravity = new Vector3();
         }
 

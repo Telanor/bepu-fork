@@ -1,8 +1,7 @@
 ﻿using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.PositionUpdating;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -29,12 +28,6 @@ namespace BEPUphysicsDemos.Demos
             float blockHeight = 1 / 2f;
             Entity toAdd;
 
-            //The default number of iterations is 10, which works fine, but this demo
-            //is all about stability (it's jenga!).  Increase the iterations a bit.
-            //Even though it's using twice as many iterations, it will early-out
-            //before reaching the limit MOST of the time.
-            //It's still pretty playable at around 7-8 max iterations, though.
-            Space.Solver.IterationLimit = 20;
 
             for (int i = 0; i < numBlocksTall; i++)
             {
@@ -65,7 +58,7 @@ namespace BEPUphysicsDemos.Demos
                 }
             }
             Space.Add(new Box(new Vector3(0, -.5f, 0), 40, 1, 40));
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 15);
+            game.Camera.Position = new Vector3(0, 5, 15);
 
         }
 

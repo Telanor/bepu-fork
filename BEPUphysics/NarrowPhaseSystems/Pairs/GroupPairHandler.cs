@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
 using BEPUphysics.Constraints;
 using BEPUphysics.Constraints.Collision;
-using BEPUphysics.DataStructures;
-using BEPUphysics.ResourceManagement;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.CollisionTests;
 using BEPUphysics.Materials;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -166,7 +162,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 if (!containedPairs.Contains(pair))
                     pairsToRemove.Add(pair);
             }
-            for (int i = 0; i < pairsToRemove.count; i++)
+            for (int i = 0; i < pairsToRemove.Count; i++)
             {
                 CollidablePairHandler toReturn = subPairs[pairsToRemove.Elements[i]];
                 subPairs.Remove(pairsToRemove.Elements[i]);
@@ -271,7 +267,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
         }
 
 
-        void IPairHandlerParent.AddSolverUpdateable(EntitySolverUpdateable addedItem)
+        void IPairHandlerParent.AddSolverUpdateable(SolverUpdateable addedItem)
         {
 
             manifoldConstraintGroup.Add(addedItem);
@@ -286,7 +282,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
 
         }
 
-        void IPairHandlerParent.RemoveSolverUpdateable(EntitySolverUpdateable removedItem)
+        void IPairHandlerParent.RemoveSolverUpdateable(SolverUpdateable removedItem)
         {
 
             manifoldConstraintGroup.Remove(removedItem);

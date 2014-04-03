@@ -1,17 +1,16 @@
 ﻿using System;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
 using BEPUphysics.CollisionTests.Manifolds;
 using BEPUphysics.Constraints.Collision;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
-using SharpDX;
+ 
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -69,7 +68,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 convex = entryA as ConvexCollidable;
 
                 if (triangle == null || convex == null)
-                    throw new Exception("Inappropriate types used to initialize pair.");
+                    throw new ArgumentException("Inappropriate types used to initialize pair.");
             }
 
             //Contact normal goes from A to B.
@@ -142,7 +141,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 Vector3.Multiply(ref velocity, dt, out velocity);
                 float velocitySquared = velocity.LengthSquared();
 
-                var minimumRadiusA = convex.Shape.minimumRadius * MotionSettings.CoreShapeScaling;
+                var minimumRadiusA = convex.Shape.MinimumRadius * MotionSettings.CoreShapeScaling;
                 timeOfImpact = 1;
                 if (minimumRadiusA * minimumRadiusA < velocitySquared)
                 {
@@ -161,7 +160,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                             Vector3.Cross(ref AB, ref AC, out normal);
 
                             float dot;
-                            Vector3Ex.Dot(ref rayHit.Normal, ref normal, out dot);
+                            Vector3.Dot(ref rayHit.Normal, ref normal, out dot);
                             if (triangle.Shape.sidedness == TriangleSidedness.Counterclockwise && dot < 0 ||
                                 triangle.Shape.sidedness == TriangleSidedness.Clockwise && dot > 0)
                             {
@@ -187,7 +186,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 //        if (triangle.Shape.sidedness != TriangleSidedness.DoubleSided)
                 //        {
                 //            float dot;
-                //            Vector3Ex.Dot(ref rayHit.Normal, ref normal, out dot);
+                //            Vector3.Dot(ref rayHit.Normal, ref normal, out dot);
                 //            if (dot > 0)
                 //            {
                 //                timeOfImpact = rayHit.T;

@@ -2,10 +2,9 @@
 using BEPUphysics.CollisionShapes;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.DataStructures;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities.DataStructures;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -44,7 +43,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
             {
                 mesh = entryB as MobileMeshCollidable;
                 if (mesh == null)
-                    throw new Exception("Invalid types used to initialize pair handler.");
+                    throw new ArgumentException("Invalid types used to initialize pair handler.");
             }
 
         }
@@ -102,7 +101,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 BoundingBox mobileBoundingBox;
                 mobileTriangle.GetBoundingBox(ref mobileTriangleTransform, out mobileBoundingBox);
                 DetectorVolume.TriangleMesh.Tree.GetOverlaps(mobileBoundingBox, overlaps);
-                for (int j = 0; j < overlaps.count; j++)
+                for (int j = 0; j < overlaps.Count; j++)
                 {
                     DetectorVolume.TriangleMesh.Data.GetTriangle(overlaps.Elements[j], out detectorTriangle.vA, out detectorTriangle.vB, out detectorTriangle.vC);
                     Vector3.Add(ref detectorTriangle.vA, ref detectorTriangle.vB, out detectorTriangleTransform.Position);
@@ -171,7 +170,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 Vector3 vertex;
                 DetectorVolume.TriangleMesh.Data.GetVertexPosition(0, out vertex);
                 Ray ray;
-                ray.Direction = Vector3.UnitY;
+                ray.Direction = Vector3.Up;
                 RayHit hit;
                 RigidTransform.TransformByInverse(ref vertex, ref mesh.worldTransform, out ray.Position);
                 if (mesh.Shape.IsLocalRayOriginInMesh(ref ray, out hit))

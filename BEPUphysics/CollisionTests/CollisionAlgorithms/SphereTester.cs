@@ -1,7 +1,8 @@
 ﻿using System;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using SharpDX;
+ 
 using BEPUphysics.Settings;
+using BEPUutilities;
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 {

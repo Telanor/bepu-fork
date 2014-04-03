@@ -5,6 +5,7 @@ using BEPUphysics.Constraints.SingleEntity;
 using BEPUphysics.Constraints.SolverGroups;
 using BEPUphysics.Constraints.TwoEntity.JointLimits;
 using BEPUphysics.Constraints.TwoEntity.Joints;
+using ConversionHelper;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -139,7 +140,7 @@ namespace BEPUphysicsDrawer.Lines
         /// </summary>
         /// <param name="viewMatrix">View matrix to use when rendering the lines.</param>
         /// <param name="projectionMatrix">Projection matrix to use when rendering the lines.</param>
-        public void Draw(Matrix viewMatrix, Matrix projectionMatrix)
+        public void Draw(BEPUutilities.Matrix viewMatrix, BEPUutilities.Matrix projectionMatrix)
         {
             int numElements = firstOpenIndex / 2;
 
@@ -152,8 +153,8 @@ namespace BEPUphysicsDrawer.Lines
                 lineDrawer.LightingEnabled = false;
                 lineDrawer.VertexColorEnabled = true;
                 lineDrawer.World = Matrix.Identity;
-                lineDrawer.View = viewMatrix;
-                lineDrawer.Projection = projectionMatrix;
+                lineDrawer.View = MathConverter.Convert(viewMatrix);
+                lineDrawer.Projection = MathConverter.Convert(projectionMatrix);
 
                 //Draw
 
@@ -192,7 +193,7 @@ namespace BEPUphysicsDrawer.Lines
             {
                 //Solver groups are special.  If no special type-specific display object 
                 //has been registered for a solver group, add every child individually.
-                foreach (EntitySolverUpdateable item in (o as SolverGroup).SolverUpdateables)
+                foreach (SolverUpdateable item in (o as SolverGroup).SolverUpdateables)
                 {
                     LineDisplayObjectBase objectAdded = Add(item);
                     if (objectAdded != null)

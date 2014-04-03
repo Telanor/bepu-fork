@@ -1,8 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -35,19 +34,19 @@ namespace BEPUphysicsDemos.Demos
                     {
                         angle = k * increment;
                         toAdd = new Box(new Vector3(-(float) Math.Cos(angle) * radius, i * blockHeight, (float) Math.Sin(angle) * radius), blockWidth, blockHeight, blockLength, 20);
-                        toAdd.Orientation = Quaternion.RotationAxis(Vector3.UnitY, (float)angle);
+                        toAdd.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Up, (float) angle);
                         Space.Add(toAdd);
                     }
                     else
                     {
                         angle = (k + .5f) * increment;
                         toAdd = new Box(new Vector3(-(float)Math.Cos(angle) * radius, i * blockHeight, (float)Math.Sin(angle) * radius), blockWidth, blockHeight, blockLength, 20);
-                        toAdd.Orientation = Quaternion.RotationAxis(Vector3.UnitY, (float) angle);
+                        toAdd.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Up, (float) angle);
                         Space.Add(toAdd);
                     }
                 }
             }
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 2, 2);
+            game.Camera.Position = new Vector3(0, 2, 2);
         }
 
         /// <summary>

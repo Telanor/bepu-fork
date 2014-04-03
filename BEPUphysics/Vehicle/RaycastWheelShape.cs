@@ -1,10 +1,10 @@
-﻿using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+﻿using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.Entities;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
-using SharpDX;
+
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.Materials;
 using System;
 
@@ -41,7 +41,11 @@ namespace BEPUphysics.Vehicle
         public override sealed float Radius
         {
             get { return graphicalRadius; }
-            set { graphicalRadius = Math.Max(value, 0); }
+            set
+            {
+                graphicalRadius = Math.Max(value, 0);
+                Initialize();
+            }
         }
 
         /// <summary>
@@ -60,13 +64,13 @@ namespace BEPUphysics.Vehicle
             Vector3 worldAttachmentPoint;
             Vector3 localAttach;
             Vector3.Add(ref wheel.suspension.localAttachmentPoint, ref wheel.vehicle.Body.CollisionInformation.localPosition, out localAttach);
-            var orientationMatrix = Matrix3X3.ToMatrix4X4(wheel.vehicle.Body.BufferedStates.InterpolatedStates.OrientationMatrix);
+            worldTransform = Matrix3x3.ToMatrix4X4(wheel.vehicle.Body.BufferedStates.InterpolatedStates.OrientationMatrix);
 
-            Vector3.TransformNormal(ref localAttach, ref orientationMatrix, out worldAttachmentPoint);
+            Matrix.TransformNormal(ref localAttach, ref worldTransform, out worldAttachmentPoint);
             worldAttachmentPoint += wheel.vehicle.Body.BufferedStates.InterpolatedStates.Position;
 
             Vector3 worldDirection;
-            Vector3Ex.Transform(ref wheel.suspension.localDirection, ref orientationMatrix, out worldDirection);
+            Matrix.Transform(ref wheel.suspension.localDirection, ref worldTransform, out worldDirection);
 
             float length = wheel.suspension.currentLength - graphicalRadius;
             newPosition.X = worldAttachmentPoint.X + worldDirection.X * length;
@@ -77,15 +81,15 @@ namespace BEPUphysics.Vehicle
 
             Vector3 localSpinAxis;
             Vector3.Cross(ref wheel.localForwardDirection, ref wheel.suspension.localDirection, out localSpinAxis);
-            Matrix.RotationAxis(ref localSpinAxis, spinAngle, out spinTransform);
+            Matrix.CreateFromAxisAngle(ref localSpinAxis, spinAngle, out spinTransform);
 
-            //Note the use of intermediate variables to avoid the SharpDX math library multiply issue.
-            Matrix localSpinTransform, localTransform;
-            Matrix.Multiply(ref localGraphicTransform, ref spinTransform, out localSpinTransform);
-            Matrix.Multiply(ref localSpinTransform, ref steeringTransform, out localTransform);
+
+            Matrix localTurnTransform;
+            Matrix.Multiply(ref localGraphicTransform, ref spinTransform, out localTurnTransform);
+            Matrix.Multiply(ref localTurnTransform, ref steeringTransform, out localTurnTransform);
             //Matrix.Multiply(ref localTurnTransform, ref spinTransform, out localTurnTransform);
-            Matrix.Multiply(ref localTransform, ref orientationMatrix, out worldTransform);
-            MatrixEx.SetTranslation(ref worldTransform, newPosition);
+            Matrix.Multiply(ref localTurnTransform, ref worldTransform, out worldTransform);
+            worldTransform.Translation += newPosition;
         }
 
         /// <summary>

@@ -1,11 +1,9 @@
 ﻿using System;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
-using SharpDX;
-using BEPUphysics.DataStructures;
+using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Settings;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.Manifolds
 {
@@ -38,34 +36,34 @@ namespace BEPUphysics.CollisionTests.Manifolds
             if (convex.entity != null)
             {
                 Vector3 transformedVelocity;
-                Matrix3X3 inverse;
-                Matrix3X3.Invert(ref terrain.worldTransform.LinearTransform, out inverse);
-                Matrix3X3.Transform(ref convex.entity.linearVelocity, ref inverse, out transformedVelocity);
+                Matrix3x3 inverse;
+                Matrix3x3.Invert(ref terrain.worldTransform.LinearTransform, out inverse);
+                Matrix3x3.Transform(ref convex.entity.linearVelocity, ref inverse, out transformedVelocity);
                 Vector3.Multiply(ref transformedVelocity, dt, out transformedVelocity);
 
 
                 if (transformedVelocity.X > 0)
-                    boundingBox.Maximum.X += transformedVelocity.X;
+                    boundingBox.Max.X += transformedVelocity.X;
                 else
-                    boundingBox.Minimum.X += transformedVelocity.X;
+                    boundingBox.Min.X += transformedVelocity.X;
 
                 if (transformedVelocity.Y > 0)
-                    boundingBox.Maximum.Y += transformedVelocity.Y;
+                    boundingBox.Max.Y += transformedVelocity.Y;
                 else
-                    boundingBox.Minimum.Y += transformedVelocity.Y;
+                    boundingBox.Min.Y += transformedVelocity.Y;
 
                 if (transformedVelocity.Z > 0)
-                    boundingBox.Maximum.Z += transformedVelocity.Z;
+                    boundingBox.Max.Z += transformedVelocity.Z;
                 else
-                    boundingBox.Minimum.Z += transformedVelocity.Z;
+                    boundingBox.Min.Z += transformedVelocity.Z;
             }
 
 
             terrain.Shape.GetOverlaps(boundingBox, overlappedTriangles);
-            return overlappedTriangles.count;
+            return overlappedTriangles.Count;
         }
 
-        protected override bool ConfigureTriangle(int i, out TriangleIndices indices)
+        protected override bool ConfigureTriangle(int i, TriangleShape localTriangleShape, out TriangleIndices indices)
         {
             indices = overlappedTriangles.Elements[i];
             terrain.Shape.GetTriangle(ref indices, ref terrain.worldTransform, out localTriangleShape.vA, out localTriangleShape.vB, out localTriangleShape.vC);
@@ -81,7 +79,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
             Vector3 terrainUp = new Vector3(terrain.worldTransform.LinearTransform.M21, terrain.worldTransform.LinearTransform.M22, terrain.worldTransform.LinearTransform.M23);
             float dot;
-            Vector3Ex.Dot(ref terrainUp, ref normal, out dot);
+            Vector3.Dot(ref terrainUp, ref normal, out dot);
             if (dot > 0)
             {
                 localTriangleShape.sidedness = TriangleSidedness.Clockwise;
@@ -101,13 +99,13 @@ namespace BEPUphysics.CollisionTests.Manifolds
         }
 
 
-        protected override void ProcessCandidates(RawValueList<ContactData> candidates)
+        protected override void ProcessCandidates(ref QuickList<ContactData> candidates)
         {
             //If the candidates list is empty, then let's see if the convex is in the 'thickness' of the terrain.
-            if (candidates.count == 0 & terrain.thickness > 0)
+            if (candidates.Count == 0 & terrain.thickness > 0)
             {
                 RayHit rayHit;
-                Ray ray = new Ray() { Position = convex.worldTransform.Position, Direction = terrain.worldTransform.LinearTransform.Up };
+                Ray ray = new Ray { Position = convex.worldTransform.Position, Direction = terrain.worldTransform.LinearTransform.Up };
                 ray.Direction.Normalize();
                 //The raycast has to use doublesidedness, since we're casting from the bottom up.
                 if (terrain.Shape.RayCast(ref ray, terrain.thickness, ref terrain.worldTransform, TriangleSidedness.DoubleSided, out rayHit))
@@ -115,17 +113,18 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     //Found a hit!
                     rayHit.Normal.Normalize();
                     float dot;
-                    Vector3Ex.Dot(ref ray.Direction, ref rayHit.Normal, out dot);
+                    Vector3.Dot(ref ray.Direction, ref rayHit.Normal, out dot);
 
-                    ContactData newContact = new ContactData()
+                    var newContact = new ContactData
                     {
                         Normal = rayHit.Normal,
                         Position = convex.worldTransform.Position,
                         Id = 2,
-                        PenetrationDepth = -rayHit.T * dot + convex.Shape.minimumRadius
+                        PenetrationDepth = -rayHit.T * dot + convex.Shape.MinimumRadius
                     };
+                    newContact.Validate();
                     bool found = false;
-                    for (int i = 0; i < contacts.count; i++)
+                    for (int i = 0; i < contacts.Count; i++)
                     {
                         if (contacts.Elements[i].Id == 2)
                         {
@@ -178,7 +177,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
                 convex = newCollidableB as ConvexCollidable;
                 terrain = newCollidableA as Terrain;
                 if (convex == null || terrain == null)
-                    throw new Exception("Inappropriate types used to initialize contact manifold.");
+                    throw new ArgumentException("Inappropriate types used to initialize contact manifold.");
             }
 
         }

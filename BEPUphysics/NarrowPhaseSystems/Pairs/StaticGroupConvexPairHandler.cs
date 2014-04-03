@@ -1,8 +1,6 @@
 ﻿using System;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.ResourceManagement;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -39,7 +37,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 convexInfo = entryB as ConvexCollidable;
                 if (convexInfo == null)
                 {
-                    throw new Exception("Inappropriate types used to initialize pair.");
+                    throw new ArgumentException("Inappropriate types used to initialize pair.");
                 }
             }
 
@@ -60,15 +58,15 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
 
         protected override void UpdateContainedPairs()
         {
-            var overlappedElements = Resources.GetCollidableList();
+            var overlappedElements = PhysicsResources.GetCollidableList();
             staticGroup.Shape.CollidableTree.GetOverlaps(convexInfo.boundingBox, overlappedElements);
-            for (int i = 0; i < overlappedElements.count; i++)
+            for (int i = 0; i < overlappedElements.Count; i++)
             {
                 var staticCollidable = overlappedElements.Elements[i] as StaticCollidable;
-                TryToAdd(overlappedElements.Elements[i], CollidableB, staticCollidable != null ? staticCollidable.Material : null);
+                TryToAdd(overlappedElements.Elements[i], CollidableB, staticCollidable != null ? staticCollidable.Material : staticGroup.Material);
             }
 
-            Resources.GiveBack(overlappedElements);
+            PhysicsResources.GiveBack(overlappedElements);
 
 
         }

@@ -1,9 +1,8 @@
 ﻿using System;
 using BEPUphysics.CollisionTests.Manifolds;
-using SharpDX;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.DataStructures;
-using BEPUphysics.CollisionShapes.ConvexShapes;
+ 
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionShapes
 {
@@ -104,7 +103,7 @@ namespace BEPUphysics.CollisionShapes
                 for (int j = 0; j < heights.GetLength(1); j++)
                 {
                     var vertex = new Vector3(i, heights[i, j], j);
-                    Matrix3X3.Transform(ref vertex, ref transform.LinearTransform, out vertex);
+                    Matrix3x3.Transform(ref vertex, ref transform.LinearTransform, out vertex);
                     if (vertex.X < minX)
                     {
                         minX = vertex.X;
@@ -141,12 +140,12 @@ namespace BEPUphysics.CollisionShapes
             }
 
             //Shift the bounding box.
-            boundingBox.Minimum.X = minXvertex.X + transform.Translation.X;
-            boundingBox.Minimum.Y = minYvertex.Y + transform.Translation.Y;
-            boundingBox.Minimum.Z = minZvertex.Z + transform.Translation.Z;
-            boundingBox.Maximum.X = maxXvertex.X + transform.Translation.X;
-            boundingBox.Maximum.Y = maxYvertex.Y + transform.Translation.Y;
-            boundingBox.Maximum.Z = maxZvertex.Z + transform.Translation.Z;
+            boundingBox.Min.X = minXvertex.X + transform.Translation.X;
+            boundingBox.Min.Y = minYvertex.Y + transform.Translation.Y;
+            boundingBox.Min.Z = minZvertex.Z + transform.Translation.Z;
+            boundingBox.Max.X = maxXvertex.X + transform.Translation.X;
+            boundingBox.Max.Y = maxYvertex.Y + transform.Translation.Y;
+            boundingBox.Max.Z = maxZvertex.Z + transform.Translation.Z;
         }
         ///<summary>
         /// Tests a ray against the terrain shape.
@@ -176,7 +175,7 @@ namespace BEPUphysics.CollisionShapes
             Ray localRay;
             AffineTransform inverse;
             AffineTransform.Invert(ref transform, out inverse);
-            Matrix3X3.Transform(ref ray.Direction, ref inverse.LinearTransform, out localRay.Direction);
+            Matrix3x3.Transform(ref ray.Direction, ref inverse.LinearTransform, out localRay.Direction);
             AffineTransform.Transform(ref ray.Position, ref inverse, out localRay.Position);
 
             //Use rasterizey traversal.
@@ -322,13 +321,13 @@ namespace BEPUphysics.CollisionShapes
                         {
                             Vector3.Multiply(ref ray.Direction, hit1.T, out hit.Location);
                             Vector3.Add(ref hit.Location, ref ray.Position, out hit.Location);
-                            Matrix3X3.TransformTranspose(ref hit1.Normal, ref inverse.LinearTransform, out hit.Normal);
+                            Matrix3x3.TransformTranspose(ref hit1.Normal, ref inverse.LinearTransform, out hit.Normal);
                             hit.T = hit1.T;
                             return true;
                         }
                         Vector3.Multiply(ref ray.Direction, hit2.T, out hit.Location);
                         Vector3.Add(ref hit.Location, ref ray.Position, out hit.Location);
-                        Matrix3X3.TransformTranspose(ref hit2.Normal, ref inverse.LinearTransform, out hit.Normal);
+                        Matrix3x3.TransformTranspose(ref hit2.Normal, ref inverse.LinearTransform, out hit.Normal);
                         hit.T = hit2.T;
                         return true;
                     }
@@ -336,7 +335,7 @@ namespace BEPUphysics.CollisionShapes
                     {
                         Vector3.Multiply(ref ray.Direction, hit1.T, out hit.Location);
                         Vector3.Add(ref hit.Location, ref ray.Position, out hit.Location);
-                        Matrix3X3.TransformTranspose(ref hit1.Normal, ref inverse.LinearTransform, out hit.Normal);
+                        Matrix3x3.TransformTranspose(ref hit1.Normal, ref inverse.LinearTransform, out hit.Normal);
                         hit.T = hit1.T;
                         return true;
                     }
@@ -344,7 +343,7 @@ namespace BEPUphysics.CollisionShapes
                     {
                         Vector3.Multiply(ref ray.Direction, hit2.T, out hit.Location);
                         Vector3.Add(ref hit.Location, ref ray.Position, out hit.Location);
-                        Matrix3X3.TransformTranspose(ref hit2.Normal, ref inverse.LinearTransform, out hit.Normal);
+                        Matrix3x3.TransformTranspose(ref hit2.Normal, ref inverse.LinearTransform, out hit.Normal);
                         hit.T = hit2.T;
                         return true;
                     }
@@ -494,10 +493,10 @@ namespace BEPUphysics.CollisionShapes
         public bool GetOverlaps(BoundingBox localSpaceBoundingBox, RawList<TriangleMeshConvexContactManifold.TriangleIndices> overlappedTriangles)
         {
             int width = heights.GetLength(0);
-            int minX = Math.Max((int)localSpaceBoundingBox.Minimum.X, 0);
-            int minY = Math.Max((int)localSpaceBoundingBox.Minimum.Z, 0);
-            int maxX = Math.Min((int)localSpaceBoundingBox.Maximum.X, width - 2);
-            int maxY = Math.Min((int)localSpaceBoundingBox.Maximum.Z, heights.GetLength(1) - 2);
+            int minX = Math.Max((int)localSpaceBoundingBox.Min.X, 0);
+            int minY = Math.Max((int)localSpaceBoundingBox.Min.Z, 0);
+            int maxX = Math.Min((int)localSpaceBoundingBox.Max.X, width - 2);
+            int maxY = Math.Min((int)localSpaceBoundingBox.Max.Z, heights.GetLength(1) - 2);
             for (int i = minX; i <= maxX; i++)
             {
                 for (int j = minY; j <= maxY; j++)
@@ -525,8 +524,8 @@ namespace BEPUphysics.CollisionShapes
                         lowest = y4;
 
 
-                    if (localSpaceBoundingBox.Maximum.Y < lowest ||
-                        localSpaceBoundingBox.Minimum.Y > highest)
+                    if (localSpaceBoundingBox.Max.Y < lowest ||
+                        localSpaceBoundingBox.Min.Y > highest)
                         continue;
 
                     //Now the local bounding box is very likely intersecting those of the triangles.
@@ -567,7 +566,7 @@ namespace BEPUphysics.CollisionShapes
 
                 }
             }
-            return overlappedTriangles.count > 0;
+            return overlappedTriangles.Count > 0;
         }
 
         ///<summary>
@@ -578,10 +577,10 @@ namespace BEPUphysics.CollisionShapes
         public bool GetOverlaps(BoundingBox localBoundingBox, RawList<int> overlappedElements)
         {
             int width = heights.GetLength(0);
-            int minX = Math.Max((int)localBoundingBox.Minimum.X, 0);
-            int minY = Math.Max((int)localBoundingBox.Minimum.Z, 0);
-            int maxX = Math.Min((int)localBoundingBox.Maximum.X, width - 2);
-            int maxY = Math.Min((int)localBoundingBox.Maximum.Z, heights.GetLength(1) - 2);
+            int minX = Math.Max((int)localBoundingBox.Min.X, 0);
+            int minY = Math.Max((int)localBoundingBox.Min.Z, 0);
+            int maxX = Math.Min((int)localBoundingBox.Max.X, width - 2);
+            int maxY = Math.Min((int)localBoundingBox.Max.Z, heights.GetLength(1) - 2);
             for (int i = minX; i <= maxX; i++)
             {
                 for (int j = minY; j <= maxY; j++)
@@ -609,8 +608,8 @@ namespace BEPUphysics.CollisionShapes
                         lowest = y4;
 
 
-                    if (localBoundingBox.Maximum.Y < lowest ||
-                        localBoundingBox.Minimum.Y > highest)
+                    if (localBoundingBox.Max.Y < lowest ||
+                        localBoundingBox.Min.Y > highest)
                         continue;
 
                     //Now the local bounding box is very likely intersecting those of the triangles.
@@ -622,7 +621,7 @@ namespace BEPUphysics.CollisionShapes
 
                 }
             }
-            return overlappedElements.count > 0;
+            return overlappedElements.Count > 0;
         }
 
         ///<summary>

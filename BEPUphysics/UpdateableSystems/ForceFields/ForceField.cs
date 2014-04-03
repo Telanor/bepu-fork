@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using BEPUphysics.BroadPhaseSystems;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.Threading;
-using BEPUphysics.DataStructures;
+using BEPUutilities;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.UpdateableSystems.ForceFields
 {
@@ -29,9 +28,9 @@ namespace BEPUphysics.UpdateableSystems.ForceFields
         ///</summary>
         public IQueryAccelerator QueryAccelerator { get; set; }
         ///<summary>
-        /// Gets or sets the thread manager used by the force field.
+        /// Gets or sets the multithreaded looper used by the force field.
         ///</summary>
-        public IThreadManager ThreadManager { get; set; }
+        public IParallelLooper ParallelLooper { get; set; }
 
         /// <summary>
         /// Constructs a force field.
@@ -90,10 +89,10 @@ namespace BEPUphysics.UpdateableSystems.ForceFields
         {
             PreUpdate();
             affectedEntities = Shape.GetPossiblyAffectedEntities();
-            if (AllowMultithreading && ThreadManager.ThreadCount > 1)
+            if (AllowMultithreading && ParallelLooper != null && ParallelLooper.ThreadCount > 1)
             {
                 currentTimestep = dt;
-                ThreadManager.ForLoop(0, affectedEntities.Count, subfunction);
+                ParallelLooper.ForLoop(0, affectedEntities.Count, subfunction);
             }
             else
             {
@@ -132,13 +131,13 @@ namespace BEPUphysics.UpdateableSystems.ForceFields
         /// Called after the object is added to a space.
         /// </summary>
         /// <param name="newSpace">Space to which the field has been added.</param>
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             base.OnAdditionToSpace(newSpace);
-            var space = newSpace as Space;
+            var space = newSpace;
             if(space != null)
             {
-                ThreadManager = space.ThreadManager;
+                ParallelLooper = space.ParallelLooper;
                 QueryAccelerator = space.BroadPhase.QueryAccelerator;
             }
         }
@@ -147,10 +146,10 @@ namespace BEPUphysics.UpdateableSystems.ForceFields
         /// Called before an object is removed from its space.
         /// </summary>
         /// <param name="oldSpace">Space from which the object has been removed.</param>
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             base.OnRemovalFromSpace(oldSpace);
-            ThreadManager = null;
+            ParallelLooper = null;
             QueryAccelerator = null;
         }
 

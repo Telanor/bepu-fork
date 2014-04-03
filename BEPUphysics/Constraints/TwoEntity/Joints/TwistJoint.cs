@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+ 
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.Joints
 {
@@ -58,7 +58,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localAxisA = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
+                Matrix3x3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
                 Initialize();
             }
         }
@@ -72,7 +72,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localAxisB = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localAxisB, ref connectionA.orientationMatrix, out worldAxisB);
+                Matrix3x3.Transform(ref localAxisB, ref connectionA.orientationMatrix, out worldAxisB);
                 Initialize();
             }
         }
@@ -88,7 +88,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 worldAxisA = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionA.orientation, out conjugate);
-                Vector3.Transform(ref worldAxisA, ref conjugate, out localAxisA);
+                Quaternion.Transform(ref worldAxisA, ref conjugate, out localAxisA);
                 Initialize();
             }
         }
@@ -104,7 +104,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 worldAxisB = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionA.orientation, out conjugate);
-                Vector3.Transform(ref worldAxisB, ref conjugate, out localAxisB);
+                Quaternion.Transform(ref worldAxisB, ref conjugate, out localAxisB);
                 Initialize();
             }
         }
@@ -119,8 +119,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             get
             {
                 float velocityA, velocityB;
-                Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-                Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+                Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+                Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
                 return velocityA + velocityB;
             }
         }
@@ -199,8 +199,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         {
             float velocityA, velocityB;
             //Find the velocity contribution from each connection
-            Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-            Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+            Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+            Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
             //Add in the constraint space bias velocity
             float lambda = -(velocityA + velocityB) + biasVelocity - softness * accumulatedImpulse;
 
@@ -234,23 +234,23 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         {
             Vector3 aAxisY, aAxisZ;
             Vector3 bAxisY;
-            Matrix3X3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
-            Matrix3X3.Transform(ref aLocalAxisY, ref connectionA.orientationMatrix, out aAxisY);
-            Matrix3X3.Transform(ref aLocalAxisZ, ref connectionA.orientationMatrix, out aAxisZ);
-            Matrix3X3.Transform(ref localAxisB, ref connectionB.orientationMatrix, out worldAxisB);
-            Matrix3X3.Transform(ref bLocalAxisY, ref connectionB.orientationMatrix, out bAxisY);
+            Matrix3x3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
+            Matrix3x3.Transform(ref aLocalAxisY, ref connectionA.orientationMatrix, out aAxisY);
+            Matrix3x3.Transform(ref aLocalAxisZ, ref connectionA.orientationMatrix, out aAxisZ);
+            Matrix3x3.Transform(ref localAxisB, ref connectionB.orientationMatrix, out worldAxisB);
+            Matrix3x3.Transform(ref bLocalAxisY, ref connectionB.orientationMatrix, out bAxisY);
 
             Quaternion rotation;
-            Toolbox.GetQuaternionBetweenNormalizedVectors(ref worldAxisB, ref worldAxisA, out rotation);
+            Quaternion.GetQuaternionBetweenNormalizedVectors(ref worldAxisB, ref worldAxisA, out rotation);
 
             //Transform b's 'Y' axis so that it is perpendicular with a's 'X' axis for measurement.
             Vector3 twistMeasureAxis;
-            Vector3.Transform(ref bAxisY, ref rotation, out twistMeasureAxis);
+            Quaternion.Transform(ref bAxisY, ref rotation, out twistMeasureAxis);
 
             //By dotting the measurement vector with a 2d plane's axes, we can get a local X and Y value.
             float y, x;
-            Vector3Ex.Dot(ref twistMeasureAxis, ref aAxisZ, out y);
-            Vector3Ex.Dot(ref twistMeasureAxis, ref aAxisY, out x);
+            Vector3.Dot(ref twistMeasureAxis, ref aAxisZ, out y);
+            Vector3.Dot(ref twistMeasureAxis, ref aAxisY, out x);
             error = (float) Math.Atan2(y, x);
 
             //Debug.WriteLine("Angle: " + angle);
@@ -277,7 +277,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             //****** VELOCITY BIAS ******//
             //Compute the correction velocity.
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
             biasVelocity = MathHelper.Clamp(-error * errorReduction, -maxCorrectiveVelocity, maxCorrectiveVelocity);
 
             //****** EFFECTIVE MASS MATRIX ******//
@@ -286,8 +286,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             Vector3 transformedAxis;
             if (connectionA.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianA, out entryA);
+                Matrix3x3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianA, out entryA);
             }
             else
                 entryA = 0;
@@ -296,8 +296,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             float entryB;
             if (connectionB.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianB, out entryB);
+                Matrix3x3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianB, out entryB);
             }
             else
                 entryB = 0;
@@ -345,19 +345,19 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             //Put the axis into the local space of A.
             Quaternion conjugate;
             Quaternion.Conjugate(ref connectionA.orientation, out conjugate);
-            Vector3.Transform(ref yAxis, ref conjugate, out aLocalAxisY);
+            Quaternion.Transform(ref yAxis, ref conjugate, out aLocalAxisY);
 
             //Complete A's basis.
             Vector3.Cross(ref localAxisA, ref aLocalAxisY, out aLocalAxisZ);
 
             //Rotate the axis to B since it could be arbitrarily rotated.
             Quaternion rotation;
-            Toolbox.GetQuaternionBetweenNormalizedVectors(ref worldAxisA, ref worldAxisB, out rotation);
-            Vector3.Transform(ref yAxis, ref rotation, out yAxis);
+            Quaternion.GetQuaternionBetweenNormalizedVectors(ref worldAxisA, ref worldAxisB, out rotation);
+            Quaternion.Transform(ref yAxis, ref rotation, out yAxis);
 
             //Put it into local space.
             Quaternion.Conjugate(ref connectionB.orientation, out conjugate);
-            Vector3.Transform(ref yAxis, ref conjugate, out bLocalAxisY);
+            Quaternion.Transform(ref yAxis, ref conjugate, out bLocalAxisY);
         }
     }
 }

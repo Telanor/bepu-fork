@@ -1,15 +1,16 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
+ 
+using BEPUutilities.DataStructures;
 using BEPUphysics.Settings;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.Collision
 {
     /// <summary>
     /// Computes the friction force for a contact when central friction cannot be used.
     /// </summary>
-    public class ContactFrictionConstraint : EntitySolverUpdateable
+    public class ContactFrictionConstraint : SolverUpdateable
     {
         private ContactManifoldConstraint contactManifoldConstraint;
         ///<summary>
@@ -323,7 +324,7 @@ namespace BEPUphysics.Constraints.Collision
             }
         }
 
-        protected internal override void CollectInvolvedEntities(DataStructures.RawList<Entity> outputInvolvedEntities)
+        protected internal override void CollectInvolvedEntities(RawList<Entity> outputInvolvedEntities)
         {
             //This should never really have to be called.
             if (entityA != null)

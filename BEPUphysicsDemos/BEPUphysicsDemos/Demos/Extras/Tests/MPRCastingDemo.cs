@@ -1,32 +1,13 @@
-﻿using BEPUphysics.Collidables;
-using BEPUphysics.Entities;
-using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.PositionUpdating;
+﻿using BEPUphysics.Entities;
 using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.DataStructures;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.CollisionShapes;
-using BEPUphysics.Settings;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Constraints;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using BEPUphysics.Constraints.SolverGroups;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.CollisionTests;
-using BEPUphysics;
-using BEPUphysics.EntityStateManagement;
-using BEPUphysics.ResourceManagement;
 using BEPUphysics.NarrowPhaseSystems;
 using ConversionHelper;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -54,12 +35,12 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             NarrowPhaseHelper.CollisionManagers.Remove(new TypePair(typeof(ConvexCollidable<BoxShape>), typeof(ConvexCollidable<BoxShape>)));
             Space.Add(a);
             Space.Add(b);
-            a.Orientation = Quaternion.RotationAxis(new Vector3(1, 0, 0), MathHelper.PiOver4);
+            a.Orientation = Quaternion.CreateFromAxisAngle(new Vector3(1, 0, 0), MathHelper.PiOver4);
             b.Orientation = Quaternion.Identity;
-            aTransform = new RigidTransform(new Vector3(0, 0, 0), a.Orientation);
-            bTransform = new RigidTransform(new Vector3(0, 10, 0), b.Orientation);
+            aTransform = new RigidTransform(new Vector3(-10, -10, -10), a.Orientation);
+            bTransform = new RigidTransform(new Vector3(10, 10, 10), b.Orientation);
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 17);
+            game.Camera.Position = new Vector3(0, 5, 17);
         }
 
 
@@ -70,20 +51,20 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
         public override void Update(float dt)
         {
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad6))
-                aTransform.Position += Vector3.UnitX * dt;
+                aTransform.Position += Vector3.Right * dt;
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad4))
-                aTransform.Position += -Vector3.UnitX * dt;
+                aTransform.Position += Vector3.Left * dt;
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad1))
-                aTransform.Position += Vector3.UnitY * dt;
+                aTransform.Position += Vector3.Up * dt;
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad0))
-                aTransform.Position += -Vector3.UnitY * dt;
+                aTransform.Position += Vector3.Down * dt;
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad8))
-                aTransform.Position += -Vector3.UnitZ * dt;
+                aTransform.Position += Vector3.Forward * dt;
             if (Game.KeyboardInput.IsKeyDown(Keys.NumPad5))
-                aTransform.Position += Vector3.UnitZ * dt;
+                aTransform.Position += Vector3.Backward * dt;
 
-            Vector3 sweepA = new Vector3(0, 10, 0);
-            Vector3 sweepB = new Vector3(0, -10, 0);
+            Vector3 sweepA = new Vector3(20, 20, 20);
+            Vector3 sweepB = new Vector3(-20, -20, -20);
 
             if (hit = MPRToolbox.Sweep(aShape, bShape, ref sweepA, ref sweepB, ref aTransform, ref bTransform, out hitData))
             //if (hit = OldGJKVerifier.ConvexCast(a.CollisionInformation.Shape, b.CollisionInformation.Shape, ref sweepA, ref sweepB, ref aTransform, ref bTransform, out hitData))

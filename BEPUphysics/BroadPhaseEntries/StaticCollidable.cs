@@ -4,7 +4,7 @@ using BEPUphysics.Materials;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.OtherSpaceStages;
 
-namespace BEPUphysics.Collidables
+namespace BEPUphysics.BroadPhaseEntries
 {
     ///<summary>
     /// Superclass of static collidable objects which can be added directly to a space.  Static objects cannot move.
@@ -73,8 +73,8 @@ namespace BEPUphysics.Collidables
 
         
 
-        ISpace space;
-        ISpace ISpaceObject.Space
+        Space space;
+        Space ISpaceObject.Space
         {
             get
             {
@@ -88,7 +88,7 @@ namespace BEPUphysics.Collidables
         ///<summary>
         /// Gets the space that owns the mesh.
         ///</summary>
-        public ISpace Space
+        public Space Space
         {
             get
             {
@@ -96,11 +96,11 @@ namespace BEPUphysics.Collidables
             }
         }
 
-        void ISpaceObject.OnAdditionToSpace(ISpace newSpace)
+        void ISpaceObject.OnAdditionToSpace(Space newSpace)
         {
         }
 
-        void ISpaceObject.OnRemovalFromSpace(ISpace oldSpace)
+        void ISpaceObject.OnRemovalFromSpace(Space oldSpace)
         {
         }
 

@@ -1,6 +1,6 @@
-﻿using SharpDX;
+﻿
 using BEPUphysics.DataStructures;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.CollisionShapes
 {
@@ -63,7 +63,7 @@ namespace BEPUphysics.CollisionShapes
             {
                 Vector3 vertex;
                 triangleMesh.Data.GetVertexPosition(i, out vertex);
-                Matrix3X3.Transform(ref vertex, ref transform.LinearTransform, out vertex);
+                Matrix3x3.Transform(ref vertex, ref transform.LinearTransform, out vertex);
                 if (vertex.X < minX)
                     minX = vertex.X;
                 if (vertex.X > maxX)
@@ -79,13 +79,13 @@ namespace BEPUphysics.CollisionShapes
                 if (vertex.Z > maxZ)
                     maxZ = vertex.Z;
             }
-            boundingBox.Minimum.X = transform.Translation.X + minX;
-            boundingBox.Minimum.Y = transform.Translation.Y + minY;
-            boundingBox.Minimum.Z = transform.Translation.Z + minZ;
+            boundingBox.Min.X = transform.Translation.X + minX;
+            boundingBox.Min.Y = transform.Translation.Y + minY;
+            boundingBox.Min.Z = transform.Translation.Z + minZ;
             
-            boundingBox.Maximum.X = transform.Translation.X + maxX;
-            boundingBox.Maximum.Y = transform.Translation.Y + maxY;
-            boundingBox.Maximum.Z = transform.Translation.Z + maxZ;
+            boundingBox.Max.X = transform.Translation.X + maxX;
+            boundingBox.Max.Y = transform.Translation.Y + maxY;
+            boundingBox.Max.Z = transform.Translation.Z + maxZ;
         }
     }
 }

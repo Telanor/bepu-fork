@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using BEPUutilities;
 using BEPUphysics.BroadPhaseEntries;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+ 
 
 namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
 {
@@ -26,12 +27,12 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             }
         }
 
-        public bool RayCast(SharpDX.Ray ray, IList<BroadPhaseEntry> outputIntersections)
+        public bool RayCast(Ray ray, IList<BroadPhaseEntry> outputIntersections)
         {
-            throw new NotSupportedException("The Grid2DSortAndSweep broad phase cannot accelerate infinite ray casts.  Consider specifying a maximum length or using a broad phase which supports infinite ray casts.");
+            throw new NotSupportedException("The Grid2DSortAndSweep broad phase cannot accelerate infinite ray casts.  Consider using a broad phase which supports infinite tests, using a custom solution, or using a finite ray.");
         }
 
-        public bool RayCast(SharpDX.Ray ray, float maximumLength, IList<BroadPhaseEntry> outputIntersections)
+        public bool RayCast(Ray ray, float maximumLength, IList<BroadPhaseEntry> outputIntersections)
         {
             if (maximumLength == float.MaxValue) 
                 throw new NotSupportedException("The Grid2DSortAndSweep broad phase cannot accelerate infinite ray casts.  Consider specifying a maximum length or using a broad phase which supports infinite ray casts.");
@@ -83,8 +84,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
                     //To fully accelerate this, the entries list would need to contain both min and max interval markers.
                     //Since it only contains the sorted min intervals, we can't just start at a point in the middle of the list.
                     //Consider some giant bounding box that spans the entire list. 
-                    for (int i = 0; i < cell.entries.count 
-                        && cell.entries.Elements[i].item.boundingBox.Minimum.X <= endingX; i++) //TODO: Try additional x axis pruning?
+                    for (int i = 0; i < cell.entries.Count 
+                        && cell.entries.Elements[i].item.boundingBox.Min.X <= endingX; i++) //TODO: Try additional x axis pruning?
                     {
                         float? intersects;
                         var item = cell.entries.Elements[i].item;
@@ -119,14 +120,14 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         }
 
 
-        public void GetEntries(SharpDX.BoundingBox boundingShape, IList<BroadPhaseEntry> overlaps)
+        public void GetEntries(BoundingBox boundingShape, IList<BroadPhaseEntry> overlaps)
         {
             //Compute the min and max of the bounding box.
             //Loop through the cells and select bounding boxes which overlap the x axis.
 
             Int2 min, max;
-            Grid2DSortAndSweep.ComputeCell(ref boundingShape.Minimum, out min);
-            Grid2DSortAndSweep.ComputeCell(ref boundingShape.Maximum, out max);
+            Grid2DSortAndSweep.ComputeCell(ref boundingShape.Min, out min);
+            Grid2DSortAndSweep.ComputeCell(ref boundingShape.Max, out max);
             for (int i = min.Y; i <= max.Y; i++)
             {
                 for (int j = min.Z; j <= max.Z; j++)
@@ -142,8 +143,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
                         //To fully accelerate this, the entries list would need to contain both min and max interval markers.
                         //Since it only contains the sorted min intervals, we can't just start at a point in the middle of the list.
                         //Consider some giant bounding box that spans the entire list. 
-                        for (int k = 0; k < cell.entries.count
-                            && cell.entries.Elements[k].item.boundingBox.Minimum.X <= boundingShape.Maximum.X; k++) //TODO: Try additional x axis pruning? A bit of optimization potential due to overlap with AABB test.
+                        for (int k = 0; k < cell.entries.Count
+                            && cell.entries.Elements[k].item.boundingBox.Min.X <= boundingShape.Max.X; k++) //TODO: Try additional x axis pruning? A bit of optimization potential due to overlap with AABB test.
                         {
                             bool intersects;
                             var item = cell.entries.Elements[k].item;
@@ -158,7 +159,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             }
         }
 
-        public void GetEntries(SharpDX.BoundingSphere boundingShape, IList<BroadPhaseEntry> overlaps)
+        public void GetEntries(BoundingSphere boundingShape, IList<BroadPhaseEntry> overlaps)
         {
             //Create a bounding box based on the bounding sphere.
             //Compute the min and max of the bounding box.
@@ -172,12 +173,12 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             offset.Y = offset.X;
             offset.Z = offset.Y;
             BoundingBox box;
-            Vector3.Add(ref boundingShape.Center, ref offset, out box.Maximum);
-            Vector3.Subtract(ref boundingShape.Center, ref offset, out box.Minimum);
+            Vector3.Add(ref boundingShape.Center, ref offset, out box.Max);
+            Vector3.Subtract(ref boundingShape.Center, ref offset, out box.Min);
 
             Int2 min, max;
-            Grid2DSortAndSweep.ComputeCell(ref box.Minimum, out min);
-            Grid2DSortAndSweep.ComputeCell(ref box.Maximum, out max);
+            Grid2DSortAndSweep.ComputeCell(ref box.Min, out min);
+            Grid2DSortAndSweep.ComputeCell(ref box.Max, out max);
             for (int i = min.Y; i <= max.Y; i++)
             {
                 for (int j = min.Z; j <= max.Z; j++)
@@ -193,11 +194,13 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
                         //To fully accelerate this, the entries list would need to contain both min and max interval markers.
                         //Since it only contains the sorted min intervals, we can't just start at a point in the middle of the list.
                         //Consider some giant bounding box that spans the entire list. 
-                        for (int k = 0; k < cell.entries.count
-                            && cell.entries.Elements[k].item.boundingBox.Minimum.X <= box.Maximum.X; k++) //TODO: Try additional x axis pruning? A bit of optimization potential due to overlap with AABB test.
+                        for (int k = 0; k < cell.entries.Count
+                            && cell.entries.Elements[k].item.boundingBox.Min.X <= box.Max.X; k++) //TODO: Try additional x axis pruning? A bit of optimization potential due to overlap with AABB test.
                         {
+                            bool intersects;
                             var item = cell.entries.Elements[k].item;
-                            if (boundingShape.Intersects(ref item.boundingBox) && !overlaps.Contains(item))
+                            item.boundingBox.Intersects(ref boundingShape, out intersects);
+                            if (intersects && !overlaps.Contains(item))
                             {
                                 overlaps.Add(item);
                             }
@@ -211,5 +214,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         //{
         //    throw new NotSupportedException("The Grid2DSortAndSweep broad phase cannot accelerate frustum tests.  Consider using a broad phase which supports frustum tests or using a custom solution.");
         //}
+
+
+
     }
 }

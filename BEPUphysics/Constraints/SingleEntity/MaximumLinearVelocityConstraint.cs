@@ -1,6 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints.SingleEntity
 {
@@ -66,7 +67,7 @@ namespace BEPUphysics.Constraints.SingleEntity
             get { return maximumSpeed; }
             set
             {
-                maximumSpeed = Math.Max(0, value);
+                maximumSpeed = MathHelper.Max(0, value);
                 maximumSpeedSquared = maximumSpeed * maximumSpeed;
             }
         }

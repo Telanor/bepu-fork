@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using BEPUphysics;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.SampleCode
 {

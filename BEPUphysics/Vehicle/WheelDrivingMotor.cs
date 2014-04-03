@@ -1,9 +1,8 @@
 ﻿using BEPUphysics.Constraints;
 using BEPUphysics.Entities;
-using SharpDX;
+ 
 using BEPUphysics.Materials;
-using System;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.Vehicle
 {
@@ -32,7 +31,7 @@ namespace BEPUphysics.Vehicle
         /// <param name="usingKineticFriction">True if the friction coefficients passed into the blender are kinetic coefficients, false otherwise.</param>
         /// <param name="wheel">Wheel being blended.</param>
         /// <returns>Blended friction coefficient.</returns>
-        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKinematicFriction, Wheel wheel)
+        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKineticFriction, Wheel wheel)
         {
             return wheelFriction * materialFriction;
         }
@@ -95,7 +94,7 @@ namespace BEPUphysics.Vehicle
         /// </summary>
         public Vector3 ForceAxis
         {
-            get { return ForceAxis; }
+            get { return forceAxis; }
         }
 
         /// <summary>
@@ -106,7 +105,7 @@ namespace BEPUphysics.Vehicle
         public float GripFriction
         {
             get { return gripFriction; }
-            set { gripFriction = Math.Max(value, 0); }
+            set { gripFriction = MathHelper.Max(value, 0); }
         }
 
         /// <summary>
@@ -206,9 +205,9 @@ namespace BEPUphysics.Vehicle
             accumulatedImpulse += lambda;
             //Don't brake, and take into account the motor's maximum force.
             if (targetSpeed > 0)
-                accumulatedImpulse = MathHelper.Clamp(accumulatedImpulse, 0, maxMotorForceDt); //Math.Min(Math.Max(accumulatedImpulse, 0), myMaxMotorForceDt);
+                accumulatedImpulse = MathHelper.Clamp(accumulatedImpulse, 0, maxMotorForceDt); //MathHelper.Min(MathHelper.Max(accumulatedImpulse, 0), myMaxMotorForceDt);
             else if (targetSpeed < 0)
-                accumulatedImpulse = MathHelper.Clamp(accumulatedImpulse, maxMotorForceDt, 0); //Math.Max(Math.Min(accumulatedImpulse, 0), myMaxMotorForceDt);
+                accumulatedImpulse = MathHelper.Clamp(accumulatedImpulse, maxMotorForceDt, 0); //MathHelper.Max(MathHelper.Min(accumulatedImpulse, 0), myMaxMotorForceDt);
             else
                 accumulatedImpulse = 0;
             //Friction

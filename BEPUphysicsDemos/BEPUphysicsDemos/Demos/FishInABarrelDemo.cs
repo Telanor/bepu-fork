@@ -1,5 +1,5 @@
-﻿using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+﻿using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
@@ -7,8 +7,7 @@ using BEPUphysicsDrawer.Models;
 using Microsoft.Xna.Framework.Graphics;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -29,7 +28,7 @@ namespace BEPUphysicsDemos.Demos
         public FishInABarrelDemo(DemosGame game)
             : base(game)
         {
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 7, 30);
+            game.Camera.Position = new Vector3(0, 7, 30);
 
             var detector = new Box(new Vector3(0, 0, 0), 1.5f, 1.5f, 1.5f);
             detector.CollisionInformation.CollisionRules.Personal = CollisionRule.NoSolver;

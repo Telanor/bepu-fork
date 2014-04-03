@@ -1,21 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.DataStructures;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Collidables;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 using BEPUphysics.NarrowPhaseSystems;
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.Settings;
-using BEPUphysics;
-using BEPUphysics.BroadPhaseSystems;
-using SharpDX;
 
 namespace BEPUphysicsDemos.AlternateMovement.Character
 {
@@ -95,8 +87,8 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
             foreach (var collidable in character.Body.CollisionInformation.OverlappedCollidables)
             {
                 //Check to see if the collidable is hit by the ray.
-                float t;
-                if (collidable.BoundingBox.Intersects(ref ray, out t) && t < length)
+                float? t = ray.Intersects(collidable.BoundingBox);
+                if (t != null && t < length)
                 {
                     //Is it an earlier hit than the current earliest?
                     RayHit hit;
@@ -128,8 +120,8 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
             foreach (var collidable in character.Body.CollisionInformation.OverlappedCollidables)
             {
                 //Check to see if the collidable is hit by the ray.
-                float t;
-                if (collidable.BoundingBox.Intersects(ref ray, out t) && t < length)
+                float? t = ray.Intersects(collidable.BoundingBox);
+                if (t != null && t < length)
                 {
                     //Is it an earlier hit than the current earliest?
                     RayHit hit;
@@ -157,8 +149,8 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
             foreach (var collidable in character.Body.CollisionInformation.OverlappedCollidables)
             {
                 //Check to see if the collidable is hit by the ray.
-                float t;
-                if (collidable.BoundingBox.Intersects(ref ray, out t) && t < length)
+                float? t = ray.Intersects(collidable.BoundingBox);
+                if (t != null && t < length)
                 {
                     RayHit hit;
                     if (collidable.RayCast(ray, length, SupportRayFilter, out hit))
@@ -213,14 +205,15 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
 
             foreach (var collidable in character.Body.CollisionInformation.OverlappedCollidables)
             {
-                var queryBoundingBox = queryObject.BoundingBox;
-                if (collidable.BoundingBox.Intersects(ref queryBoundingBox))
+                if (collidable.BoundingBox.Intersects(queryObject.BoundingBox))
                 {
                     var pair = new CollidablePair(collidable, queryObject);
                     var pairHandler = NarrowPhaseHelper.GetPairHandler(ref pair);
                     if (pairHandler.CollisionRule == CollisionRule.Normal)
                     {
+                        pairHandler.SuppressEvents = true;
                         pairHandler.UpdateCollision(0);
+                        pairHandler.SuppressEvents = false;
                         foreach (var contact in pairHandler.Contacts)
                         {
                             //Must check per-contact collision rules, just in case
@@ -250,13 +243,13 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
 
         void CategorizeContacts(ref Vector3 position)
         {
-            Vector3 downDirection = character.Body.OrientationMatrix.Down;
+            Vector3 downDirection = character.Down;
             for (int i = 0; i < contacts.Count; i++)
             {
                 float dot;
                 Vector3 offset;
                 Vector3.Subtract(ref contacts.Elements[i].Position, ref position, out offset);
-                Vector3Ex.Dot(ref contacts.Elements[i].Normal, ref offset, out dot);
+                Vector3.Dot(ref contacts.Elements[i].Normal, ref offset, out dot);
                 ContactData processed = contacts.Elements[i];
                 if (dot < 0)
                 {
@@ -264,7 +257,7 @@ namespace BEPUphysicsDemos.AlternateMovement.Character
                     dot = -dot;
                     Vector3.Negate(ref processed.Normal, out processed.Normal);
                 }
-                Vector3Ex.Dot(ref processed.Normal, ref downDirection, out dot);
+                Vector3.Dot(ref processed.Normal, ref downDirection, out dot);
                 if (dot > SupportFinder.SideContactThreshold)
                 {
                     //It's a support.

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using SharpDX;
-using BEPUphysics.DataStructures;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.Paths
 {

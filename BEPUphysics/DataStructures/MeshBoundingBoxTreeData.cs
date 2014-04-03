@@ -1,5 +1,6 @@
-﻿using SharpDX;
+﻿
 
+using BEPUutilities;
 namespace BEPUphysics.DataStructures
 {
     ///<summary>
@@ -48,10 +49,10 @@ namespace BEPUphysics.DataStructures
         {
             Vector3 v1, v2, v3;
             GetTriangle(triangleIndex, out v1, out v2, out v3);
-            Vector3.Min(ref v1, ref v2, out boundingBox.Minimum);
-            Vector3.Min(ref boundingBox.Minimum, ref v3, out boundingBox.Minimum);
-            Vector3.Max(ref v1, ref v2, out boundingBox.Maximum);
-            Vector3.Max(ref boundingBox.Maximum, ref v3, out boundingBox.Maximum);
+            Vector3.Min(ref v1, ref v2, out boundingBox.Min);
+            Vector3.Min(ref boundingBox.Min, ref v3, out boundingBox.Min);
+            Vector3.Max(ref v1, ref v2, out boundingBox.Max);
+            Vector3.Max(ref boundingBox.Max, ref v3, out boundingBox.Max);
 
         }
         ///<summary>

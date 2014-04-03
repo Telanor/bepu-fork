@@ -3,8 +3,7 @@ using BEPUphysics;
 using BEPUphysics.BroadPhaseSystems;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems.ForceFields;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.SampleCode
 {
@@ -132,7 +131,7 @@ namespace BEPUphysicsDemos.SampleCode
                 Vector3 endpointB = position - Axis * Height / 2;
                 Toolbox.GetClosestPointOnSegmentToPoint(ref endpointA, ref endpointB, ref entityPosition, out closestPoint);
                 float entityDistanceFromTornado;
-                Vector3Ex.Distance(ref entityPosition, ref closestPoint, out entityDistanceFromTornado);
+                Vector3.Distance(ref entityPosition, ref closestPoint, out entityDistanceFromTornado);
                 //Compute the axis to the 
                 Vector3 posClosest;
                 float forceMultiplier;

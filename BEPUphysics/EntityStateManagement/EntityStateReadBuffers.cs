@@ -1,6 +1,6 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using BEPUphysics.Threading;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.EntityStateManagement
 {
@@ -92,13 +92,13 @@ namespace BEPUphysics.EntityStateManagement
         /// Constructs a read buffer manager.
         ///</summary>
         ///<param name="manager">Owning buffered states manager.</param>
-        ///<param name="threadManager">Thread manager to use.</param>
-        public StateReadBuffers(BufferedStatesManager manager, IThreadManager threadManager)
+        ///<param name="parallelLooper">Parallel loop provider to use.</param>
+        public StateReadBuffers(BufferedStatesManager manager, IParallelLooper parallelLooper)
         {
             this.manager = manager;
             multithreadedStateUpdateDelegate = MultithreadedStateUpdate;
             FlipLocker = new object();
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
 
@@ -116,7 +116,7 @@ namespace BEPUphysics.EntityStateManagement
 
         protected override void UpdateMultithreaded()
         {
-            ThreadManager.ForLoop(0, manager.entities.Count, multithreadedStateUpdateDelegate);
+            ParallelLooper.ForLoop(0, manager.entities.Count, multithreadedStateUpdateDelegate);
             FlipBuffers();
         }
 

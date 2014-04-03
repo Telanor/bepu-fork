@@ -6,8 +6,7 @@ using BEPUphysicsDemos.SampleCode;
 using BEPUphysics.CollisionShapes;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using System.Collections.Generic;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -41,13 +40,13 @@ namespace BEPUphysicsDemos.Demos
             Entity toAdd = new Box(new Vector3(10, 4, 0), 26, 1f, 6);
             Space.Add(toAdd);
             toAdd = new Box(new Vector3(32, 7.8f, 0), 20, 1, 6);
-            toAdd.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, -(float)Math.PI / 8);
+            toAdd.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, -(float)Math.PI / 8);
             Space.Add(toAdd);
             toAdd = new Box(new Vector3(32, 8.8f, -3.5f), 20, 1, 1);
-            toAdd.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, -(float)Math.PI / 8);
+            toAdd.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, -(float)Math.PI / 8);
             Space.Add(toAdd);
             toAdd = new Box(new Vector3(32, 8.8f, 3.5f), 20, 1, 1);
-            toAdd.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, -(float)Math.PI / 8);
+            toAdd.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, -(float)Math.PI / 8);
             Space.Add(toAdd);
             toAdd = new Box(new Vector3(-2.75f, 5.5f, 0), .5f, 2f, 3);
             Space.Add(toAdd);
@@ -56,12 +55,12 @@ namespace BEPUphysicsDemos.Demos
             ship.AngularDamping = .4f; //Helps keep the rocket on track for a little while longer :D
             var thruster = new Thruster(ship, new Vector3(0, -2, 0), new Vector3(0, 300, 0), 0);
             Space.Add(thruster);
-            ship.Orientation = QuaternionEx.Multiply(Quaternion.RotationAxis(Vector3.UnitX, (float)Math.PI / 2), Quaternion.RotationAxis(-Vector3.UnitZ, (float)Math.PI / 2));
+            ship.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Right, (float)Math.PI / 2) * Quaternion.CreateFromAxisAngle(Vector3.Forward, (float)Math.PI / 2);
             Space.Add(ship);
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(-14, 12, 25);
-            game.Camera.Yaw = (float)Math.PI / -4;
+            game.Camera.Position = new Vector3(-14, 12, 25);
+            game.Camera.Yaw((float)Math.PI / -4);
         }
 
         /// <summary>

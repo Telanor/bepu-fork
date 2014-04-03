@@ -1,31 +1,12 @@
-﻿using BEPUphysics.Collidables;
-using BEPUphysics.Entities;
-using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.PositionUpdating;
-using Microsoft.Xna.Framework.Input;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.DataStructures;
+﻿using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.Collidables.MobileCollidables;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.Settings;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Constraints;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using BEPUphysics.Constraints.SolverGroups;
-using BEPUphysics.Constraints.TwoEntity.Motors;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
     /// <summary>
-    /// Demo showing a wall of blocks stacked up.
+    /// Demo showing a set of entity meshes capable of dynamic movement.
     /// </summary>
     public class MobileMeshDemo : StandardDemo
     {
@@ -82,9 +63,7 @@ namespace BEPUphysicsDemos.Demos
                     }
 
             //Space.Add(new Box(new Vector3(0, -10, 0), 1, 1, 1));
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, -10, 5);
-            game.Camera.Yaw = 0;
-            game.Camera.Pitch = 0;
+            game.Camera.Position = new Vector3(0, -10, 5);
 
 
         }

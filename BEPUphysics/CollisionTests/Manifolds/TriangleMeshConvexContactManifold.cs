@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using SharpDX;
-using BEPUphysics.DataStructures;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.Settings;
-using BEPUphysics.ResourceManagement;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using System.Diagnostics;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.Manifolds
 {
@@ -18,19 +16,44 @@ namespace BEPUphysics.CollisionTests.Manifolds
     public abstract class TriangleMeshConvexContactManifold : ContactManifold
     {
         protected RawValueList<ContactSupplementData> supplementData = new RawValueList<ContactSupplementData>(4);
-        Dictionary<TriangleIndices, TrianglePairTester> activePairTesters = new Dictionary<TriangleIndices, TrianglePairTester>(4);
-        RawValueList<ContactData> candidatesToAdd;
-        RawValueList<ContactData> reducedCandidates = new RawValueList<ContactData>();
+        private QuickDictionary<TriangleIndices, TrianglePairTester> activePairTesters;
         protected TriangleShape localTriangleShape = new TriangleShape();
+
+
 
         protected abstract TrianglePairTester GetTester();
 
         protected abstract void GiveBackTester(TrianglePairTester tester);
 
-        HashSet<int> blockedVertexRegions = new HashSet<int>();
-        HashSet<Edge> blockedEdgeRegions = new HashSet<Edge>();
-        RawValueList<EdgeContact> edgeContacts = new RawValueList<EdgeContact>();
-        RawValueList<VertexContact> vertexContacts = new RawValueList<VertexContact>();
+        //HashSet<int> blockedVertexRegions = new HashSet<int>();
+        //HashSet<Edge> blockedEdgeRegions = new HashSet<Edge>();
+        //RawValueList<EdgeContact> edgeContacts = new RawValueList<EdgeContact>(8);
+        //RawValueList<VertexContact> vertexContacts = new RawValueList<VertexContact>(8);
+
+        private struct BoundarySets
+        {
+            public QuickSet<int> BlockedVertexRegions;
+            public QuickSet<Edge> BlockedEdgeRegions;
+            public QuickList<EdgeContact> EdgeContacts;
+            public QuickList<VertexContact> VertexContacts;
+
+            public BoundarySets(int sizePower)
+            {
+                BlockedVertexRegions = new QuickSet<int>(BufferPools<int>.Thread, BufferPools<int>.Thread, sizePower);
+                BlockedEdgeRegions = new QuickSet<Edge>(BufferPools<Edge>.Thread, BufferPools<int>.Thread, sizePower);
+                EdgeContacts = new QuickList<EdgeContact>(BufferPools<EdgeContact>.Thread, sizePower);
+                VertexContacts = new QuickList<VertexContact>(BufferPools<VertexContact>.Thread, sizePower);
+            }
+
+            internal void Dispose()
+            {
+                BlockedEdgeRegions.Dispose();
+                BlockedVertexRegions.Dispose();
+                VertexContacts.Dispose();
+                EdgeContacts.Dispose();
+            }
+        }
+
 
         protected ConvexCollidable convex;
 
@@ -53,7 +76,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
             contacts = new RawList<Contact>(4);
             unusedContacts = new UnsafeResourcePool<Contact>(4);
             contactIndicesToRemove = new RawList<int>(4);
-            candidatesToAdd = new RawValueList<ContactData>(1);
+            activePairTesters = new QuickDictionary<TriangleIndices, TrianglePairTester>(BufferPools<TriangleIndices>.Locking, BufferPools<TrianglePairTester>.Locking, BufferPools<int>.Locking, 3);
         }
 
         protected virtual RigidTransform MeshTransform
@@ -67,7 +90,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
         protected abstract bool UseImprovedBoundaryHandling { get; }
         protected internal abstract int FindOverlappingTriangles(float dt);
-        protected abstract bool ConfigureTriangle(int i, out TriangleIndices indices);
+        protected abstract bool ConfigureTriangle(int i, TriangleShape localTriangleShape, out TriangleIndices indices);
         protected internal abstract void CleanUpOverlappingTriangles();
 
         ///<summary>
@@ -76,7 +99,6 @@ namespace BEPUphysics.CollisionTests.Manifolds
         ///<param name="dt">Timestep duration.</param>
         public override void Update(float dt)
         {
-
             //First, refresh all existing contacts.  This is an incremental manifold.
             var transform = MeshTransform;
             ContactRefresher.ContactRefresh(contacts, supplementData, ref convex.worldTransform, ref transform, contactIndicesToRemove);
@@ -88,13 +110,24 @@ namespace BEPUphysics.CollisionTests.Manifolds
             //Get all the overlapped triangle indices.
             int triangleCount = FindOverlappingTriangles(dt);
 
-            Matrix3X3 orientation;
-            Matrix3X3.CreateFromQuaternion(ref convex.worldTransform.Orientation, out orientation);
+            //Just use 32 elements for all the lists and sets in this system.
+            const int bufferPoolSizePower = 5;
+            BoundarySets boundarySets;
+            if (UseImprovedBoundaryHandling)
+                boundarySets = new BoundarySets(bufferPoolSizePower);
+            else
+                boundarySets = new BoundarySets();
+
+            var candidatesToAdd = new QuickList<ContactData>(BufferPools<ContactData>.Thread, bufferPoolSizePower);
+
+            Matrix3x3 orientation;
+            Matrix3x3.CreateFromQuaternion(ref convex.worldTransform.Orientation, out orientation);
+            var guaranteedContacts = 0;
             for (int i = 0; i < triangleCount; i++)
             {
                 //Initialize the local triangle.
                 TriangleIndices indices;
-                if (ConfigureTriangle(i, out indices))
+                if (ConfigureTriangle(i, localTriangleShape, out indices))
                 {
 
                     //Find a pairtester for the triangle.
@@ -112,30 +145,32 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     Vector3.Subtract(ref localTriangleShape.vA, ref convex.worldTransform.Position, out localTriangleShape.vA);
                     Vector3.Subtract(ref localTriangleShape.vB, ref convex.worldTransform.Position, out localTriangleShape.vB);
                     Vector3.Subtract(ref localTriangleShape.vC, ref convex.worldTransform.Position, out localTriangleShape.vC);
-                    Matrix3X3.TransformTranspose(ref localTriangleShape.vA, ref orientation, out localTriangleShape.vA);
-                    Matrix3X3.TransformTranspose(ref localTriangleShape.vB, ref orientation, out localTriangleShape.vB);
-                    Matrix3X3.TransformTranspose(ref localTriangleShape.vC, ref orientation, out localTriangleShape.vC);
+                    Matrix3x3.TransformTranspose(ref localTriangleShape.vA, ref orientation, out localTriangleShape.vA);
+                    Matrix3x3.TransformTranspose(ref localTriangleShape.vB, ref orientation, out localTriangleShape.vB);
+                    Matrix3x3.TransformTranspose(ref localTriangleShape.vC, ref orientation, out localTriangleShape.vC);
 
                     //Now, generate a contact between the two shapes.
                     ContactData contact;
                     TinyStructList<ContactData> contactList;
                     if (pairTester.GenerateContactCandidate(out contactList))
                     {
-                        for (int j = 0; j < contactList.count; j++)
+                        for (int j = 0; j < contactList.Count; j++)
                         {
                             contactList.Get(j, out contact);
 
 
                             if (UseImprovedBoundaryHandling)
                             {
-                                if (AnalyzeCandidate(ref indices, pairTester, ref contact))
+                                if (AnalyzeCandidate(ref indices, pairTester, ref contact, ref boundarySets))
                                 {
-                                    AddLocalContact(ref contact, ref orientation);
+                                    //This is let through if there's a face contact. Face contacts cannot be blocked.
+                                    guaranteedContacts++;
+                                    AddLocalContact(ref contact, ref orientation, ref candidatesToAdd);
                                 }
                             }
                             else
                             {
-                                AddLocalContact(ref contact, ref orientation);
+                                AddLocalContact(ref contact, ref orientation, ref candidatesToAdd);
                             }
 
                         }
@@ -153,7 +188,6 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
 
 
-
             if (UseImprovedBoundaryHandling)
             {
 
@@ -165,7 +199,6 @@ namespace BEPUphysics.CollisionTests.Manifolds
                 //Sure, it might not be necessary under normal circumstances, but it's a better option than having no contacts.
                 //TODO: There is another option: Changing restricted regions so that a vertex only restricts the other two vertices and the far edge,
                 //and an edge only restricts the far vertex and other two edges.  This introduces an occasional bump though...
-                int guaranteedContacts = candidatesToAdd.count;
 
                 //It's possible, in very specific instances, for an object to wedge itself between two adjacent triangles.
                 //For this state to continue beyond a brief instant generally requires the object be orientation locked and slender.
@@ -180,7 +213,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
                 //This isn't a completely free operation, but it's guarded behind pretty rare conditions.
                 //Essentially, we will check to see if there's just edge contacts fighting against each other.
                 //If they are, then we will correct any stuck-contributing normals to the triangle normal.
-                if (vertexContacts.count == 0 && guaranteedContacts == 0 && edgeContacts.count > 1)
+                if (boundarySets.VertexContacts.Count == 0 && guaranteedContacts == 0 && boundarySets.EdgeContacts.Count > 1)
                 {
                     //There are only edge contacts, check to see if:
                     //all normals are coplanar, and
@@ -189,10 +222,10 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     bool allNormalsInSamePlane = true;
                     bool atLeastOneNormalAgainst = false;
 
-                    var firstNormal = edgeContacts.Elements[0].ContactData.Normal;
-                    edgeContacts.Elements[0].CorrectedNormal.Normalize();
+                    var firstNormal = boundarySets.EdgeContacts.Elements[0].ContactData.Normal;
+                    boundarySets.EdgeContacts.Elements[0].CorrectedNormal.Normalize();
                     float dot;
-                    Vector3Ex.Dot(ref firstNormal, ref edgeContacts.Elements[0].CorrectedNormal, out dot);
+                    Vector3.Dot(ref firstNormal, ref boundarySets.EdgeContacts.Elements[0].CorrectedNormal, out dot);
                     if (Math.Abs(dot) > .01f)
                     {
                         //Go ahead and test the first contact separately, since we're using its contact normal to determine coplanarity.
@@ -203,15 +236,15 @@ namespace BEPUphysics.CollisionTests.Manifolds
                         //TODO: Note that we're only checking the new edge contacts, not the existing contacts.
                         //It's possible that some existing contacts could interfere and cause issues, but for the sake of simplicity and due to rarity
                         //we'll ignore that possibility for now.
-                        for (int i = 1; i < edgeContacts.count; i++)
+                        for (int i = 1; i < boundarySets.EdgeContacts.Count; i++)
                         {
-                            Vector3Ex.Dot(ref edgeContacts.Elements[i].ContactData.Normal, ref firstNormal, out dot);
+                            Vector3.Dot(ref boundarySets.EdgeContacts.Elements[i].ContactData.Normal, ref firstNormal, out dot);
                             if (dot < 0)
                             {
                                 atLeastOneNormalAgainst = true;
                             }
                             //Check to see if the normal is outside the plane.
-                            Vector3Ex.Dot(ref edgeContacts.Elements[i].ContactData.Normal, ref edgeContacts.Elements[0].CorrectedNormal, out dot);
+                            Vector3.Dot(ref boundarySets.EdgeContacts.Elements[i].ContactData.Normal, ref boundarySets.EdgeContacts.Elements[0].CorrectedNormal, out dot);
 
                             if (Math.Abs(dot) > .01f)
                             {
@@ -230,28 +263,28 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
                         //Already normalized the first contact above.
                         //We don't need to perform the perpendicularity test here- we did that before! We know it's perpendicular already.
-                        edgeContacts.Elements[0].ContactData.Normal = edgeContacts.Elements[0].CorrectedNormal;
-                        edgeContacts.Elements[0].ShouldCorrect = true;
+                        boundarySets.EdgeContacts.Elements[0].ContactData.Normal = boundarySets.EdgeContacts.Elements[0].CorrectedNormal;
+                        boundarySets.EdgeContacts.Elements[0].ShouldCorrect = true;
 
-                        for (int i = 1; i < edgeContacts.count; i++)
+                        for (int i = 1; i < boundarySets.EdgeContacts.Count; i++)
                         {
                             //Must normalize the corrected normal before using it.
-                            edgeContacts.Elements[i].CorrectedNormal.Normalize();
-                            Vector3Ex.Dot(ref edgeContacts.Elements[i].CorrectedNormal, ref edgeContacts.Elements[i].ContactData.Normal, out dot);
+                            boundarySets.EdgeContacts.Elements[i].CorrectedNormal.Normalize();
+                            Vector3.Dot(ref boundarySets.EdgeContacts.Elements[i].CorrectedNormal, ref boundarySets.EdgeContacts.Elements[i].ContactData.Normal, out dot);
                             if (dot < .01)
                             {
                                 //Only bother doing the correction if the normal appears to be pointing nearly horizontally- implying that it's a contributor to the stuckness!
                                 //If it's blocked, the next section will use the corrected normal- if it's not blocked, the next section will use the direct normal.
                                 //Make them the same thing :)
-                                edgeContacts.Elements[i].ContactData.Normal = edgeContacts.Elements[i].CorrectedNormal;
-                                edgeContacts.Elements[i].ShouldCorrect = true;
+                                boundarySets.EdgeContacts.Elements[i].ContactData.Normal = boundarySets.EdgeContacts.Elements[i].CorrectedNormal;
+                                boundarySets.EdgeContacts.Elements[i].ShouldCorrect = true;
                                 //Note that the penetration depth is NOT corrected.  The contact's depth no longer represents the true depth.
                                 //However, we only need to have some penetration depth to get the object to escape the rut.
                                 //Furthermore, the depth computed from the horizontal opposing contacts is known to be less than the depth in the perpendicular direction.
                                 //If the current depth was NOT less than the true depth along the corrected normal, then the collision detection system 
                                 //would have picked a different depth, as it finds a reasonable approximation of the minimum penetration!
                                 //As a consequence, this contact will not be active beyond the object's destuckification, because its contact depth will be negative (or very close to it).
-                                
+
                             }
                         }
                     }
@@ -259,60 +292,67 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
 
 
-                for (int i = 0; i < edgeContacts.count; i++)
+
+
+                for (int i = 0; i < boundarySets.EdgeContacts.Count; i++)
                 {
                     //Only correct if it's allowed AND it's blocked.
                     //If it's not blocked, the contact being created is necessary!
                     //The normal generated by the triangle-convex tester is already known not to
                     //violate the triangle sidedness.
-                    if (!blockedEdgeRegions.Contains(edgeContacts.Elements[i].Edge))
+                    if (!boundarySets.BlockedEdgeRegions.Contains(boundarySets.EdgeContacts.Elements[i].Edge))
                     {
                         //If it's not blocked, use the contact as-is without correcting it.
-                        AddLocalContact(ref edgeContacts.Elements[i].ContactData, ref orientation);
+                        AddLocalContact(ref boundarySets.EdgeContacts.Elements[i].ContactData, ref orientation, ref candidatesToAdd);
 
                     }
-                    else if (edgeContacts.Elements[i].ShouldCorrect || guaranteedContacts == 0)
+                    else if (boundarySets.EdgeContacts.Elements[i].ShouldCorrect || guaranteedContacts == 0)
                     {
                         //If it is blocked, we can still make use of the contact.  But first, we need to change the contact normal to ensure that
                         //it will not interfere (and cause a bump or something).
                         float dot;
-                        edgeContacts.Elements[i].CorrectedNormal.Normalize();
-                        Vector3Ex.Dot(ref edgeContacts.Elements[i].CorrectedNormal, ref edgeContacts.Elements[i].ContactData.Normal, out dot);
-                        edgeContacts.Elements[i].ContactData.Normal = edgeContacts.Elements[i].CorrectedNormal;
-                        edgeContacts.Elements[i].ContactData.PenetrationDepth *= Math.Max(0, dot); //Never cause a negative penetration depth.
-                        AddLocalContact(ref edgeContacts.Elements[i].ContactData, ref orientation);
+                        boundarySets.EdgeContacts.Elements[i].CorrectedNormal.Normalize();
+                        Vector3.Dot(ref boundarySets.EdgeContacts.Elements[i].CorrectedNormal, ref boundarySets.EdgeContacts.Elements[i].ContactData.Normal, out dot);
+                        boundarySets.EdgeContacts.Elements[i].ContactData.Normal = boundarySets.EdgeContacts.Elements[i].CorrectedNormal;
+                        boundarySets.EdgeContacts.Elements[i].ContactData.PenetrationDepth *= MathHelper.Max(0, dot); //Never cause a negative penetration depth.
+                        AddLocalContact(ref boundarySets.EdgeContacts.Elements[i].ContactData, ref orientation, ref candidatesToAdd);
                     }
                     //If it's blocked AND it doesn't allow correction, ignore its existence.
 
 
 
                 }
-                for (int i = 0; i < vertexContacts.count; i++)
+
+
+
+
+                for (int i = 0; i < boundarySets.VertexContacts.Count; i++)
                 {
-                    if (!blockedVertexRegions.Contains(vertexContacts.Elements[i].Vertex))
+
+                    if (!boundarySets.BlockedVertexRegions.Contains(boundarySets.VertexContacts.Elements[i].Vertex))
                     {
                         //If it's not blocked, use the contact as-is without correcting it.
-                        AddLocalContact(ref vertexContacts.Elements[i].ContactData, ref orientation);
+                        AddLocalContact(ref boundarySets.VertexContacts.Elements[i].ContactData, ref orientation, ref candidatesToAdd);
                     }
-                    else if (vertexContacts.Elements[i].ShouldCorrect || guaranteedContacts == 0)
+                    else if (boundarySets.VertexContacts.Elements[i].ShouldCorrect || guaranteedContacts == 0)
                     {
                         //If it is blocked, we can still make use of the contact.  But first, we need to change the contact normal to ensure that
                         //it will not interfere (and cause a bump or something).
                         float dot;
-                        vertexContacts.Elements[i].CorrectedNormal.Normalize();
-                        Vector3Ex.Dot(ref vertexContacts.Elements[i].CorrectedNormal, ref vertexContacts.Elements[i].ContactData.Normal, out dot);
-                        vertexContacts.Elements[i].ContactData.Normal = vertexContacts.Elements[i].CorrectedNormal;
-                        vertexContacts.Elements[i].ContactData.PenetrationDepth *= Math.Max(0, dot); //Never cause a negative penetration depth.
-                        AddLocalContact(ref vertexContacts.Elements[i].ContactData, ref orientation);
+                        boundarySets.VertexContacts.Elements[i].CorrectedNormal.Normalize();
+                        Vector3.Dot(ref boundarySets.VertexContacts.Elements[i].CorrectedNormal, ref boundarySets.VertexContacts.Elements[i].ContactData.Normal, out dot);
+                        boundarySets.VertexContacts.Elements[i].ContactData.Normal = boundarySets.VertexContacts.Elements[i].CorrectedNormal;
+                        boundarySets.VertexContacts.Elements[i].ContactData.PenetrationDepth *= MathHelper.Max(0, dot); //Never cause a negative penetration depth.
+                        AddLocalContact(ref boundarySets.VertexContacts.Elements[i].ContactData, ref orientation, ref candidatesToAdd);
                     }
                     //If it's blocked AND it doesn't allow correction, ignore its existence.
 
 
                 }
-                blockedEdgeRegions.Clear();
-                blockedVertexRegions.Clear();
-                vertexContacts.Clear();
-                edgeContacts.Clear();
+
+
+
+                boundarySets.Dispose();
 
 
             }
@@ -320,51 +360,44 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
 
             //Remove stale pair testers.
-            //This will only remove 8 stale ones per frame, but it doesn't really matter.
-            //VERY rarely will there be more than 8 in a single frame, and they will be immediately taken care of in the subsequent frame.
-            var toRemove = new TinyList<TriangleIndices>();
-            foreach (KeyValuePair<TriangleIndices, TrianglePairTester> pair in activePairTesters)
+            for (int i = activePairTesters.Count - 1; i >= 0; --i)
             {
-                if (!pair.Value.Updated)
+                var tester = activePairTesters.Values[i];
+                if (!tester.Updated)
                 {
-                    if (!toRemove.Add(pair.Key))
-                        break;
+                    tester.CleanUp();
+                    GiveBackTester(tester);
+                    activePairTesters.FastRemove(activePairTesters.Keys[i]);
                 }
                 else
-                    pair.Value.Updated = false;
+                {
+                    tester.Updated = false;
+                }
+
             }
-
-
-
-            for (int i = toRemove.count - 1; i >= 0; i--)
-            {
-                var pairTester = activePairTesters[toRemove[i]];
-                pairTester.CleanUp();
-                GiveBackTester(pairTester);
-                activePairTesters.Remove(toRemove[i]);
-            }
-
 
             //Some child types will want to do some extra post processing on the manifold.        
-            ProcessCandidates(candidatesToAdd);
+            ProcessCandidates(ref candidatesToAdd);
 
 
             //Check if adding the new contacts would overflow the manifold.
-            if (contacts.count + candidatesToAdd.count > 4)
+            if (contacts.Count + candidatesToAdd.Count > 4)
             {
                 //Adding all the contacts would overflow the manifold.  Reduce to the best subset.
-                ContactReducer.ReduceContacts(contacts, candidatesToAdd, contactIndicesToRemove, reducedCandidates);
+                var reducedCandidates = new QuickList<ContactData>(BufferPools<ContactData>.Thread, bufferPoolSizePower);
+                ContactReducer.ReduceContacts(contacts, ref candidatesToAdd, contactIndicesToRemove, ref reducedCandidates);
                 RemoveQueuedContacts();
-                for (int i = reducedCandidates.count - 1; i >= 0; i--)
+                for (int i = reducedCandidates.Count - 1; i >= 0; i--)
                 {
                     Add(ref reducedCandidates.Elements[i]);
                     reducedCandidates.RemoveAt(i);
                 }
+                reducedCandidates.Dispose();
             }
-            else if (candidatesToAdd.count > 0)
+            else if (candidatesToAdd.Count > 0)
             {
                 //Won't overflow the manifold, so just toss it in PROVIDED that it isn't too close to something else.
-                for (int i = 0; i < candidatesToAdd.count; i++)
+                for (int i = 0; i < candidatesToAdd.Count; i++)
                 {
                     Add(ref candidatesToAdd.Elements[i]);
                 }
@@ -372,25 +405,25 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
 
 
-            candidatesToAdd.Clear();
+            candidatesToAdd.Dispose();
 
         }
 
-        void AddLocalContact(ref ContactData contact, ref Matrix3X3 orientation)
+        void AddLocalContact(ref ContactData contact, ref Matrix3x3 orientation, ref QuickList<ContactData> candidatesToAdd)
         {
             //Put the contact into world space.
-            Matrix3X3.Transform(ref contact.Position, ref orientation, out contact.Position);
+            Matrix3x3.Transform(ref contact.Position, ref orientation, out contact.Position);
             Vector3.Add(ref contact.Position, ref convex.worldTransform.Position, out contact.Position);
-            Matrix3X3.Transform(ref contact.Normal, ref orientation, out contact.Normal);
+            Matrix3x3.Transform(ref contact.Normal, ref orientation, out contact.Normal);
             //Check to see if the contact is unique before proceeding.
-            if (IsContactUnique(ref contact))
+            if (IsContactUnique(ref contact, ref candidatesToAdd))
             {
                 candidatesToAdd.Add(ref contact);
             }
         }
 
 
-        protected void GetNormal(ref Vector3 uncorrectedNormal, out Vector3 normal)
+        protected void GetNormal(ref Vector3 uncorrectedNormal, TriangleShape localTriangleShape, out Vector3 normal)
         {
             //Compute the normal of the triangle in the current convex's local space.
             //Note its reliance on the local triangle shape.  It must be initialized to the correct values before this is called.
@@ -405,7 +438,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     //as the contact normal that's going to be corrected.
                     float dot;
                     Vector3.Cross(ref AB, ref AC, out normal);
-                    Vector3Ex.Dot(ref normal, ref uncorrectedNormal, out dot);
+                    Vector3.Dot(ref normal, ref uncorrectedNormal, out dot);
                     if (dot < 0)
                         Vector3.Negate(ref normal, out normal);
                     break;
@@ -418,132 +451,118 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     Vector3.Cross(ref AB, ref AC, out normal);
                     break;
             }
-
-
+            //If the normal is degenerate, just use the uncorrected normal.
+            if (normal.LengthSquared() < Toolbox.Epsilon)
+                normal = uncorrectedNormal;
         }
 
-        bool AnalyzeCandidate(ref TriangleIndices indices, TrianglePairTester pairTester, ref ContactData contact)
+        bool AnalyzeCandidate(ref TriangleIndices indices, TrianglePairTester pairTester, ref ContactData contact, ref BoundarySets sets)
         {
             switch (pairTester.GetRegion(ref contact))
             {
                 case VoronoiRegion.A:
                     //Add the contact.
                     VertexContact vertexContact;
+                    GetNormal(ref contact.Normal, pairTester.triangle, out vertexContact.CorrectedNormal);
                     vertexContact.ContactData = contact;
                     vertexContact.Vertex = indices.A;
                     vertexContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (vertexContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out vertexContact.CorrectedNormal);
-                    //else
-                    //    vertexContact.CorrectedNormal = contact.Normal;
-                    vertexContacts.Add(ref vertexContact);
+                    sets.VertexContacts.Add(ref vertexContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.B);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.B);
+                    sets.BlockedVertexRegions.Add(indices.C);
+
                     break;
                 case VoronoiRegion.B:
                     //Add the contact.
+                    GetNormal(ref contact.Normal, pairTester.triangle, out vertexContact.CorrectedNormal);
                     vertexContact.ContactData = contact;
                     vertexContact.Vertex = indices.B;
                     vertexContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (vertexContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out vertexContact.CorrectedNormal);
-                    //else
-                    //    vertexContact.CorrectedNormal = contact.Normal;
-                    vertexContacts.Add(ref vertexContact);
+                    sets.VertexContacts.Add(ref vertexContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.C);
+
                     break;
                 case VoronoiRegion.C:
                     //Add the contact.
+                    GetNormal(ref contact.Normal, pairTester.triangle, out vertexContact.CorrectedNormal);
                     vertexContact.ContactData = contact;
                     vertexContact.Vertex = indices.C;
                     vertexContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (vertexContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out vertexContact.CorrectedNormal);
-                    //else
-                    //    vertexContact.CorrectedNormal = contact.Normal;
-                    vertexContacts.Add(ref vertexContact);
+                    sets.VertexContacts.Add(ref vertexContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.B);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.B);
+
                     break;
                 case VoronoiRegion.AB:
                     //Add the contact.
                     EdgeContact edgeContact;
+                    GetNormal(ref contact.Normal, pairTester.triangle, out edgeContact.CorrectedNormal);
                     edgeContact.Edge = new Edge(indices.A, indices.B);
                     edgeContact.ContactData = contact;
                     edgeContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (edgeContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out edgeContact.CorrectedNormal);
-                    //else
-                    //    edgeContact.CorrectedNormal = contact.Normal;
-                    edgeContacts.Add(ref edgeContact);
+                    sets.EdgeContacts.Add(ref edgeContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.B);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.B);
+                    sets.BlockedVertexRegions.Add(indices.C);
                     break;
                 case VoronoiRegion.AC:
                     //Add the contact.
+                    GetNormal(ref contact.Normal, pairTester.triangle, out edgeContact.CorrectedNormal);
                     edgeContact.Edge = new Edge(indices.A, indices.C);
                     edgeContact.ContactData = contact;
                     edgeContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (edgeContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out edgeContact.CorrectedNormal);
-                    //else
-                    //    edgeContact.CorrectedNormal = contact.Normal;
-                    edgeContacts.Add(ref edgeContact);
+                    sets.EdgeContacts.Add(ref edgeContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.B);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.B);
+                    sets.BlockedVertexRegions.Add(indices.C);
                     break;
                 case VoronoiRegion.BC:
                     //Add the contact.
+                    GetNormal(ref contact.Normal, pairTester.triangle, out edgeContact.CorrectedNormal);
                     edgeContact.Edge = new Edge(indices.B, indices.C);
                     edgeContact.ContactData = contact;
                     edgeContact.ShouldCorrect = pairTester.ShouldCorrectContactNormal;
-                    //if (edgeContact.ShouldCorrect)
-                    GetNormal(ref contact.Normal, out edgeContact.CorrectedNormal);
-                    //else
-                    //    edgeContact.CorrectedNormal = contact.Normal;
-                    edgeContacts.Add(ref edgeContact);
+                    sets.EdgeContacts.Add(ref edgeContact);
 
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.B);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.B);
+                    sets.BlockedVertexRegions.Add(indices.C);
                     break;
                 default:
                     //Block all of the other voronoi regions.
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.B));
-                    blockedEdgeRegions.Add(new Edge(indices.B, indices.C));
-                    blockedEdgeRegions.Add(new Edge(indices.A, indices.C));
-                    blockedVertexRegions.Add(indices.A);
-                    blockedVertexRegions.Add(indices.B);
-                    blockedVertexRegions.Add(indices.C);
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.B));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.B, indices.C));
+                    sets.BlockedEdgeRegions.Add(new Edge(indices.A, indices.C));
+                    sets.BlockedVertexRegions.Add(indices.A);
+                    sets.BlockedVertexRegions.Add(indices.B);
+                    sets.BlockedVertexRegions.Add(indices.C);
                     //Should add the contact.
                     return true;
             }
@@ -571,19 +590,19 @@ namespace BEPUphysics.CollisionTests.Manifolds
         }
 
 
-        private bool IsContactUnique(ref ContactData contactCandidate)
+        private bool IsContactUnique(ref ContactData contactCandidate, ref QuickList<ContactData> candidatesToAdd)
         {
-
+            contactCandidate.Validate();
             float distanceSquared;
             RigidTransform meshTransform = MeshTransform;
-            for (int i = 0; i < contacts.count; i++)
+            for (int i = 0; i < contacts.Count; i++)
             {
-                Vector3Ex.DistanceSquared(ref contacts.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
+                Vector3.DistanceSquared(ref contacts.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
                 if (distanceSquared < CollisionDetectionSettings.ContactMinimumSeparationDistanceSquared)
                 {
                     //This is a nonconvex manifold.  There will be times where a an object will be shoved into a corner such that
                     //a single position will have two reasonable normals.  If the normals aren't mostly aligned, they should NOT be considered equivalent.
-                    Vector3Ex.Dot(ref contacts.Elements[i].Normal, ref contactCandidate.Normal, out distanceSquared);
+                    Vector3.Dot(ref contacts.Elements[i].Normal, ref contactCandidate.Normal, out distanceSquared);
                     if (Math.Abs(distanceSquared) >= CollisionDetectionSettings.nonconvexNormalDotMinimum)
                     {
                         //Update the existing 'redundant' contact with the new information.
@@ -598,21 +617,21 @@ namespace BEPUphysics.CollisionTests.Manifolds
                     }
                 }
             }
-            for (int i = 0; i < candidatesToAdd.count; i++)
+            for (int i = 0; i < candidatesToAdd.Count; i++)
             {
-                Vector3Ex.DistanceSquared(ref candidatesToAdd.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
+                Vector3.DistanceSquared(ref candidatesToAdd.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
                 if (distanceSquared < CollisionDetectionSettings.ContactMinimumSeparationDistanceSquared)
                 {
                     //This is a nonconvex manifold.  There will be times where a an object will be shoved into a corner such that
                     //a single position will have two reasonable normals.  If the normals aren't mostly aligned, they should NOT be considered equivalent.
-                    Vector3Ex.Dot(ref candidatesToAdd.Elements[i].Normal, ref contactCandidate.Normal, out distanceSquared);
+                    Vector3.Dot(ref candidatesToAdd.Elements[i].Normal, ref contactCandidate.Normal, out distanceSquared);
                     if (Math.Abs(distanceSquared) >= CollisionDetectionSettings.nonconvexNormalDotMinimum)
                         return false;
                 }
             }
             //for (int i = 0; i < edgeContacts.count; i++)
             //{
-            //    Vector3Ex.DistanceSquared(ref edgeContacts.Elements[i].ContactData.Position, ref contactCandidate.Position, out distanceSquared);
+            //    Vector3.DistanceSquared(ref edgeContacts.Elements[i].ContactData.Position, ref contactCandidate.Position, out distanceSquared);
             //    if (distanceSquared < CollisionDetectionSettings.ContactMinimumSeparationDistanceSquared)
             //    {
             //        return false;
@@ -620,7 +639,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
             //}
             //for (int i = 0; i < vertexContacts.count; i++)
             //{
-            //    Vector3Ex.DistanceSquared(ref vertexContacts.Elements[i].ContactData.Position, ref contactCandidate.Position, out distanceSquared);
+            //    Vector3.DistanceSquared(ref vertexContacts.Elements[i].ContactData.Position, ref contactCandidate.Position, out distanceSquared);
             //    if (distanceSquared < CollisionDetectionSettings.ContactMinimumSeparationDistanceSquared)
             //    {
             //        return false;
@@ -630,7 +649,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
         }
 
-        protected virtual void ProcessCandidates(RawValueList<ContactData> candidates)
+        protected virtual void ProcessCandidates(ref QuickList<ContactData> candidates)
         {
 
         }
@@ -642,14 +661,14 @@ namespace BEPUphysics.CollisionTests.Manifolds
         public override void CleanUp()
         {
             supplementData.Clear();
-            contacts.Clear();
             convex = null;
-            foreach (KeyValuePair<TriangleIndices, TrianglePairTester> pair in activePairTesters)
+            for (int i = activePairTesters.Count - 1; i >= 0; --i)
             {
-                pair.Value.CleanUp();
-                GiveBackTester(pair.Value);
+                activePairTesters.Values[i].CleanUp();
+                GiveBackTester(activePairTesters.Values[i]);
             }
-            activePairTesters.Clear();
+            activePairTesters.Dispose();
+            activePairTesters = new QuickDictionary<TriangleIndices, TrianglePairTester>(BufferPools<TriangleIndices>.Locking, BufferPools<TrianglePairTester>.Locking, BufferPools<int>.Locking, 3);
             CleanUpOverlappingTriangles();
             base.CleanUp();
         }
@@ -676,6 +695,11 @@ namespace BEPUphysics.CollisionTests.Manifolds
             public bool Equals(Edge edge)
             {
                 return (edge.A == A && edge.B == B) || (edge.A == B && edge.B == A);
+            }
+
+            public override string ToString()
+            {
+                return "{" + A + ", " + B + "}";
             }
         }
 

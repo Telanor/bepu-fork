@@ -1,14 +1,14 @@
 ﻿using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 using System.Diagnostics;
 using System;
-using BEPUphysics.DataStructures;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.BroadPhaseSystems;
 using BEPUphysics.BroadPhaseSystems.Hierarchies;
-using BEPUphysics.Threading;
-using SharpDX;
+using BEPUutilities.Threading;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -47,18 +47,18 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             for (int i = 0; i < reruns; i++)
             {
                 GC.Collect();
-                var threadManager = new SpecializedThreadManager();
+                var looper = new ParallelLooper();
 
 
 
                 //Try different thread counts.
                 for (int j = 0; j < coreCountMax; j++)
                 {
-                    threadManager.AddThread();
+                    looper.AddThread();
                     //Try different split levels.);
                     for (int k = 0; k <= splitOffsetMax; k++)
                     {
-                        testResults[j, k] += RunTest(k, threadManager);
+                        testResults[j, k] += RunTest(k, looper);
                         GC.Collect();
                     }
                 }
@@ -120,24 +120,24 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
         }
 
-        double RunTest(int splitOffset, IThreadManager threadManager)
+        double RunTest(int splitOffset, IParallelLooper parallelLooper)
         {
             Entity toAdd;
             //BoundingBox box = new BoundingBox(new Vector3(-5, 1, 1), new Vector3(5, 7, 7));
             BoundingBox box = new BoundingBox(new Vector3(-500, -500, -500), new Vector3(500, 500, 500));
 
-            int splitDepth = splitOffset + (int)Math.Ceiling(Math.Log(threadManager.ThreadCount, 2));
+            int splitDepth = splitOffset + (int)Math.Ceiling(Math.Log(parallelLooper.ThreadCount, 2));
 
-            DynamicHierarchy dh = new DynamicHierarchy(threadManager);
+            DynamicHierarchy dh = new DynamicHierarchy(parallelLooper);
 
             Random rand = new Random(0);
 
             RawList<Entity> entities = new RawList<Entity>();
             for (int k = 0; k < 10000; k++)
             {
-                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
+                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
                 toAdd = new Box(position, 1, 1, 1, 1);
                 toAdd.CollisionInformation.CollisionRules.Personal = CollisionRule.NoNarrowPhasePair;
                 toAdd.CollisionInformation.UpdateBoundingBox(0);
@@ -274,9 +274,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     {
                         rays.Add(new Ray()
                         {
-                            Position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z)),
+                            Position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z)),
                             Direction = Vector3.Normalize(new Vector3((float)(rand.NextDouble() - .5), (float)(rand.NextDouble() - .5), (float)(rand.NextDouble() - .5)))
                         });
                     }
@@ -305,13 +305,13 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     Vector3 offset = new Vector3(boundingBoxSize / 2, boundingBoxSize / 2, boundingBoxSize / 2);
                     for (int i = 0; i < numRuns; i++)
                     {
-                        Vector3 center = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                                     (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                                     (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
+                        Vector3 center = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                                     (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                                     (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
                         boundingBoxes.Add(new BoundingBox()
                         {
-                            Minimum = center - offset,
-                            Maximum = center + offset
+                            Min = center - offset,
+                            Max = center + offset
                         });
                     }
 

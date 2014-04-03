@@ -1,11 +1,10 @@
-﻿using BEPUphysics.Entities;
+﻿using System;
+using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.UpdateableSystems.ForceFields;
 using BEPUphysicsDemos.SampleCode;
-using System.Collections.Generic;
 using BEPUphysics.NarrowPhaseSystems;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -14,6 +13,7 @@ namespace BEPUphysicsDemos.Demos
     /// </summary>
     public class PlanetDemo : StandardDemo
     {
+        private Vector3 planetPosition;
         /// <summary>
         /// Constructs a new demo.
         /// </summary>
@@ -26,7 +26,8 @@ namespace BEPUphysicsDemos.Demos
             //By pre-allocating a bunch of box-box pair handlers, the simulation will avoid having to allocate new ones at runtime.
             NarrowPhaseHelper.Factories.BoxBox.EnsureCount(1000);
 
-            var planet = new Sphere(new Vector3(0, 0, 0), 30);
+            planetPosition = new Vector3(0, 0, 0);
+            var planet = new Sphere(planetPosition, 30);
             Space.Add(planet);
 
             var field = new GravitationalField(new InfiniteForceFieldShape(), planet.Position, 66730 / 2f, 100);
@@ -48,7 +49,10 @@ namespace BEPUphysicsDemos.Demos
                         toAdd.AngularDamping = 0;
                         Space.Add(toAdd);
                     }
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 0, 150);
+            game.Camera.Position = new Vector3(0, 0, 150);
+
+
+
         }
 
         /// <summary>
@@ -58,5 +62,28 @@ namespace BEPUphysicsDemos.Demos
         {
             get { return "Planet"; }
         }
+
+        public override void Update(float dt)
+        {
+            //Orient the character and camera as needed.
+            if (character.IsActive)
+            {
+                var down = planetPosition - character.CharacterController.Body.Position;
+                character.CharacterController.Down = down;
+                Game.Camera.LockedUp = -down;
+            }
+            else if (vehicle.IsActive)
+            {
+                Game.Camera.LockedUp = vehicle.Vehicle.Body.Position - planetPosition;
+            }
+            else
+            {
+                Game.Camera.LockedUp = Vector3.Up;
+            }
+
+            base.Update(dt);
+        }
+
+
     }
 }

@@ -1,10 +1,10 @@
 ﻿using System;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 using BEPUphysics.Materials;
-using BEPUphysics.Collidables;
+using BEPUphysics.BroadPhaseEntries;
 
 namespace BEPUphysics.Vehicle
 {
@@ -139,7 +139,7 @@ namespace BEPUphysics.Vehicle
             {
                 localForwardDirection = Vector3.Normalize(value);
                 if (vehicle != null)
-                    Matrix3X3.Transform(ref localForwardDirection, ref Vehicle.Body.orientationMatrix, out worldForwardDirection);
+                    Matrix3x3.Transform(ref localForwardDirection, ref Vehicle.Body.orientationMatrix, out worldForwardDirection);
                 else
                     worldForwardDirection = localForwardDirection;
             }
@@ -154,13 +154,21 @@ namespace BEPUphysics.Vehicle
             set
             {
                 if (shape != null)
+                {
+                    //if the vehicle is already in the space, replacing the shape removes the existing shape from the space.
+                    if (vehicle != null && vehicle.space != null)
+                        shape.OnRemovalFromSpace(vehicle.space);
                     shape.Wheel = null;
+                }
                 if (value != null)
                 {
                     if (value.Wheel == null)
                     {
                         value.Wheel = this;
                         value.Initialize();
+                        //If the vehicle is already in the space, replacing the shape adds the new shape to the space.
+                        if (vehicle != null && vehicle.space != null)
+                            value.OnAdditionToSpace(vehicle.space);
                     }
                     else
                         throw new InvalidOperationException("Can't use a wheel shape object that already belongs to another wheel.");
@@ -282,7 +290,7 @@ namespace BEPUphysics.Vehicle
                 {
                     Quaternion conjugate;
                     Quaternion.Conjugate(ref Vehicle.Body.orientation, out conjugate);
-                    Vector3.Transform(ref worldForwardDirection, ref conjugate, out localForwardDirection);
+                    Quaternion.Transform(ref worldForwardDirection, ref conjugate, out localForwardDirection);
                 }
                 else
                     localForwardDirection = worldForwardDirection;
@@ -292,9 +300,9 @@ namespace BEPUphysics.Vehicle
 
         internal void PreStep(float dt)
         {
-            Matrix.RotationAxis(ref suspension.localDirection, shape.steeringAngle, out shape.steeringTransform);
-            Vector3.TransformNormal(ref localForwardDirection, ref shape.steeringTransform, out worldForwardDirection);
-            Matrix3X3.Transform(ref worldForwardDirection, ref Vehicle.Body.orientationMatrix, out worldForwardDirection);
+            Matrix.CreateFromAxisAngle(ref suspension.localDirection, shape.steeringAngle, out shape.steeringTransform);
+            Matrix.TransformNormal(ref localForwardDirection, ref shape.steeringTransform, out worldForwardDirection);
+            Matrix3x3.Transform(ref worldForwardDirection, ref Vehicle.Body.orientationMatrix, out worldForwardDirection);
             if (HasSupport)
             {
                 Vector3.Subtract(ref supportLocation, ref Vehicle.Body.position, out ra);
@@ -359,11 +367,11 @@ namespace BEPUphysics.Vehicle
             int numActiveConstraints = 0;
             if (suspension.isActive)
             {
-                if (++suspension.solverSettings.currentIterations <= suspension.solverSettings.maximumIterations)
+                if (++suspension.solverSettings.currentIterations <= suspension.solverSettings.maximumIterationCount)
                     if (Math.Abs(suspension.ApplyImpulse()) < suspension.solverSettings.minimumImpulse)
                     {
                         suspension.numIterationsAtZeroImpulse++;
-                        if (suspension.numIterationsAtZeroImpulse > suspension.solverSettings.minimumIterations)
+                        if (suspension.numIterationsAtZeroImpulse > suspension.solverSettings.minimumIterationCount)
                             suspension.isActive = false;
                         else
                         {
@@ -381,11 +389,11 @@ namespace BEPUphysics.Vehicle
             }
             if (slidingFriction.isActive)
             {
-                if (++slidingFriction.solverSettings.currentIterations <= suspension.solverSettings.maximumIterations)
+                if (++slidingFriction.solverSettings.currentIterations <= suspension.solverSettings.maximumIterationCount)
                     if (Math.Abs(slidingFriction.ApplyImpulse()) < slidingFriction.solverSettings.minimumImpulse)
                     {
                         slidingFriction.numIterationsAtZeroImpulse++;
-                        if (slidingFriction.numIterationsAtZeroImpulse > slidingFriction.solverSettings.minimumIterations)
+                        if (slidingFriction.numIterationsAtZeroImpulse > slidingFriction.solverSettings.minimumIterationCount)
                             slidingFriction.isActive = false;
                         else
                         {
@@ -403,11 +411,11 @@ namespace BEPUphysics.Vehicle
             }
             if (drivingMotor.isActive)
             {
-                if (++drivingMotor.solverSettings.currentIterations <= suspension.solverSettings.maximumIterations)
+                if (++drivingMotor.solverSettings.currentIterations <= suspension.solverSettings.maximumIterationCount)
                     if (Math.Abs(drivingMotor.ApplyImpulse()) < drivingMotor.solverSettings.minimumImpulse)
                     {
                         drivingMotor.numIterationsAtZeroImpulse++;
-                        if (drivingMotor.numIterationsAtZeroImpulse > drivingMotor.solverSettings.minimumIterations)
+                        if (drivingMotor.numIterationsAtZeroImpulse > drivingMotor.solverSettings.minimumIterationCount)
                             drivingMotor.isActive = false;
                         else
                         {
@@ -425,11 +433,11 @@ namespace BEPUphysics.Vehicle
             }
             if (brake.isActive)
             {
-                if (++brake.solverSettings.currentIterations <= suspension.solverSettings.maximumIterations)
+                if (++brake.solverSettings.currentIterations <= suspension.solverSettings.maximumIterationCount)
                     if (Math.Abs(brake.ApplyImpulse()) < brake.solverSettings.minimumImpulse)
                     {
                         brake.numIterationsAtZeroImpulse++;
-                        if (brake.numIterationsAtZeroImpulse > brake.solverSettings.minimumIterations)
+                        if (brake.numIterationsAtZeroImpulse > brake.solverSettings.minimumIterationCount)
                             brake.isActive = false;
                         else
                         {
@@ -455,28 +463,25 @@ namespace BEPUphysics.Vehicle
                 suspension.currentLength = suspension.restLength;
         }
 
-        internal void OnAdditionToSpace(ISpace space)
+        internal void OnAdditionToSpace(Space space)
         {
             //Make sure it doesn't collide with anything.
 
             shape.OnAdditionToSpace(space);
-            shape.UpdateDetectorPosition(); //Need to put the detectors in appropriate locations before adding since otherwise overloads the broadphase
-            space.Add(shape.detector);
+
         }
 
 
 
-        internal void OnRemovalFromSpace(ISpace space)
+        internal void OnRemovalFromSpace(Space space)
         {
-            space.Remove(shape.detector);
-
             shape.OnRemovalFromSpace(space);
         }
 
         internal void OnAddedToVehicle(Vehicle vehicle)
         {
             this.vehicle = vehicle;
-            ISpace space = (vehicle as ISpaceUpdateable).Space;
+            Space space = (vehicle as ISpaceUpdateable).Space;
             if (space != null)
             {
                 OnAdditionToSpace(space);
@@ -487,7 +492,7 @@ namespace BEPUphysics.Vehicle
 
         internal void OnRemovedFromVehicle()
         {
-            ISpace space = (vehicle as ISpaceUpdateable).Space;
+            Space space = (vehicle as ISpaceUpdateable).Space;
             if (space != null)
             {
                 OnRemovalFromSpace(space);

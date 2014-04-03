@@ -2,8 +2,7 @@
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using System.Diagnostics;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -48,7 +47,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     }
 
             Space.Add(new Box(new Vector3(0, 0, 0), 20, 1f, 20));
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 3, 10);
+            game.Camera.Position = new Vector3(0, 3, 10);
         }
 
         public override void Update(float dt)

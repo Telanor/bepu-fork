@@ -1,5 +1,5 @@
-﻿using BEPUphysics.MathExtensions;
-using SharpDX;
+﻿using BEPUutilities;
+ 
 using BEPUphysics.DataStructures;
 
 namespace BEPUphysics.CollisionShapes

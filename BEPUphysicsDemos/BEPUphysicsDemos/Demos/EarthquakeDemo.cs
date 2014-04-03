@@ -2,8 +2,7 @@
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.Materials;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -30,71 +29,71 @@ namespace BEPUphysicsDemos.Demos
             //Create a big mess of DistanceJoints representing springs.
 
             var distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, -9), new Vector3(9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 3000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 3000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, -9), new Vector3(-9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 3000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 3000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, -9), new Vector3(9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 3000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 3000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, -9), new Vector3(-9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 3000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 3000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
 
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, 9), new Vector3(9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, 9), new Vector3(-9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, 9), new Vector3(9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, 9), new Vector3(-9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
 
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, -9), new Vector3(9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, -9), new Vector3(9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, 9), new Vector3(9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(9, .5f, 9), new Vector3(9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
 
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, -9), new Vector3(-9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, -9), new Vector3(-9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, 9), new Vector3(-9, 3.5f, -9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
             distanceJoint = new DistanceJoint(ground, platform, new Vector3(-9, .5f, 9), new Vector3(-9, 3.5f, 9));
-            distanceJoint.SpringSettings.StiffnessConstant = 6000;
-            distanceJoint.SpringSettings.DampingConstant = 0;
+            distanceJoint.SpringSettings.Stiffness = 6000;
+            distanceJoint.SpringSettings.Damping = 0;
             Space.Add(distanceJoint);
 
             int numBlocksTall = 10; //How many 'stories' tall.
@@ -134,7 +133,7 @@ namespace BEPUphysicsDemos.Demos
                 }
             }
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 7, 30);
+            game.Camera.Position = new Vector3(0, 7, 30);
         }
 
         /// <summary>

@@ -1,13 +1,11 @@
 ﻿using System;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.MathExtensions;
-using SharpDX;
-using BEPUphysics.DataStructures;
+using BEPUutilities;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.Settings;
-using BEPUphysics.ResourceManagement;
-using System.Diagnostics;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.Manifolds
 {
@@ -81,11 +79,25 @@ namespace BEPUphysics.CollisionTests.Manifolds
             ContactData contact;
             if (pairTester.GenerateContactCandidate(out contact))
             {
+                //Eliminate any old contacts which have normals which would fight with this new contact.
+                for (int i = 0; i < contacts.Count; ++i)
+                {
+                    float normalDot;
+                    Vector3.Dot(ref contacts.Elements[i].Normal, ref contact.Normal, out normalDot);
+                    if (normalDot < 0)
+                    {
+                        Remove(i);
+                        break;
+                    }
+                }
 
+                //If a contact is unique, add it to the manifold separately.
+                //If it is redundant, it will be used to update an existing contact... within the IsContactUnique call.
+                //In other words: THIS FUNCTION HAS IMPORTANT SNEAKY SIDE EFFECTS.
                 if (IsContactUnique(ref contact))
                 {
                     //Check if adding the new contact would overflow the manifold.
-                    if (contacts.count == 4)
+                    if (contacts.Count == 4)
                     {
                         //Adding that contact would overflow the manifold.  Reduce to the best subset.
                         bool addCandidate;
@@ -104,7 +116,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
             else
             {
                 //No collision, clean out the manifold.
-                for (int i = contacts.count - 1; i >= 0; i--)
+                for (int i = contacts.Count - 1; i >= 0; i--)
                 {
                     Remove(i);
                 }
@@ -132,10 +144,11 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
         private bool IsContactUnique(ref ContactData contactCandidate)
         {
-            for (int i = 0; i < contacts.count; i++)
+            contactCandidate.Validate();
+            for (int i = 0; i < contacts.Count; i++)
             {
                 float distanceSquared;
-                Vector3Ex.DistanceSquared(ref contacts.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
+                Vector3.DistanceSquared(ref contacts.Elements[i].Position, ref contactCandidate.Position, out distanceSquared);
                 if (distanceSquared < CollisionDetectionSettings.ContactMinimumSeparationDistanceSquared)
                 {
                     //Update the existing 'redundant' contact with the new information.
@@ -166,7 +179,7 @@ namespace BEPUphysics.CollisionTests.Manifolds
 
             if (collidableA == null || collidableB == null)
             {
-                throw new Exception("Inappropriate types used to initialize pair tester.");
+                throw new ArgumentException("Inappropriate types used to initialize pair tester.");
             }
         }
 
@@ -176,7 +189,6 @@ namespace BEPUphysics.CollisionTests.Manifolds
         public override void CleanUp()
         {
             supplementData.Clear();
-            contacts.Clear();
             collidableA = null;
             collidableB = null;
             pairTester.CleanUp();

@@ -6,7 +6,7 @@ namespace BEPUphysics.UpdateableSystems
     ///<summary>
     /// A class which is both a space updateable and a Solver Updateable.
     ///</summary>
-    public abstract class CombinedUpdateable : EntitySolverUpdateable, ISpaceUpdateable
+    public abstract class CombinedUpdateable : SolverUpdateable, ISpaceUpdateable
     {
         private bool isSequentiallyUpdated = true;
 
@@ -28,7 +28,7 @@ namespace BEPUphysics.UpdateableSystems
 
         /// <summary>
         /// Gets and sets whether or not the updateable should be updated sequentially even in a multithreaded space.
-        /// If this is true, the updateable can make use of the space's ThreadManager for internal multithreading.
+        /// If this is true, the updateable can make use of the space's ParallelLooper for internal multithreading.
         /// </summary>
         public bool IsUpdatedSequentially
         {
@@ -55,17 +55,6 @@ namespace BEPUphysics.UpdateableSystems
             set;
         }
 
-
-        ISpace ISpaceObject.Space
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Gets or sets the user data associated with this object.
-        /// </summary>
-        public new object Tag { get; set; }
 
         #endregion
 

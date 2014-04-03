@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+ 
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.Joints
 {
@@ -58,7 +58,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localHingeAxis = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localHingeAxis, ref connectionA.orientationMatrix, out worldHingeAxis);
+                Matrix3x3.Transform(ref localHingeAxis, ref connectionA.orientationMatrix, out worldHingeAxis);
             }
         }
 
@@ -71,7 +71,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localTwistAxis = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localTwistAxis, ref connectionB.orientationMatrix, out worldTwistAxis);
+                Matrix3x3.Transform(ref localTwistAxis, ref connectionB.orientationMatrix, out worldTwistAxis);
             }
         }
 
@@ -86,7 +86,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 worldHingeAxis = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionA.orientation, out conjugate);
-                Vector3.Transform(ref worldHingeAxis, ref conjugate, out localHingeAxis);
+                Quaternion.Transform(ref worldHingeAxis, ref conjugate, out localHingeAxis);
             }
         }
 
@@ -101,7 +101,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 worldTwistAxis = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionB.orientation, out conjugate);
-                Vector3.Transform(ref worldTwistAxis, ref conjugate, out localTwistAxis);
+                Quaternion.Transform(ref worldTwistAxis, ref conjugate, out localTwistAxis);
             }
         }
 
@@ -116,8 +116,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             {
                 float velocityA, velocityB;
                 //Find the velocity contribution from each connection
-                Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-                Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+                Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+                Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
                 return velocityA + velocityB;
             }
         }
@@ -196,8 +196,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         {
             float velocityA, velocityB;
             //Find the velocity contribution from each connection
-            Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-            Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+            Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+            Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
             //Add in the constraint space bias velocity
             float lambda = -(velocityA + velocityB) - biasVelocity - softness * accumulatedImpulse;
 
@@ -230,15 +230,15 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         public override void Update(float dt)
         {
             //Transform the axes into world space.
-            Matrix3X3.Transform(ref localHingeAxis, ref connectionA.orientationMatrix, out worldHingeAxis);
-            Matrix3X3.Transform(ref localTwistAxis, ref connectionB.orientationMatrix, out worldTwistAxis);
+            Matrix3x3.Transform(ref localHingeAxis, ref connectionA.orientationMatrix, out worldHingeAxis);
+            Matrix3x3.Transform(ref localTwistAxis, ref connectionB.orientationMatrix, out worldTwistAxis);
 
             //****** VELOCITY BIAS ******//
-            Vector3Ex.Dot(ref worldHingeAxis, ref worldTwistAxis, out error);
+            Vector3.Dot(ref worldHingeAxis, ref worldTwistAxis, out error);
             //Compute the correction velocity.
 
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
 
             biasVelocity = MathHelper.Clamp(error * errorReduction, -maxCorrectiveVelocity, maxCorrectiveVelocity);
 
@@ -260,8 +260,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             Vector3 transformedAxis;
             if (connectionA.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianA, out entryA);
+                Matrix3x3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianA, out entryA);
             }
             else
                 entryA = 0;
@@ -270,8 +270,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             float entryB;
             if (connectionB.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianB, out entryB);
+                Matrix3x3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianB, out entryB);
             }
             else
                 entryB = 0;

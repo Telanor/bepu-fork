@@ -1,9 +1,8 @@
 ﻿using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.CollisionShapes;
 using Microsoft.Xna.Framework.Graphics;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -109,7 +108,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
             Space.Add(new Box(new Vector3(0, -5, 0), 50, 1, 50));
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 10, 20);
+            game.Camera.Position = new Vector3(0, 10, 20);
 
         }
 

@@ -1,8 +1,9 @@
 ﻿using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.Threading;
+using BEPUutilities;
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.DataStructures;
+using BEPUutilities.DataStructures;
 using System;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.BroadPhaseSystems
 {
@@ -23,10 +24,10 @@ namespace BEPUphysics.BroadPhaseSystems
             Enabled = true;
         }
 
-        protected BroadPhase(IThreadManager threadManager)
+        protected BroadPhase(IParallelLooper parallelLooper)
             : this()
         {
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
         //TODO: Initial capacity?  Special collection type other than list due to structs? RawList? Clear at beginning of each frame?
@@ -55,7 +56,7 @@ namespace BEPUphysics.BroadPhaseSystems
             if (entry.BroadPhase == null)
                 entry.BroadPhase = this;
             else
-                throw new Exception("Cannot add entry; it already belongs to a broad phase.");
+                throw new ArgumentException("Cannot add entry; it already belongs to a broad phase.");
         }
 
         /// <summary>
@@ -67,7 +68,7 @@ namespace BEPUphysics.BroadPhaseSystems
             if (entry.BroadPhase == this)
                 entry.BroadPhase = null;
             else
-                throw new Exception("Cannot remove entry; it does not belong to this broad phase.");
+                throw new ArgumentException("Cannot remove entry; it does not belong to this broad phase.");
         }
 
         protected internal void AddOverlap(BroadPhaseOverlap overlap)

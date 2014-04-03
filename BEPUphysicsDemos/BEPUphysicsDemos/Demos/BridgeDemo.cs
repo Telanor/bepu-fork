@@ -2,10 +2,8 @@
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.Constraints.SolverGroups;
-using BEPUphysics.MathExtensions;
-using BEPUphysicsDemos.AlternateMovement.Character;
+using BEPUutilities;
 using ConversionHelper;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -37,22 +35,17 @@ namespace BEPUphysicsDemos.Demos
                 position = startPosition + offset * i;
                 Box link = new Box(position, 4.5f, .3f, 1.5f, 50);
                 Space.Add(link);
-                Space.Add(new RevoluteJoint(previousLink, link, position - offset * .5f, Vector3.UnitX));
+                Space.Add(new RevoluteJoint(previousLink, link, position - offset * .5f, Vector3.Right));
 
                 previousLink = link;
             }
             var endPlatform = new Box(position - new Vector3(0, 0, -4.8f), 8, .5f, 8);
             Space.Add(endPlatform);
 
-            Space.Add(new RevoluteJoint(previousLink, endPlatform, position + offset * .5f, Vector3.UnitX));
-
-		  var controller = new CharacterController(position + offset + new Vector3(0, 1, 0), 2, 1.5f, 0.5f, 10);
-	        controller.Body.Orientation = Quaternion.RotationYawPitchRoll(MathUtil.DegreesToRadians(135), 0, 0);
-
-		   Space.Add(controller);
+            Space.Add(new RevoluteJoint(previousLink, endPlatform, position + offset * .5f, Vector3.Right));
 
 
-            game.Camera.Position = MathConverter.Convert(startPosition + new Vector3(0, 1, offset.Z * 200 + 5));
+            game.Camera.Position = startPosition + new Vector3(0, 1, offset.Z * 200 + 5);
         }
 
         /// <summary>

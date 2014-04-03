@@ -1,11 +1,10 @@
 ﻿using System;
-using BEPUphysics.Collidables;
+using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.UpdateableSystems.ForceFields;
 using BEPUphysicsDemos.SampleCode;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -25,7 +24,7 @@ namespace BEPUphysicsDemos.Demos
             : base(game)
         {
             shape = new BoundingBoxForceFieldShape(new BoundingBox(new Vector3(-100, -20, -40), new Vector3(-20, 120, 40)));
-            tornado = new Tornado(shape, (shape.BoundingBox.Minimum + shape.BoundingBox.Maximum) / 2, new Vector3(0, 1, 0),
+            tornado = new Tornado(shape, (shape.BoundingBox.Min + shape.BoundingBox.Max) / 2, new Vector3(0, 1, 0),
                                   150, false, 50, 10, 200, 200, 80, 2000, 40, 10);
             tornado.ForceWakeUp = true; //The tornado will be moving, so it should wake up things that it comes into contact with.
             Space.Add(tornado);
@@ -80,7 +79,7 @@ namespace BEPUphysicsDemos.Demos
                 new Vector3(-xLength * xSpacing / 2, 0, -zLength * zSpacing / 2)));
             Space.Add(terrain);
             game.ModelDrawer.Add(terrain);
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 60);
+            game.Camera.Position = new Vector3(0, 5, 60);
         }
 
         /// <summary>
@@ -96,7 +95,7 @@ namespace BEPUphysicsDemos.Demos
             //Move the origin of the force of the tornado,
             Vector3 increment = new Vector3(10, 0, 0) * dt;
             //Move the detection shape as well.
-            shape.BoundingBox = new BoundingBox(shape.BoundingBox.Minimum + increment, shape.BoundingBox.Maximum + increment);
+            shape.BoundingBox = new BoundingBox(shape.BoundingBox.Min + increment, shape.BoundingBox.Max + increment);
             tornado.Position += increment;
             base.Update(dt);
         }

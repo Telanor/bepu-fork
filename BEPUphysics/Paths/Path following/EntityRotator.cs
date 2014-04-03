@@ -3,8 +3,8 @@ using BEPUphysics.Constraints.SingleEntity;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Paths.PathFollowing
 {
@@ -85,12 +85,12 @@ namespace BEPUphysics.Paths.PathFollowing
             //Compute the relative orientation R' between R and the target relative orientation.
             Quaternion errorOrientation;
             Quaternion.Conjugate(ref start, out errorOrientation);
-            QuaternionEx.Multiply(ref end, ref errorOrientation, out errorOrientation);
+            Quaternion.Multiply(ref end, ref errorOrientation, out errorOrientation);
 
             Vector3 axis;
             float angle;
             //Turn this into an axis-angle representation.
-            Toolbox.GetAxisAngleFromQuaternion(ref errorOrientation, out axis, out angle);
+            Quaternion.GetAxisAngleFromQuaternion(ref errorOrientation, out axis, out angle);
             Vector3.Multiply(ref axis, angle / dt, out axis);
             return axis;
         }
@@ -98,7 +98,7 @@ namespace BEPUphysics.Paths.PathFollowing
         /// <summary>
         /// Adds the motors to the solver.  Called automatically.
         /// </summary>
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             newSpace.Add(AngularMotor);
         }
@@ -106,7 +106,7 @@ namespace BEPUphysics.Paths.PathFollowing
         /// <summary>
         /// Removes the motors from the solver.  Called automatically.
         /// </summary>
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             oldSpace.Remove(AngularMotor);
         }

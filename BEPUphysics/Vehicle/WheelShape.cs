@@ -1,11 +1,11 @@
 ﻿using System;
+using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using SharpDX;
+
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.Materials;
-using BEPUphysics.Collidables;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.Vehicle
 {
@@ -39,7 +39,7 @@ namespace BEPUphysics.Vehicle
 
         protected internal Matrix worldTransform;
 
-        CollisionRules collisionRules = new CollisionRules() { Group = CollisionRules.DefaultDynamicCollisionGroup};
+        CollisionRules collisionRules = new CollisionRules() { Group = CollisionRules.DefaultDynamicCollisionGroup };
         /// <summary>
         /// Gets or sets the collision rules used by the wheel.
         /// </summary>
@@ -165,16 +165,20 @@ namespace BEPUphysics.Vehicle
         public abstract void UpdateWorldTransform();
 
 
-        internal void OnAdditionToSpace(ISpace space)
+        internal void OnAdditionToSpace(Space space)
         {
             detector.CollisionInformation.collisionRules.Specific.Add(wheel.vehicle.Body.CollisionInformation.collisionRules, CollisionRule.NoBroadPhase);
             detector.CollisionInformation.collisionRules.Personal = CollisionRule.NoNarrowPhaseUpdate;
             detector.CollisionInformation.collisionRules.group = CollisionRules.DefaultDynamicCollisionGroup;
+            //Need to put the detectors in appropriate locations before adding, or else the broad phase would see objects at (0,0,0) and make things gross.
+            UpdateDetectorPosition();
+            space.Add(detector);
 
         }
 
-        internal void OnRemovalFromSpace(ISpace space)
+        internal void OnRemovalFromSpace(Space space)
         {
+            space.Remove(detector);
             detector.CollisionInformation.CollisionRules.Specific.Remove(wheel.vehicle.Body.CollisionInformation.collisionRules);
         }
 

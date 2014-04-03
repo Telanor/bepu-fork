@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.DataStructures;
-using SharpDX;
-using System.Runtime.InteropServices;
-using BEPUphysics.Threading;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.MathExtensions;
+using BEPUutilities.DataStructures;
+using BEPUutilities.ResourceManagement;
+using BEPUutilities;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.BroadPhaseSystems.Hierarchies
 {
@@ -36,9 +32,9 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
         /// <summary>
         /// Constructs a new dynamic hierarchy broad phase.
         /// </summary>
-        /// <param name="threadManager">Thread manager to use in the broad phase.</param>
-        public DynamicHierarchy(IThreadManager threadManager)
-            : base(threadManager)
+        /// <param name="parallelLooper">Parallel loop provider to use in the broad phase.</param>
+        public DynamicHierarchy(IParallelLooper parallelLooper)
+            : base(parallelLooper)
         {
             multithreadedRefit = MultithreadedRefit;
             multithreadedOverlap = MultithreadedOverlap;
@@ -51,10 +47,36 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
         /// Going above the tested core count theoretically benefits from a '0 if power of 2, 2 otherwise' rule of thumb.
         /// </summary>
         private int[] threadSplitOffsets = new[]
-#if !XBOX360
- { 0, 0, 4, 1, 2, 2, 2, 0, 2, 2, 2, 2 };
+#if WINDOWS
+        { 0, 0, 4, 1, 2, 2, 2, 0, 2, 2, 2, 2 };
 #else
         { 2, 2, 2, 1};
+#endif
+#if PROFILE
+        /// <summary>
+        /// Gets the time used in refitting the acceleration structure and making any necessary incremental improvements.
+        /// </summary>
+        public double RefitTime
+        {
+            get
+            {
+                return (endRefit - startRefit) / (double)Stopwatch.Frequency;
+            }
+        }
+        /// <summary>
+        /// Gets the time used in testing the tree against itself to find overlapping pairs. 
+        /// </summary>
+        public double OverlapTime
+        {
+            get
+            {
+                return (endOverlap - endRefit) / (double)Stopwatch.Frequency;
+            }
+        }
+        long startRefit, endRefit;
+        long endOverlap;
+
+
 #endif
 
         #region Multithreading
@@ -65,7 +87,7 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             {
                 root.CollectMultithreadingNodes(splitDepth, 1, multithreadingSourceNodes);
                 //Go through every node and refit it.
-                ThreadManager.ForLoop(0, multithreadingSourceNodes.count, multithreadedRefit);
+                ParallelLooper.ForLoop(0, multithreadingSourceNodes.Count, multithreadedRefit);
                 multithreadingSourceNodes.Clear();
                 //Now that the subtrees belonging to the source nodes are refit, refit the top nodes.
                 //Sometimes, this will go deeper than necessary because the refit process may require an extremely high level (nonmultithreaded) revalidation.
@@ -87,7 +109,7 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
                 if (!root.IsLeaf) //If the root is a leaf, it's alone- nothing to collide against! This test is required by the assumptions of the leaf-leaf test.
                 {
                     root.GetMultithreadedOverlaps(root, splitDepth, 1, this, multithreadingSourceOverlaps);
-                    ThreadManager.ForLoop(0, multithreadingSourceOverlaps.count, multithreadedOverlap);
+                    ParallelLooper.ForLoop(0, multithreadingSourceOverlaps.Count, multithreadedOverlap);
                     multithreadingSourceOverlaps.Clear();
                 }
             }
@@ -109,14 +131,21 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
                     //The depth to which we dive is offset by some precomputed values (when available) or a guess based on whether or not the 
                     //thread count is a power of 2.  Thread counts which are a power of 2 match well to the binary tree, while other thread counts
                     //require going deeper for better distributions.
-                    int offset = ThreadManager.ThreadCount <= threadSplitOffsets.Length
-                                     ? threadSplitOffsets[ThreadManager.ThreadCount - 1]
-                                     : (ThreadManager.ThreadCount & (ThreadManager.ThreadCount - 1)) == 0 ? 0 : 2;
-                    int splitDepth = offset + (int)Math.Ceiling(Math.Log(ThreadManager.ThreadCount, 2));
-
+                    int offset = ParallelLooper.ThreadCount <= threadSplitOffsets.Length
+                                     ? threadSplitOffsets[ParallelLooper.ThreadCount - 1]
+                                     : (ParallelLooper.ThreadCount & (ParallelLooper.ThreadCount - 1)) == 0 ? 0 : 2;
+                    int splitDepth = offset + (int)Math.Ceiling(Math.Log(ParallelLooper.ThreadCount, 2));
+#if PROFILE
+                    startRefit = Stopwatch.GetTimestamp();
+#endif
                     MultithreadedRefitPhase(splitDepth);
-
+#if PROFILE
+                    endRefit = Stopwatch.GetTimestamp();
+#endif
                     MultithreadedOverlapPhase(splitDepth);
+#if PROFILE
+                    endOverlap = Stopwatch.GetTimestamp();
+#endif
                 }
             }
 
@@ -164,8 +193,17 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
                 Overlaps.Clear();
                 if (root != null)
                 {
+#if PROFILE
+                    startRefit = Stopwatch.GetTimestamp();
+#endif
                     SingleThreadedRefitPhase();
+#if PROFILE
+                    endRefit = Stopwatch.GetTimestamp();
+#endif
                     SingleThreadedOverlapPhase();
+#if PROFILE
+                    endOverlap = Stopwatch.GetTimestamp();
+#endif
                 }
             }
         }
@@ -181,7 +219,7 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             base.Add(entry);
             //Entities do not set up their own bounding box before getting stuck in here.  If they're all zeroed out, the tree will be horrible.
             Vector3 offset;
-            Vector3.Subtract(ref entry.boundingBox.Maximum, ref entry.boundingBox.Minimum, out offset);
+            Vector3.Subtract(ref entry.boundingBox.Max, ref entry.boundingBox.Min, out offset);
             if (offset.X * offset.Y * offset.Z == 0)
                 entry.UpdateBoundingBox();
             //Could buffer additions to get a better construction in the tree.
@@ -198,9 +236,9 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
                     root.TryToInsert(node, out root);
                 else
                 {
-                    BoundingBoxEx.Merge(ref node.BoundingBox, ref root.BoundingBox, out root.BoundingBox);
+                    BoundingBox.CreateMerged(ref node.BoundingBox, ref root.BoundingBox, out root.BoundingBox);
                     var internalNode = (InternalNode)root;
-                    Vector3.Subtract(ref root.BoundingBox.Maximum, ref root.BoundingBox.Minimum, out offset);
+                    Vector3.Subtract(ref root.BoundingBox.Max, ref root.BoundingBox.Min, out offset);
                     internalNode.currentVolume = offset.X * offset.Y * offset.Z;
                     //internalNode.maximumVolume = internalNode.currentVolume * InternalNode.MaximumVolumeScale;
                     //The caller is responsible for the merge.

@@ -1,9 +1,7 @@
-﻿using System;
-using BEPUphysics.Entities;
+﻿using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.Materials;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -23,9 +21,9 @@ namespace BEPUphysicsDemos.Demos
             //It defaults to multiplicative, but for the purposes of this demo, we'll switch it to use the smaller friction and the larger bounciness.
             MaterialManager.MaterialBlender = delegate(Material a, Material b, out InteractionProperties properties)
                 {
-                    properties.KineticFriction = Math.Min(a.KineticFriction, b.KineticFriction);
-                    properties.StaticFriction = Math.Min(a.StaticFriction, b.StaticFriction);
-                    properties.Bounciness = Math.Max(a.Bounciness, b.Bounciness);
+                    properties.KineticFriction = MathHelper.Min(a.KineticFriction, b.KineticFriction);
+                    properties.StaticFriction = MathHelper.Min(a.StaticFriction, b.StaticFriction);
+                    properties.Bounciness = MathHelper.Max(a.Bounciness, b.Bounciness);
                 };
             //Special blenders can be defined between specific Material instances by adding entries to the MaterialManager.MaterialInteractions dictionary.
 
@@ -59,7 +57,7 @@ namespace BEPUphysicsDemos.Demos
             toAdd.Material = new Material(.5f, .5f, 0);
             toAdd.LinearVelocity = new Vector3(-5, 0, 0);
             Space.Add(toAdd);
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 2, 30);
+            game.Camera.Position = new Vector3(0, 2, 30);
         }
 
         /// <summary>
@@ -68,6 +66,12 @@ namespace BEPUphysicsDemos.Demos
         public override string Name
         {
             get { return "Bounciness and Friction"; }
+        }
+
+        public override void CleanUp()
+        {
+            MaterialManager.MaterialBlender = MaterialManager.DefaultMaterialBlender;
+            base.CleanUp();
         }
     }
 }

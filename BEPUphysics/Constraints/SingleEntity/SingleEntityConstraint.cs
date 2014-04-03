@@ -1,12 +1,12 @@
 using BEPUphysics.Entities;
-using BEPUphysics.DataStructures;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.Constraints.SingleEntity
 {
     /// <summary>
     /// Abstract superclass of constraints which control a single entity.
     /// </summary>
-    public abstract class SingleEntityConstraint : EntitySolverUpdateable
+    public abstract class SingleEntityConstraint : SolverUpdateable
     {
         /// <summary>
         /// Number of frames so far at effectively zero corrective impulse.

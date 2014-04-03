@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.DataStructures;
-using SharpDX;
-using System.Diagnostics;
-using BEPUphysics.Threading;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+using BEPUutilities.ResourceManagement;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
 {
@@ -58,9 +54,9 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         /// <summary>
         /// Constructs a grid-based sort and sweep broad phase.
         /// </summary>
-        /// <param name="threadManager">Thread manager to use for the broad phase.</param>
-        public Grid2DSortAndSweep(IThreadManager threadManager)
-            :base(threadManager)
+        /// <param name="parallelLooper">Parallel loop provider to use for the broad phase.</param>
+        public Grid2DSortAndSweep(IParallelLooper parallelLooper)
+            :base(parallelLooper)
         {
             updateEntry = UpdateEntry;
             updateCell = UpdateCell;
@@ -86,7 +82,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             base.Add(entry);
             //Entities do not set up their own bounding box before getting stuck in here.  If they're all zeroed out, the tree will be horrible.
             Vector3 offset;
-            Vector3.Subtract(ref entry.boundingBox.Maximum, ref entry.boundingBox.Minimum, out offset);
+            Vector3.Subtract(ref entry.boundingBox.Max, ref entry.boundingBox.Min, out offset);
             if (offset.X * offset.Y * offset.Z == 0)
                 entry.UpdateBoundingBox();
             var newEntry = entryPool.Take();
@@ -110,7 +106,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         public override void Remove(BroadPhaseEntry entry)
         {
             base.Remove(entry);
-            for (int i = 0; i < entries.count; i++)
+            for (int i = 0; i < entries.Count; i++)
             {
                 if (entries.Elements[i].item == entry)
                 {
@@ -138,9 +134,9 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             {
                 Overlaps.Clear();
                 //Update the entries!
-                ThreadManager.ForLoop(0, entries.count, updateEntry);
+                ParallelLooper.ForLoop(0, entries.Count, updateEntry);
                 //Update the cells!
-                ThreadManager.ForLoop(0, cellSet.count, updateCell);
+                ParallelLooper.ForLoop(0, cellSet.count, updateCell);
             }
         }
 
@@ -150,13 +146,13 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             {
                 Overlaps.Clear();
                 //Update the placement of objects.
-                for (int i = 0; i < entries.count; i++)
+                for (int i = 0; i < entries.Count; i++)
                 {
                     //Compute the current cells occupied by the entry.
                     var entry = entries.Elements[i];
                     Int2 min, max;
-                    ComputeCell(ref entry.item.boundingBox.Minimum, out min);
-                    ComputeCell(ref entry.item.boundingBox.Maximum, out max);
+                    ComputeCell(ref entry.item.boundingBox.Min, out min);
+                    ComputeCell(ref entry.item.boundingBox.Max, out max);
                     //For any cell that used to be occupied (defined by the previous min/max),
                     //remove the entry.
                     for (int j = entry.previousMin.Y; j <= entry.previousMax.Y; j++)
@@ -205,8 +201,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             //Compute the current cells occupied by the entry.
             var entry = entries.Elements[i];
             Int2 min, max;
-            ComputeCell(ref entry.item.boundingBox.Minimum, out min);
-            ComputeCell(ref entry.item.boundingBox.Maximum, out max);
+            ComputeCell(ref entry.item.boundingBox.Min, out min);
+            ComputeCell(ref entry.item.boundingBox.Max, out max);
             //For any cell that used to be occupied (defined by the previous min/max),
             //remove the entry.
             for (int j = entry.previousMin.Y; j <= entry.previousMax.Y; j++)

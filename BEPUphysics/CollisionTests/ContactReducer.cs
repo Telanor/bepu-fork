@@ -1,7 +1,7 @@
 ﻿using System;
-using BEPUphysics.DataStructures;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+
 
 namespace BEPUphysics.CollisionTests
 {
@@ -19,13 +19,13 @@ namespace BEPUphysics.CollisionTests
         ///<param name="contactsToRemove">Contacts that need to removed to reach the reduced state.</param>
         ///<param name="toAdd">Contact candidates that should be added to reach the reduced state.</param>
         ///<exception cref="InvalidOperationException">Thrown when the set being reduced is empty.</exception>
-        public static void ReduceContacts(RawList<Contact> contacts, RawValueList<ContactData> contactCandidates, RawList<int> contactsToRemove, RawValueList<ContactData> toAdd)
+        public static void ReduceContacts(RawList<Contact> contacts, ref QuickList<ContactData> contactCandidates, RawList<int> contactsToRemove, ref QuickList<ContactData> toAdd)
         {
             //Find the deepest point of all contacts/candidates, as well as a compounded 'normal' vector.
             float maximumDepth = -float.MaxValue;
             int deepestIndex = -1;
             Vector3 normal = Toolbox.ZeroVector;
-            for (int i = 0; i < contacts.count; i++)
+            for (int i = 0; i < contacts.Count; i++)
             {
                 Vector3.Add(ref normal, ref contacts.Elements[i].Normal, out normal);
                 if (contacts.Elements[i].PenetrationDepth > maximumDepth)
@@ -34,20 +34,20 @@ namespace BEPUphysics.CollisionTests
                     maximumDepth = contacts.Elements[i].PenetrationDepth;
                 }
             }
-            for (int i = 0; i < contactCandidates.count; i++)
+            for (int i = 0; i < contactCandidates.Count; i++)
             {
                 Vector3.Add(ref normal, ref contactCandidates.Elements[i].Normal, out normal);
                 if (contactCandidates.Elements[i].PenetrationDepth > maximumDepth)
                 {
-                    deepestIndex = contacts.count + i;
+                    deepestIndex = contacts.Count + i;
                     maximumDepth = contactCandidates.Elements[i].PenetrationDepth;
                 }
             }
             //If the normals oppose each other, this can happen.  It doesn't need to be normalized, but having SOME normal is necessary.
             if (normal.LengthSquared() < Toolbox.Epsilon)
-                if (contacts.count > 0)
+                if (contacts.Count > 0)
                     normal = contacts.Elements[0].Normal;
-                else if (contactCandidates.count > 0)
+                else if (contactCandidates.Count > 0)
                     normal = contactCandidates.Elements[0].Normal; //This method is only called when there's too many contacts, so if contacts is empty, the candidates must NOT be empty.
                 else //This method should not have been called at all if it gets here.
                     throw new ArgumentException("Cannot reduce an empty contact set.");
@@ -55,43 +55,43 @@ namespace BEPUphysics.CollisionTests
 
             //Find the contact (candidate) that is furthest away from the deepest contact (candidate).
             Vector3 deepestPosition;
-            if (deepestIndex < contacts.count)
+            if (deepestIndex < contacts.Count)
                 deepestPosition = contacts.Elements[deepestIndex].Position;
             else
-                deepestPosition = contactCandidates.Elements[deepestIndex - contacts.count].Position;
+                deepestPosition = contactCandidates.Elements[deepestIndex - contacts.Count].Position;
             float distanceSquared;
             float furthestDistance = 0;
             int furthestIndex = -1;
-            for (int i = 0; i < contacts.count; i++)
+            for (int i = 0; i < contacts.Count; i++)
             {
-                Vector3Ex.DistanceSquared(ref contacts.Elements[i].Position, ref deepestPosition, out distanceSquared);
+                Vector3.DistanceSquared(ref contacts.Elements[i].Position, ref deepestPosition, out distanceSquared);
                 if (distanceSquared > furthestDistance)
                 {
                     furthestDistance = distanceSquared;
                     furthestIndex = i;
                 }
             }
-            for (int i = 0; i < contactCandidates.count; i++)
+            for (int i = 0; i < contactCandidates.Count; i++)
             {
-                Vector3Ex.DistanceSquared(ref contactCandidates.Elements[i].Position, ref deepestPosition, out distanceSquared);
+                Vector3.DistanceSquared(ref contactCandidates.Elements[i].Position, ref deepestPosition, out distanceSquared);
                 if (distanceSquared > furthestDistance)
                 {
                     furthestDistance = distanceSquared;
-                    furthestIndex = contacts.count + i;
+                    furthestIndex = contacts.Count + i;
                 }
             }
             if (furthestIndex == -1)
             {
                 //Either this method was called when it shouldn't have been, or all contacts and contact candidates are at the same location.
-                if (contacts.count > 0)
+                if (contacts.Count > 0)
                 {
-                    for (int i = 1; i < contacts.count; i++)
+                    for (int i = 1; i < contacts.Count; i++)
                     {
                         contactsToRemove.Add(i);
                     }
                     return;
                 }
-                if (contactCandidates.count > 0)
+                if (contactCandidates.Count > 0)
                 {
                     toAdd.Add(ref contactCandidates.Elements[0]);
                     return;
@@ -100,10 +100,10 @@ namespace BEPUphysics.CollisionTests
 
             }
             Vector3 furthestPosition;
-            if (furthestIndex < contacts.count)
+            if (furthestIndex < contacts.Count)
                 furthestPosition = contacts.Elements[furthestIndex].Position;
             else
-                furthestPosition = contactCandidates.Elements[furthestIndex - contacts.count].Position;
+                furthestPosition = contactCandidates.Elements[furthestIndex - contacts.Count].Position;
             Vector3 xAxis;
             Vector3.Subtract(ref deepestPosition, ref furthestPosition, out xAxis);
 
@@ -115,10 +115,10 @@ namespace BEPUphysics.CollisionTests
             float minYAxisDot = float.MaxValue, maxYAxisDot = -float.MaxValue;
             int minYAxisIndex = -1, maxYAxisIndex = -1;
 
-            for (int i = 0; i < contacts.count; i++)
+            for (int i = 0; i < contacts.Count; i++)
             {
                 float dot;
-                Vector3Ex.Dot(ref contacts.Elements[i].Position, ref yAxis, out dot);
+                Vector3.Dot(ref contacts.Elements[i].Position, ref yAxis, out dot);
                 if (dot < minYAxisDot)
                 {
                     minYAxisIndex = i;
@@ -131,18 +131,18 @@ namespace BEPUphysics.CollisionTests
                 }
 
             }
-            for (int i = 0; i < contactCandidates.count; i++)
+            for (int i = 0; i < contactCandidates.Count; i++)
             {
                 float dot;
-                Vector3Ex.Dot(ref contactCandidates.Elements[i].Position, ref yAxis, out dot);
+                Vector3.Dot(ref contactCandidates.Elements[i].Position, ref yAxis, out dot);
                 if (dot < minYAxisDot)
                 {
-                    minYAxisIndex = i + contacts.count;
+                    minYAxisIndex = i + contacts.Count;
                     minYAxisDot = dot;
                 }
                 if (dot > maxYAxisDot)
                 {
-                    maxYAxisIndex = i + contacts.count;
+                    maxYAxisIndex = i + contacts.Count;
                     maxYAxisDot = dot;
                 }
 
@@ -160,16 +160,16 @@ namespace BEPUphysics.CollisionTests
             //-Contact candidates do not repeat with contacts.
             //-Contact candidates are added if they match any of the indices.
 
-            for (int i = 0; i < contactCandidates.count; i++)
+            for (int i = 0; i < contactCandidates.Count; i++)
             {
-                int totalIndex = i + contacts.count;
+                int totalIndex = i + contacts.Count;
                 if (totalIndex == deepestIndex || totalIndex == furthestIndex || totalIndex == minYAxisIndex || totalIndex == maxYAxisIndex)
                 {
                     //This contact is present in the new manifold.  Add it.
                     toAdd.Add(ref contactCandidates.Elements[i]);
                 }
             }
-            for (int i = 0; i < contacts.count; i++)
+            for (int i = 0; i < contacts.Count; i++)
             {
                 if (!(i == deepestIndex || i == furthestIndex || i == minYAxisIndex || i == maxYAxisIndex))
                 {
@@ -181,6 +181,8 @@ namespace BEPUphysics.CollisionTests
 
 
         }
+
+        
 
 
         //This works in the specific case of 4 contacts and 1 contact candidate.
@@ -194,23 +196,10 @@ namespace BEPUphysics.CollisionTests
         ///<exception cref="ArgumentException">Thrown when the contact manifold being reduced doesn't have 4 contacts.</exception>
         public static void ReduceContacts(RawList<Contact> contacts, ref ContactData contactCandidate, RawList<int> toRemove, out bool addCandidate)
         {
-            if (contacts.count != 4)
+            if (contacts.Count != 4)
                 throw new ArgumentException("Can only use this method to reduce contact lists with four contacts and a contact candidate.");
 
-            //addCandidate = true;
-            //float min = float.MaxValue;
-            //int minIndex = 3;
-            //for (int i = 0; i < 4; i++)
-            //{
-            //    if (contacts.Elements[i].PenetrationDepth < min)
-            //    {
-            //        min = contacts.Elements[i].PenetrationDepth;
-            //        minIndex = i;
-            //    }
-            //}
-            //toRemove.Add(minIndex);
-            //return;
-
+            
             //Find the deepest point of all contacts/candidates, as well as a compounded 'normal' vector.
             float maximumDepth = -float.MaxValue;
             int deepestIndex = -1;
@@ -239,7 +228,7 @@ namespace BEPUphysics.CollisionTests
             int furthestIndex = -1;
             for (int i = 0; i < 4; i++)
             {
-                Vector3Ex.DistanceSquared(ref contacts.Elements[i].Position, ref deepestPosition, out distanceSquared);
+                Vector3.DistanceSquared(ref contacts.Elements[i].Position, ref deepestPosition, out distanceSquared);
                 if (distanceSquared > furthestDistance)
                 {
                     furthestDistance = distanceSquared;
@@ -247,13 +236,13 @@ namespace BEPUphysics.CollisionTests
                 }
             }
 
-            Vector3Ex.DistanceSquared(ref contactCandidate.Position, ref deepestPosition, out distanceSquared);
+            Vector3.DistanceSquared(ref contactCandidate.Position, ref deepestPosition, out distanceSquared);
             if (distanceSquared > furthestDistance)
             {
                 furthestIndex = 4;
             }
             Vector3 furthestPosition;
-            if (furthestIndex < contacts.count)
+            if (furthestIndex < contacts.Count)
                 furthestPosition = contacts.Elements[furthestIndex].Position;
             else
                 furthestPosition = contactCandidate.Position;
@@ -271,7 +260,7 @@ namespace BEPUphysics.CollisionTests
             float dot;
             for (int i = 0; i < 4; i++)
             {
-                Vector3Ex.Dot(ref contacts.Elements[i].Position, ref yAxis, out dot);
+                Vector3.Dot(ref contacts.Elements[i].Position, ref yAxis, out dot);
                 if (dot < minYAxisDot)
                 {
                     minYAxisIndex = i;
@@ -284,7 +273,7 @@ namespace BEPUphysics.CollisionTests
                 }
 
             }
-            Vector3Ex.Dot(ref contactCandidate.Position, ref yAxis, out dot);
+            Vector3.Dot(ref contactCandidate.Position, ref yAxis, out dot);
             if (dot < minYAxisDot)
             {
                 minYAxisIndex = 4;

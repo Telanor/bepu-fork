@@ -1,9 +1,9 @@
 ﻿using System;
 using BEPUphysics.Constraints;
 using BEPUphysics.Entities;
-using SharpDX;
+ 
 using BEPUphysics.Materials;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.Vehicle
 {
@@ -32,7 +32,7 @@ namespace BEPUphysics.Vehicle
         /// <param name="usingKineticFriction">True if the friction coefficients passed into the blender are kinetic coefficients, false otherwise.</param>
         /// <param name="wheel">Wheel being blended.</param>
         /// <returns>Blended friction coefficient.</returns>
-        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKinematicFriction, Wheel wheel)
+        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKineticFriction, Wheel wheel)
         {
             return wheelFriction * materialFriction;
         }
@@ -93,7 +93,7 @@ namespace BEPUphysics.Vehicle
         public float KineticCoefficient
         {
             get { return kineticCoefficient; }
-            set { kineticCoefficient = Math.Max(value, 0); }
+            set { kineticCoefficient = MathHelper.Max(value, 0); }
         }
 
         /// <summary>
@@ -121,7 +121,7 @@ namespace BEPUphysics.Vehicle
         public float StaticCoefficient
         {
             get { return staticCoefficient; }
-            set { staticCoefficient = Math.Max(value, 0); }
+            set { staticCoefficient = MathHelper.Max(value, 0); }
         }
 
         /// <summary>

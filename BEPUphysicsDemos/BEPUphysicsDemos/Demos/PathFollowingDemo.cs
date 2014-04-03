@@ -3,8 +3,7 @@ using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.Paths;
 using BEPUphysics.Paths.PathFollowing;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -86,13 +85,12 @@ namespace BEPUphysicsDemos.Demos
 
             var slerpCurve = new QuaternionSlerpCurve();
             slerpCurve.ControlPoints.Add(0, Quaternion.Identity);
-            slerpCurve.ControlPoints.Add(1, Quaternion.RotationAxis(Vector3.UnitY, MathHelper.PiOver2));
-            slerpCurve.ControlPoints.Add(2, Quaternion.RotationAxis(Vector3.UnitY, MathHelper.Pi));
-            slerpCurve.ControlPoints.Add(3, Quaternion.RotationAxis(Vector3.UnitY, 3 * MathHelper.PiOver2));
+            slerpCurve.ControlPoints.Add(1, Quaternion.CreateFromAxisAngle(Vector3.Up, MathHelper.PiOver2));
+            slerpCurve.ControlPoints.Add(2, Quaternion.CreateFromAxisAngle(Vector3.Up, MathHelper.Pi));
+            slerpCurve.ControlPoints.Add(3, Quaternion.CreateFromAxisAngle(Vector3.Up, 3 * MathHelper.PiOver2));
             slerpCurve.ControlPoints.Add(4, Quaternion.Identity);
 
             slerpCurve.PostLoop = CurveEndpointBehavior.Mirror;
-
             orientationPath = slerpCurve;
 
 
@@ -127,7 +125,7 @@ namespace BEPUphysicsDemos.Demos
                                           2, 2, 2, 10));
                     }
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 30);
+            game.Camera.Position = new Vector3(0, 5, 30);
         }
 
         /// <summary>

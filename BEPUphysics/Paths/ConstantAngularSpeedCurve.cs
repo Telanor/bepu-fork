@@ -1,5 +1,5 @@
-﻿using SharpDX;
-using BEPUphysics.MathExtensions;
+﻿using BEPUutilities;
+
 
 namespace BEPUphysics.Paths
 {
@@ -33,8 +33,8 @@ namespace BEPUphysics.Paths
         protected override float GetDistance(Quaternion start, Quaternion end)
         {
             Quaternion.Conjugate(ref end, out end);
-            QuaternionEx.Multiply(ref end, ref start, out end);
-            return Toolbox.GetAngleFromQuaternion(ref end);
+            Quaternion.Multiply(ref end, ref start, out end);
+            return Quaternion.GetAngleFromQuaternion(ref end);
         }
     }
 }

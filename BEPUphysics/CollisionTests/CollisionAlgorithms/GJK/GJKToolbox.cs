@@ -1,7 +1,8 @@
 ﻿using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
+ 
 using BEPUphysics.Settings;
+using RigidTransform = BEPUutilities.RigidTransform;
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 {
@@ -73,7 +74,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                 //Since this is a boolean test, we don't need to refine the simplex if it becomes apparent that we cannot reach the origin.
                 //If the most extreme point at any given time does not go past the origin, then we can quit immediately.
                 float dot;
-                Vector3Ex.Dot(ref extremePoint, ref closestPoint, out dot); //extreme point dotted against the direction pointing backwards towards the CSO. 
+                Vector3.Dot(ref extremePoint, ref closestPoint, out dot); //extreme point dotted against the direction pointing backwards towards the CSO. 
                 if (dot > 0)
                 {
                     // If it's positive, that means that the direction pointing towards the origin produced an extreme point 'in front of' the origin, eliminating the possibility of any intersection.
@@ -198,21 +199,21 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             Vector3.Subtract(ref ray.Position, ref shapeTransform.Position, out ray.Position);
             Quaternion conjugate;
             Quaternion.Conjugate(ref shapeTransform.Orientation, out conjugate);
-            Vector3.Transform(ref ray.Position, ref conjugate, out ray.Position);
-            Vector3.Transform(ref ray.Direction, ref conjugate, out ray.Direction);
+            Quaternion.Transform(ref ray.Position, ref conjugate, out ray.Position);
+            Quaternion.Transform(ref ray.Direction, ref conjugate, out ray.Direction);
 
-            Vector3 w, p;
+            Vector3 extremePointToRayOrigin, extremePoint;
             hit.T = 0;
             hit.Location = ray.Position;
             hit.Normal = Toolbox.ZeroVector;
-            Vector3 v = hit.Location;
+            Vector3 closestOffset = hit.Location;
 
             RaySimplex simplex = new RaySimplex();
 
-            float vw, vdir;
+            float vw, closestPointDotDirection;
             int count = 0;
             //This epsilon has a significant impact on performance and accuracy.  Changing it to use BigEpsilon instead increases speed by around 30-40% usually, but jigging is more evident.
-            while (v.LengthSquared() >= Toolbox.Epsilon * simplex.GetErrorTolerance(ref ray.Position))
+            while (closestOffset.LengthSquared() >= Toolbox.Epsilon * simplex.GetErrorTolerance(ref ray.Position))
             {
                 if (++count > MaximumGJKIterations)
                 {
@@ -221,19 +222,22 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                     return false;
                 }
 
-                shape.GetLocalExtremePoint(v, out p);
+                shape.GetLocalExtremePoint(closestOffset, out extremePoint);
 
-                Vector3.Subtract(ref hit.Location, ref p, out w);
-                Vector3Ex.Dot(ref v, ref w, out vw);
+                Vector3.Subtract(ref hit.Location, ref extremePoint, out extremePointToRayOrigin);
+                Vector3.Dot(ref closestOffset, ref extremePointToRayOrigin, out vw);
+                //If the closest offset and the extreme point->ray origin direction point the same way,
+                //then we might be able to conservatively advance the point towards the surface.
                 if (vw > 0)
                 {
-                    Vector3Ex.Dot(ref v, ref ray.Direction, out vdir);
-                    if (vdir >= 0)
+                    
+                    Vector3.Dot(ref closestOffset, ref ray.Direction, out closestPointDotDirection);
+                    if (closestPointDotDirection >= 0)
                     {
                         hit = new RayHit();
                         return false;
                     }
-                    hit.T = hit.T - vw / vdir;
+                    hit.T = hit.T - vw / closestPointDotDirection;
                     if (hit.T > maximumLength)
                     {
                         //If we've gone beyond where the ray can reach, there's obviously no hit.
@@ -243,18 +247,19 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                     //Shift the ray up.
                     Vector3.Multiply(ref ray.Direction, hit.T, out hit.Location);
                     Vector3.Add(ref hit.Location, ref ray.Position, out hit.Location);
-                    hit.Normal = v;
+                    hit.Normal = closestOffset;
                 }
 
                 RaySimplex shiftedSimplex;
-                simplex.AddNewSimplexPoint(ref p, ref hit.Location, out shiftedSimplex);
+                simplex.AddNewSimplexPoint(ref extremePoint, ref hit.Location, out shiftedSimplex);
 
-                shiftedSimplex.GetPointClosestToOrigin(ref simplex, out v);
+                //Compute the offset from the simplex surface to the origin.
+                shiftedSimplex.GetPointClosestToOrigin(ref simplex, out closestOffset);
 
             }
             //Transform the hit data into world space.
-            Vector3.Transform(ref hit.Normal, ref shapeTransform.Orientation, out hit.Normal);
-            Vector3.Transform(ref hit.Location, ref shapeTransform.Orientation, out hit.Location);
+            Quaternion.Transform(ref hit.Normal, ref shapeTransform.Orientation, out hit.Normal);
+            Quaternion.Transform(ref hit.Location, ref shapeTransform.Orientation, out hit.Location);
             Vector3.Add(ref hit.Location, ref shapeTransform.Position, out hit.Location);
 
             return true;
@@ -296,12 +301,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             Quaternion conjugateOrientationA;
             Quaternion.Conjugate(ref transformA.Orientation, out conjugateOrientationA);
             Vector3 rayDirection;
-            Vector3.Transform(ref velocityWorld, ref conjugateOrientationA, out rayDirection);
+            Quaternion.Transform(ref velocityWorld, ref conjugateOrientationA, out rayDirection);
             //Transform b into a's local space.
             RigidTransform localTransformB;
-            QuaternionEx.Concatenate(ref transformB.Orientation, ref conjugateOrientationA, out localTransformB.Orientation);
+            Quaternion.Concatenate(ref transformB.Orientation, ref conjugateOrientationA, out localTransformB.Orientation);
             Vector3.Subtract(ref transformB.Position, ref transformA.Position, out localTransformB.Position);
-            Vector3.Transform(ref localTransformB.Position, ref conjugateOrientationA, out localTransformB.Position);
+            Quaternion.Transform(ref localTransformB.Position, ref conjugateOrientationA, out localTransformB.Position);
             
 
             Vector3 w, p;
@@ -329,10 +334,10 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                 MinkowskiToolbox.GetLocalMinkowskiExtremePoint(shapeA, shapeB, ref v, ref localTransformB, out p);
 
                 Vector3.Subtract(ref hit.Location, ref p, out w);
-                Vector3Ex.Dot(ref v, ref w, out vw);
+                Vector3.Dot(ref v, ref w, out vw);
                 if (vw > 0)
                 {
-                    Vector3Ex.Dot(ref v, ref rayDirection, out vdir);
+                    Vector3.Dot(ref v, ref rayDirection, out vdir);
                     if (vdir >= 0)
                     {
                         hit = new RayHit();
@@ -362,7 +367,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             } while (v.LengthSquared() >= Toolbox.Epsilon * simplex.GetErrorTolerance(ref Toolbox.ZeroVector));
             //This epsilon has a significant impact on performance and accuracy.  Changing it to use BigEpsilon instead increases speed by around 30-40% usually, but jigging is more evident.
             //Transform the hit data into world space.
-            Vector3.Transform(ref hit.Normal, ref transformA.Orientation, out hit.Normal);
+            Quaternion.Transform(ref hit.Normal, ref transformA.Orientation, out hit.Normal);
             Vector3.Multiply(ref velocityWorld, hit.T, out hit.Location);
             Vector3.Add(ref hit.Location, ref transformA.Position, out hit.Location);
             return true;
@@ -386,8 +391,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             Vector3.Subtract(ref ray.Position, ref shapeTransform.Position, out ray.Position);
             Quaternion conjugate;
             Quaternion.Conjugate(ref shapeTransform.Orientation, out conjugate);
-            Vector3.Transform(ref ray.Position, ref conjugate, out ray.Position);
-            Vector3.Transform(ref ray.Direction, ref conjugate, out ray.Direction);
+            Quaternion.Transform(ref ray.Position, ref conjugate, out ray.Position);
+            Quaternion.Transform(ref ray.Direction, ref conjugate, out ray.Direction);
 
             Vector3 w, p;
             hit.T = 0;
@@ -416,10 +421,10 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                 Vector3.Add(ref p, ref contribution, out p);
 
                 Vector3.Subtract(ref hit.Location, ref p, out w);
-                Vector3Ex.Dot(ref v, ref w, out vw);
+                Vector3.Dot(ref v, ref w, out vw);
                 if (vw > 0)
                 {
-                    Vector3Ex.Dot(ref v, ref ray.Direction, out vdir);
+                    Vector3.Dot(ref v, ref ray.Direction, out vdir);
                     hit.T = hit.T - vw / vdir;
                     if (vdir >= 0)
                     {
@@ -444,8 +449,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 
             }
             //Transform the hit data into world space.
-            Vector3.Transform(ref hit.Normal, ref shapeTransform.Orientation, out hit.Normal);
-            Vector3.Transform(ref hit.Location, ref shapeTransform.Orientation, out hit.Location);
+            Quaternion.Transform(ref hit.Normal, ref shapeTransform.Orientation, out hit.Normal);
+            Quaternion.Transform(ref hit.Location, ref shapeTransform.Orientation, out hit.Location);
             Vector3.Add(ref hit.Location, ref shapeTransform.Position, out hit.Location);
 
             return true;

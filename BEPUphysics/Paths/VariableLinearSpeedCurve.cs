@@ -1,6 +1,6 @@
-﻿using SharpDX;
-using BEPUphysics.MathExtensions;
+﻿
 
+using BEPUutilities;
 namespace BEPUphysics.Paths
 {
     /// <summary>
@@ -36,7 +36,7 @@ namespace BEPUphysics.Paths
         protected override float GetDistance(Vector3 start, Vector3 end)
         {
             float distance;
-            Vector3Ex.Distance(ref start, ref end, out distance);
+            Vector3.Distance(ref start, ref end, out distance);
             return distance;
         }
     }

@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.UpdateableSystems;
 using BEPUphysics;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUutilities;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
 using BEPUphysics.Materials;
 using BEPUphysics.PositionUpdating;
-using System.Diagnostics;
 using System.Threading;
-using SharpDX;
 
 namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
 {
@@ -42,6 +41,84 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
         /// </summary>
         public VerticalMotionConstraint VerticalMotionConstraint { get; private set; }
 
+        private Vector3 down = new Vector3(0, -1, 0);
+        /// <summary>
+        /// Gets or sets the down direction of the character. Controls the interpretation of movement and support finding.
+        /// </summary>
+        public Vector3 Down
+        {
+            get
+            {
+                return down;
+            }
+            set
+            {
+                float lengthSquared = value.LengthSquared();
+                if (lengthSquared < Toolbox.Epsilon)
+                    return; //Silently fail. Assuming here that a dynamic process is setting this property; don't need to make a stink about it.
+                Vector3.Divide(ref value, (float)Math.Sqrt(lengthSquared), out value);
+                down = value;
+                UpdateHorizontalViewDirection();
+            }
+        }
+
+        Vector3 viewDirection = new Vector3(0, 0, -1);
+        Vector3 horizontalViewDirection = new Vector3(0, 0, -1);
+
+        /// <summary>
+        /// Gets the horizontal view direction computed using the Down vector and the ViewDirection.
+        /// </summary>
+        public Vector3 HorizontalViewDirection
+        {
+            get
+            {
+                return horizontalViewDirection;
+            }
+        }
+
+        /// <summary>
+        /// Gets the axis along which the character can strafe.
+        /// </summary>
+        public Vector3 StrafeDirection
+        {
+            get
+            {
+                return Vector3.Cross(Down, horizontalViewDirection);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the view direction associated with the character.
+        /// Also sets the horizontal view direction internally based on the current down vector.
+        /// This is used to interpret the movement directions.
+        /// </summary>
+        public Vector3 ViewDirection
+        {
+            get
+            {
+                return viewDirection;
+            }
+            set
+            {
+                viewDirection = value;
+                UpdateHorizontalViewDirection();
+            }
+        }
+
+        void UpdateHorizontalViewDirection()
+        {
+            float dot = Vector3.Dot(viewDirection, Down);
+            Vector3 toRemove = Down * dot;
+            Vector3.Subtract(ref viewDirection, ref toRemove, out horizontalViewDirection);
+            float length = horizontalViewDirection.LengthSquared();
+            if (length > 0)
+            {
+                Vector3.Divide(ref horizontalViewDirection, (float)Math.Sqrt(length), out horizontalViewDirection);
+            }
+            else
+                horizontalViewDirection = new Vector3();
+        }
+
         private float jumpSpeed = 4.5f;
         /// <summary>
         /// Gets or sets the speed at which the character leaves the ground when it jumps.
@@ -55,7 +132,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             set
             {
                 if (value < 0)
-                    throw new Exception("Value must be nonnegative.");
+                    throw new ArgumentException("Value must be nonnegative.");
                 jumpSpeed = value;
             }
         }
@@ -72,7 +149,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             set
             {
                 if (value < 0)
-                    throw new Exception("Value must be nonnegative.");
+                    throw new ArgumentException("Value must be nonnegative.");
                 slidingJumpSpeed = value;
             }
         }
@@ -89,7 +166,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             set
             {
                 if (value < 0)
-                    throw new Exception("Value must be nonnegative.");
+                    throw new ArgumentException("Value must be nonnegative.");
                 jumpForceFactor = value;
             }
         }
@@ -123,7 +200,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             Body.IgnoreShapeChanges = true; //Wouldn't want inertia tensor recomputations to occur if the shape changes.
             //Making the character a continuous object prevents it from flying through walls which would be pretty jarring from a player's perspective.
             Body.PositionUpdateMode = PositionUpdateMode.Continuous;
-            Body.LocalInertiaTensorInverse = new Matrix3X3();
+            Body.LocalInertiaTensorInverse = new Matrix3x3();
             //TODO: In v0.16.2, compound bodies would override the material properties that get set in the CreatingPair event handler.
             //In a future version where this is changed, change this to conceptually minimally required CreatingPair.
             Body.CollisionInformation.Events.DetectingInitialCollision += RemoveFriction;
@@ -168,19 +245,25 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
                 involvedCharacters.Add((ICharacterTag)Body.CollisionInformation.Tag);
 
                 //However, the characters cannot be locked willy-nilly.  There needs to be some defined order in which pairs are locked to avoid deadlocking.
-                involvedCharacters.Sort((x, y) =>
-                {
-                    if (x.InstanceId < y.InstanceId)
-                        return -1;
-                    if (x.InstanceId > y.InstanceId)
-                        return 1;
-                    return 0;
-                });
+                involvedCharacters.Sort(comparer);
 
                 for (int i = 0; i < involvedCharacters.Count; ++i)
                 {
                     Monitor.Enter(involvedCharacters[i]);
                 }
+            }
+        }
+
+        private static Comparer comparer = new Comparer();
+        class Comparer : IComparer<ICharacterTag>
+        {
+            public int Compare(ICharacterTag x, ICharacterTag y)
+            {
+                if (x.InstanceId < y.InstanceId)
+                    return -1;
+                if (x.InstanceId > y.InstanceId)
+                    return 1;
+                return 0;
             }
         }
 
@@ -212,20 +295,20 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             {
                 //This runs after the bounding box updater is run, but before the broad phase.
                 //The expansion allows the downward pointing raycast to collect hit points.
-                Vector3 down = SupportFinder.MaximumAssistedDownStepHeight * Body.OrientationMatrix.Down;
+                Vector3 expansion = SupportFinder.MaximumAssistedDownStepHeight * down;
                 BoundingBox box = Body.CollisionInformation.BoundingBox;
                 if (down.X < 0)
-                    box.Minimum.X += down.X;
+                    box.Min.X += expansion.X;
                 else
-                    box.Maximum.X += down.X;
+                    box.Max.X += expansion.X;
                 if (down.Y < 0)
-                    box.Minimum.Y += down.Y;
+                    box.Min.Y += expansion.Y;
                 else
-                    box.Maximum.Y += down.Y;
+                    box.Max.Y += expansion.Y;
                 if (down.Z < 0)
-                    box.Minimum.Z += down.Z;
+                    box.Min.Z += expansion.Z;
                 else
-                    box.Maximum.Z += down.Z;
+                    box.Max.Z += expansion.Z;
                 Body.CollisionInformation.BoundingBox = box;
             }
 
@@ -263,7 +346,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             LockCharacterPairs();
             try
             {
-                bool hadTraction = SupportFinder.HasTraction;
+                bool hadSupport = SupportFinder.HasSupport;
 
                 CollectSupportData();
 
@@ -275,7 +358,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
 
 
                 //Don't attempt to use an object as support if we are flying away from it (and we were never standing on it to begin with).
-                if (SupportFinder.HasTraction && !hadTraction && verticalVelocity < 0)
+                if (SupportFinder.HasSupport && !hadSupport && verticalVelocity < 0)
                 {
                     SupportFinder.ClearSupportData();
                     supportData = new SupportData();
@@ -292,10 +375,11 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
                     if (SupportFinder.HasTraction)
                     {
                         //The character has traction, so jump straight up.
-                        float currentUpVelocity = Vector3.Dot(Body.OrientationMatrix.Up, relativeVelocity);
+                        float currentDownVelocity;
+                        Vector3.Dot(ref down, ref relativeVelocity, out currentDownVelocity);
                         //Target velocity is JumpSpeed.
-                        float velocityChange = Math.Max(jumpSpeed - currentUpVelocity, 0);
-                        ApplyJumpVelocity(ref supportData, Body.OrientationMatrix.Up * velocityChange, ref relativeVelocity);
+                        float velocityChange = Math.Max(jumpSpeed + currentDownVelocity, 0);
+                        ApplyJumpVelocity(ref supportData, down * -velocityChange, ref relativeVelocity);
 
 
                         //Prevent any old contacts from hanging around and coming back with a negative depth.
@@ -358,27 +442,15 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             //Vertical support data is different because it has the capacity to stop the character from moving unless
             //contacts are pruned appropriately.
             SupportData verticalSupportData;
-            Vector3 movement3d = new Vector3(HorizontalMotionConstraint.MovementDirection.X, 0, HorizontalMotionConstraint.MovementDirection.Y);
+            Vector3 movement3d;
+            HorizontalMotionConstraint.GetMovementDirectionIn3D(out movement3d);
             SupportFinder.GetTractionInDirection(ref movement3d, out verticalSupportData);
 
 
-            //Warning:
-            //Changing a constraint's support data is not thread safe; it modifies simulation islands!
-            //If something other than a CharacterController can modify simulation islands is running
-            //simultaneously (in the IBeforeSolverUpdateable.Update stage), it will need to be synchronized.
-
-            //We don't need to synchronize this all the time- only when the support object changes.
-            bool needToLock = HorizontalMotionConstraint.SupportData.SupportObject != supportData.SupportObject ||
-                              VerticalMotionConstraint.SupportData.SupportObject != verticalSupportData.SupportObject;
-
-            if (needToLock)
-                CharacterSynchronizer.ConstraintAccessLocker.Enter();
 
             HorizontalMotionConstraint.SupportData = supportData;
             VerticalMotionConstraint.SupportData = verticalSupportData;
 
-            if (needToLock)
-                CharacterSynchronizer.ConstraintAccessLocker.Exit();
 
 
 
@@ -427,7 +499,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
                         entityCollidable.Entity.Locker.Enter();
                     try
                     {
-                        entityVelocity = Toolbox.GetVelocityOfPoint(supportData.Position, entityCollidable.Entity);
+                        entityVelocity = Toolbox.GetVelocityOfPoint(supportData.Position, entityCollidable.Entity.Position, entityCollidable.Entity.LinearVelocity, entityCollidable.Entity.AngularVelocity);
                     }
                     finally
                     {
@@ -493,7 +565,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
 
 
 
-        bool tryToJump = false;
+        bool tryToJump;
         /// <summary>
         /// Jumps the character off of whatever it's currently standing on.  If it has traction, it will go straight up.
         /// If it doesn't have traction, but is still supported by something, it will jump in the direction of the surface normal.
@@ -505,26 +577,26 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             tryToJump = true;
         }
 
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             //Add any supplements to the space too.
             newSpace.Add(Body);
             newSpace.Add(HorizontalMotionConstraint);
             newSpace.Add(VerticalMotionConstraint);
             //This character controller requires the standard implementation of Space.
-            ((Space)newSpace).BoundingBoxUpdater.Finishing += ExpandBoundingBox;
+            newSpace.BoundingBoxUpdater.Finishing += ExpandBoundingBox;
 
             Body.AngularVelocity = new Vector3();
             Body.LinearVelocity = new Vector3();
         }
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             //Remove any supplements from the space too.
             oldSpace.Remove(Body);
             oldSpace.Remove(HorizontalMotionConstraint);
             oldSpace.Remove(VerticalMotionConstraint);
             //This character controller requires the standard implementation of Space.
-            ((Space)oldSpace).BoundingBoxUpdater.Finishing -= ExpandBoundingBox;
+            oldSpace.BoundingBoxUpdater.Finishing -= ExpandBoundingBox;
             SupportFinder.ClearSupportData();
             Body.AngularVelocity = new Vector3();
             Body.LinearVelocity = new Vector3();

@@ -1,9 +1,7 @@
-﻿using BEPUphysics.MathExtensions;
+﻿using BEPUutilities;
 using BEPUphysics.Settings;
-using SharpDX;
-using BEPUphysics.DataStructures;
-using System.Diagnostics;
-using System;
+ 
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests
 {
@@ -22,8 +20,9 @@ namespace BEPUphysics.CollisionTests
             //TODO: Could also refresh normals with some trickery.
             //Would also need to refresh depth using new normals, and would require some extra information.
 
-            for (int k = 0; k < contacts.count; k++)
+            for (int k = 0; k < contacts.Count; k++)
             {
+                contacts.Elements[k].Validate();
                 ContactSupplementData data = supplementData.Elements[k];
                 Vector3 newPosA, newPosB;
                 RigidTransform.Transform(ref data.LocalOffsetA, ref transformA, out newPosA);
@@ -34,7 +33,7 @@ namespace BEPUphysics.CollisionTests
                 Vector3 ab;
                 Vector3.Subtract(ref newPosB, ref newPosA, out ab);
                 float dot;
-                Vector3Ex.Dot(ref ab, ref contacts.Elements[k].Normal, out dot);
+                Vector3.Dot(ref ab, ref contacts.Elements[k].Normal, out dot);
                 Vector3 temp;
                 Vector3.Multiply(ref contacts.Elements[k].Normal, dot, out temp);
                 Vector3.Subtract(ref ab, ref temp, out temp);
@@ -46,8 +45,8 @@ namespace BEPUphysics.CollisionTests
                 else
                 {
                     //Depth refresh:
-                    //Find deviation (IE, (Ra-Rb)*N) and add to base depth.
-                    Vector3Ex.Dot(ref ab, ref contacts.Elements[k].Normal, out dot);
+                    //Find deviation ((Ra-Rb)*N) and add to base depth.
+                    Vector3.Dot(ref ab, ref contacts.Elements[k].Normal, out dot);
                     contacts.Elements[k].PenetrationDepth = data.BasePenetrationDepth - dot;
                     if (contacts.Elements[k].PenetrationDepth < -CollisionDetectionSettings.maximumContactDistance)
                         toRemove.Add(k);
@@ -63,6 +62,7 @@ namespace BEPUphysics.CollisionTests
                         //RigidTransform.TransformByInverse(ref newPos, ref transformA, out data.LocalOffsetA);
                         //RigidTransform.TransformByInverse(ref newPos, ref transformB, out data.LocalOffsetB);
                     }
+                    contacts.Elements[k].Validate();
                 }
                
             }

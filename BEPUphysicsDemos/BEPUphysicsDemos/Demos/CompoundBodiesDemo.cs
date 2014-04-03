@@ -3,8 +3,7 @@ using BEPUphysics.CollisionShapes;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using System.Collections.Generic;
 using System.Diagnostics;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -22,7 +21,7 @@ namespace BEPUphysicsDemos.Demos
         {
 
             //Build the first body
-            var bodies = new List<CompoundShapeEntry>() 
+            var bodies = new List<CompoundShapeEntry>
             {
                 new CompoundShapeEntry(new SphereShape(.5f), new Vector3(0, 1, 0), 1),
                 new CompoundShapeEntry(new ConeShape(2, .5f), new Vector3(1, 1, 0), 1),
@@ -33,7 +32,7 @@ namespace BEPUphysicsDemos.Demos
 
 
             //Build the second body
-            bodies = new List<CompoundShapeEntry>() 
+            bodies = new List<CompoundShapeEntry>
             {
                 new CompoundShapeEntry(new BoxShape(1,1,1), new Vector3(0, 3, 0), 1),
                 new CompoundShapeEntry(new BoxShape(1,1,1), new Vector3(1, 3.5f, 0), 1),
@@ -56,7 +55,7 @@ namespace BEPUphysicsDemos.Demos
 
 
             Space.Add(new Box(new Vector3(0, -.5f, 0), 10, 1, 10));
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 3, 15);
+            game.Camera.Position = new Vector3(0, 3, 15);
 
         }
 

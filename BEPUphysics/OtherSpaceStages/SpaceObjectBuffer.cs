@@ -1,4 +1,5 @@
-﻿using BEPUphysics.Threading;
+﻿using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.OtherSpaceStages
 {
@@ -24,11 +25,11 @@ namespace BEPUphysics.OtherSpaceStages
         }
         private ConcurrentDeque<SpaceObjectChange> objectsToChange = new ConcurrentDeque<SpaceObjectChange>();
 
-        private ISpace space;
+        private Space space;
         ///<summary>
         /// Gets the space which owns this buffer.
         ///</summary>
-        public ISpace Space
+        public Space Space
         {
             get { return space; }
         }
@@ -37,7 +38,7 @@ namespace BEPUphysics.OtherSpaceStages
         /// Constructs the buffer.
         ///</summary>
         ///<param name="space">Space that owns the buffer.</param>
-        public SpaceObjectBuffer(ISpace space)
+        public SpaceObjectBuffer(Space space)
         {
             Enabled = true;
             this.space = space;

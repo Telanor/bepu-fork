@@ -1,13 +1,12 @@
 ﻿using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.CollisionShapes;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.Collidables;
+using BEPUphysics.BroadPhaseEntries;
 using System;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using System.Collections.Generic;
-using BEPUphysics.Collidables.MobileCollidables;
-using SharpDX;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -38,7 +37,7 @@ namespace BEPUphysicsDemos.Demos
             //This avoids the performance problem!
 
             //To demonstrate, we'll be creating a set of static objects and giving them to a group to manage.
-            List<Collidable> collidables = new List<Collidable>();
+            var collidables = new List<Collidable>();
 
             //Start with a whole bunch of boxes.  These are entity collidables, but without entities!
             float xSpacing = 6;
@@ -68,7 +67,7 @@ namespace BEPUphysicsDemos.Demos
                         //This also updates its bounding box.
                         collidable.WorldTransform = new RigidTransform(
                             new Vector3(i * xSpacing - xCount * xSpacing * .5f, j * ySpacing + 3, k * zSpacing - zCount * zSpacing * .5f),
-                            Quaternion.RotationAxis(Vector3.Normalize(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), (float)random.NextDouble() * 100));
+                            Quaternion.CreateFromAxisAngle(Vector3.Normalize(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), (float)random.NextDouble() * 100));
 
                         collidables.Add(collidable);
                         game.ModelDrawer.Add(collidable);
@@ -100,7 +99,7 @@ namespace BEPUphysicsDemos.Demos
                         //Create a transform and the instance of the mesh.
                         var transform = new AffineTransform(
                             new Vector3((float)random.NextDouble() * 6 + .5f, (float)random.NextDouble() * 6 + .5f, (float)random.NextDouble() * 6 + .5f),
-                             Quaternion.RotationAxis(Vector3.Normalize(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), (float)random.NextDouble() * 100),
+                             Quaternion.CreateFromAxisAngle(Vector3.Normalize(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), (float)random.NextDouble() * 100),
                             new Vector3(i * xSpacing - xCount * xSpacing * .5f, j * ySpacing + 50, k * zSpacing - zCount * zSpacing * .5f));
                         var mesh = new InstancedMesh(meshShape, transform);
                         //Making the triangles one-sided makes collision detection a bit more robust, since the backsides of triangles won't try to collide with things
@@ -112,7 +111,12 @@ namespace BEPUphysicsDemos.Demos
                 }
             }
 
-            StaticGroup group = new StaticGroup(collidables);
+            var ground = new ConvexCollidable<BoxShape>(new BoxShape(200, 1, 200));
+            ground.WorldTransform = new RigidTransform(new Vector3(0, -3, 0), Quaternion.Identity);
+            collidables.Add(ground);
+            game.ModelDrawer.Add(ground);
+
+            var group = new StaticGroup(collidables);
             Space.Add(group);
 
 
@@ -135,11 +139,9 @@ namespace BEPUphysicsDemos.Demos
                     }
 
 
-            Box ground = new Box(new Vector3(0, -3f, 0), 200, 1, 200);
-            Space.Add(ground);
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 60, 90);
+            game.Camera.Position = new Vector3(0, 60, 90);
         }
 
         /// <summary>

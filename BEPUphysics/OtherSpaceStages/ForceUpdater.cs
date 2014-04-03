@@ -1,7 +1,7 @@
 ﻿using System;
-using SharpDX;
-using BEPUphysics.DataStructures;
-using BEPUphysics.Threading;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.OtherSpaceStages
 {
@@ -62,11 +62,11 @@ namespace BEPUphysics.OtherSpaceStages
         /// Constructs the force updater.
         ///</summary>
         ///<param name="timeStepSettings">Time step settings to use.</param>
-        /// <param name="threadManager">Thread manager to use.</param>
-        public ForceUpdater(TimeStepSettings timeStepSettings, IThreadManager threadManager)
+        /// <param name="parallelLooper">Parallel loop provider to use.</param>
+        public ForceUpdater(TimeStepSettings timeStepSettings, IParallelLooper parallelLooper)
             : this(timeStepSettings)
         {
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
         private Action<int> multithreadedLoopBodyDelegate;
@@ -79,13 +79,13 @@ namespace BEPUphysics.OtherSpaceStages
         protected override void UpdateMultithreaded()
         {
             Vector3.Multiply(ref gravity, timeStepSettings.TimeStepDuration, out gravityDt);
-            ThreadManager.ForLoop(0, dynamicObjects.Count, multithreadedLoopBodyDelegate);
+            ParallelLooper.ForLoop(0, dynamicObjects.Count, multithreadedLoopBodyDelegate);
         }
 
         protected override void UpdateSingleThreaded()
         {
             Vector3.Multiply(ref gravity, timeStepSettings.TimeStepDuration, out gravityDt);
-            for (int i = 0; i < dynamicObjects.count; i++)
+            for (int i = 0; i < dynamicObjects.Count; i++)
             {
                 UpdateObject(i);
             }
@@ -106,7 +106,7 @@ namespace BEPUphysics.OtherSpaceStages
                     dynamicObjects.Add(forceUpdateable);
             }
             else
-                throw new Exception("Cannot add updateable; it already belongs to another manager.");
+                throw new ArgumentException("Cannot add updateable; it already belongs to another manager.");
         }
         ///<summary>
         /// Removes a force updateable from the force updater.
@@ -118,11 +118,11 @@ namespace BEPUphysics.OtherSpaceStages
             if (forceUpdateable.ForceUpdater == this)
             {
                 if (forceUpdateable.IsDynamic && !dynamicObjects.Remove(forceUpdateable))
-                    throw new Exception("Dynamic object not present in dynamic objects list; ensure that the IForceUpdateable was never removed from the list improperly by using ForceUpdateableBecomingKinematic.");
+                    throw new InvalidOperationException("Dynamic object not present in dynamic objects list; ensure that the IForceUpdateable was never removed from the list improperly by using ForceUpdateableBecomingKinematic.");
                 forceUpdateable.ForceUpdater = null;
             }
             else
-                throw new Exception("Cannot remove updateable; it does not belong to this manager.");
+                throw new ArgumentException("Cannot remove updateable; it does not belong to this manager.");
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace BEPUphysics.OtherSpaceStages
                 dynamicObjects.Add(updateable);
             }
             else
-                throw new Exception("Updateable does not belong to this manager.");
+                throw new ArgumentException("Updateable does not belong to this manager.");
         }
         /// <summary>
         /// Notifies the system that a force updateable is becoming kinematic.
@@ -149,10 +149,10 @@ namespace BEPUphysics.OtherSpaceStages
             if (updateable.ForceUpdater == this)
             {
                 if (!dynamicObjects.Remove(updateable))
-                    throw new Exception("Dynamic object not present in dynamic objects list; ensure that the IVelocityUpdateable was never removed from the list improperly by using VelocityUpdateableBecomingKinematic.");
+                    throw new InvalidOperationException("Dynamic object not present in dynamic objects list; ensure that the IVelocityUpdateable was never removed from the list improperly by using VelocityUpdateableBecomingKinematic.");
             }
             else
-                throw new Exception("Updateable does not belong to this manager.");
+                throw new ArgumentException("Updateable does not belong to this manager.");
         }
     }
 }

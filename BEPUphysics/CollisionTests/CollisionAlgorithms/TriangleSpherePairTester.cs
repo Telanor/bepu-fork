@@ -1,11 +1,7 @@
 ﻿using System;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using SharpDX;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Settings;
-using BEPUphysics.DataStructures;
-using System.Diagnostics;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 {
@@ -49,7 +45,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             
             float dot;
-            Vector3Ex.Dot(ref triangleNormal, ref triangle.vA, out dot);
+            Vector3.Dot(ref triangleNormal, ref triangle.vA, out dot);
             switch (triangle.sidedness)
             {
                 case TriangleSidedness.DoubleSided:

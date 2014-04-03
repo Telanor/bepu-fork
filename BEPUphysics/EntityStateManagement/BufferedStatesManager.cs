@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using BEPUphysics.Threading;
 using BEPUphysics.Entities;
-using BEPUphysics.DataStructures;
+using BEPUutilities.DataStructures;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.EntityStateManagement
 {
@@ -75,11 +73,11 @@ namespace BEPUphysics.EntityStateManagement
         ///<summary>
         /// Constructs a new manager.
         ///</summary>
-        ///<param name="threadManager">Thread manager to be used by the manager.</param>
-        public BufferedStatesManager(IThreadManager threadManager)
+        ///<param name="parallelLooper">Parallel loop provider to be used by the manager.</param>
+        public BufferedStatesManager(IParallelLooper parallelLooper)
         {
-            InterpolatedStates = new InterpolatedStatesManager(this, threadManager);
-            ReadBuffers = new StateReadBuffers(this, threadManager);
+            InterpolatedStates = new InterpolatedStatesManager(this, parallelLooper);
+            ReadBuffers = new StateReadBuffers(this, parallelLooper);
         }
 
 

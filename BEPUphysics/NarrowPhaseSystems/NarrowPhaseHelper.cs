@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.DataStructures;
-using BEPUphysics.UpdateableSystems;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.NarrowPhaseSystems
 {
@@ -426,6 +424,8 @@ namespace BEPUphysics.NarrowPhaseSystems
         public static bool Intersecting(ref CollidablePair pair)
         {
             var pairHandler = GetPairHandler(ref pair);
+            if (pairHandler == null)
+                return false;
             pairHandler.SuppressEvents = true;
             pairHandler.UpdateCollision(0);
             //Technically, contacts with negative depth do not count.

@@ -1,16 +1,16 @@
 ﻿using System;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
 using BEPUphysics.CollisionTests.Manifolds;
 using BEPUphysics.Constraints.Collision;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
-using SharpDX;
+ 
 using BEPUphysics.CollisionShapes.ConvexShapes;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -26,6 +26,8 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
 
             base.Initialize(entryA, entryB);
         }
+
+
 
         ///<summary>
         /// Updates the time of impact for the pair.
@@ -77,7 +79,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 Vector3.Multiply(ref velocity, dt, out velocity);
                 float velocitySquared = velocity.LengthSquared();
 
-                var minimumRadiusA = collidableA.Shape.minimumRadius * MotionSettings.CoreShapeScaling;
+                var minimumRadiusA = collidableA.Shape.MinimumRadius * MotionSettings.CoreShapeScaling;
                 timeOfImpact = 1;
                 if (minimumRadiusA * minimumRadiusA < velocitySquared)
                 {
@@ -87,7 +89,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                         timeOfImpact = rayHit.T;
                 }
 
-                var minimumRadiusB = collidableB.Shape.minimumRadius * MotionSettings.CoreShapeScaling;
+                var minimumRadiusB = collidableB.Shape.MinimumRadius * MotionSettings.CoreShapeScaling;
                 if (minimumRadiusB * minimumRadiusB < velocitySquared)
                 {
                     //Spherecast B against A.

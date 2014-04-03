@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.JointLimits
 {
@@ -61,7 +61,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 localAxisA = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
+                Matrix3x3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
             }
         }
 
@@ -74,7 +74,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 localAxisB = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localAxisB, ref connectionA.orientationMatrix, out worldAxisB);
+                Matrix3x3.Transform(ref localAxisB, ref connectionA.orientationMatrix, out worldAxisB);
             }
         }
 
@@ -98,7 +98,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
                 worldAxisA = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionA.orientation, out conjugate);
-                Vector3.Transform(ref worldAxisA, ref conjugate, out localAxisA);
+                Quaternion.Transform(ref worldAxisA, ref conjugate, out localAxisA);
             }
         }
 
@@ -113,7 +113,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
                 worldAxisB = Vector3.Normalize(value);
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref connectionB.orientation, out conjugate);
-                Vector3.Transform(ref worldAxisB, ref conjugate, out localAxisB);
+                Quaternion.Transform(ref worldAxisB, ref conjugate, out localAxisB);
             }
         }
 
@@ -131,7 +131,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
                     Vector3 relativeVelocity;
                     Vector3.Subtract(ref connectionA.angularVelocity, ref connectionB.angularVelocity, out relativeVelocity);
                     float lambda;
-                    Vector3Ex.Dot(ref relativeVelocity, ref hingeAxis, out lambda);
+                    Vector3.Dot(ref relativeVelocity, ref hingeAxis, out lambda);
                     return lambda;
                 }
                 return 0;
@@ -214,7 +214,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             Vector3 relativeVelocity;
             Vector3.Subtract(ref connectionA.angularVelocity, ref connectionB.angularVelocity, out relativeVelocity);
             //Transform the velocity to with the jacobian
-            Vector3Ex.Dot(ref relativeVelocity, ref hingeAxis, out lambda);
+            Vector3.Dot(ref relativeVelocity, ref hingeAxis, out lambda);
             //Add in the constraint space bias velocity
             lambda = -lambda + biasVelocity - softness * accumulatedImpulse;
 
@@ -223,7 +223,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
 
             //Clamp accumulated impulse (can't go negative)
             float previousAccumulatedImpulse = accumulatedImpulse;
-            accumulatedImpulse = Math.Max(accumulatedImpulse + lambda, 0);
+            accumulatedImpulse = MathHelper.Max(accumulatedImpulse + lambda, 0);
             lambda = accumulatedImpulse - previousAccumulatedImpulse;
 
             //Apply the impulse
@@ -248,11 +248,11 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
         /// <param name="dt">Time since the last frame.</param>
         public override void Update(float dt)
         {
-            Matrix3X3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
-            Matrix3X3.Transform(ref localAxisB, ref connectionB.orientationMatrix, out worldAxisB);
+            Matrix3x3.Transform(ref localAxisA, ref connectionA.orientationMatrix, out worldAxisA);
+            Matrix3x3.Transform(ref localAxisB, ref connectionB.orientationMatrix, out worldAxisB);
 
             float dot;
-            Vector3Ex.Dot(ref worldAxisA, ref worldAxisB, out dot);
+            Vector3.Dot(ref worldAxisA, ref worldAxisB, out dot);
 
             //Keep in mind, the dot is the cosine of the angle.
             //1: 0 radians
@@ -271,31 +271,22 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             //Hinge axis is actually the jacobian entry for angular A (negative angular B).
             Vector3.Cross(ref worldAxisA, ref worldAxisB, out hingeAxis);
             float lengthSquared = hingeAxis.LengthSquared();
-            if (lengthSquared > Toolbox.Epsilon)
-            {
-                //Vector3.Divide(ref hingeAxis, (float)Math.Sqrt(lengthSquared), out hingeAxis);
-            }
-            else
+            if (lengthSquared < Toolbox.Epsilon)
             {
                 //They're parallel; for the sake of continuity, pick some axis which is perpendicular to both that ISN'T the zero vector.
                 Vector3.Cross(ref worldAxisA, ref Toolbox.UpVector, out hingeAxis);
                 lengthSquared = hingeAxis.LengthSquared();
-                if (lengthSquared > Toolbox.Epsilon)
-                {
-                    //Vector3.Divide(ref hingeAxis, (float)Math.Sqrt(lengthSquared), out hingeAxis);
-                }
-                else
+                if (lengthSquared < Toolbox.Epsilon)
                 {
                     //That's improbable; b's world axis was apparently parallel with the up vector!
                     //So just use the right vector (it can't be parallel with both the up and right vectors).
                     Vector3.Cross(ref worldAxisA, ref Toolbox.RightVector, out hingeAxis);
-                    //hingeAxis.Normalize();
                 }
             }
 
 
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
 
             //Further away from 0 degrees is further negative; if the dot is below the minimum cosine, it means the angle is above the maximum angle.
             error = Math.Max(0, minimumCosine - dot - margin);
@@ -307,11 +298,9 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
                 float relativeSpeed;
                 Vector3 relativeVelocity;
                 Vector3.Subtract(ref connectionA.angularVelocity, ref connectionB.angularVelocity, out relativeVelocity);
-                Vector3Ex.Dot(ref relativeVelocity, ref hingeAxis, out relativeSpeed);
-                if (relativeSpeed < -bounceVelocityThreshold)
-                {
-                    biasVelocity = Math.Max(biasVelocity, bounciness * relativeSpeed);
-                }
+                Vector3.Dot(ref relativeVelocity, ref hingeAxis, out relativeSpeed);
+
+                biasVelocity = MathHelper.Max(biasVelocity, ComputeBounceVelocity(-relativeSpeed));
             }
 
             //Connection A's contribution to the mass matrix
@@ -319,8 +308,8 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             Vector3 transformedAxis;
             if (connectionA.isDynamic)
             {
-                Matrix3X3.Transform(ref hingeAxis, ref connectionA.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref hingeAxis, out entryA);
+                Matrix3x3.Transform(ref hingeAxis, ref connectionA.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref hingeAxis, out entryA);
             }
             else
                 entryA = 0;
@@ -329,8 +318,8 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             float entryB;
             if (connectionB.isDynamic)
             {
-                Matrix3X3.Transform(ref hingeAxis, ref connectionB.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref hingeAxis, out entryB);
+                Matrix3x3.Transform(ref hingeAxis, ref connectionB.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref hingeAxis, out entryB);
             }
             else
                 entryB = 0;

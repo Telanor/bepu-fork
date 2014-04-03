@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
 using BEPUphysics.UpdateableSystems;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -37,7 +36,8 @@ namespace BEPUphysicsDemos.Demos
                              new Vector3(-basinWidth / 2, waterHeight, basinLength / 2), new Vector3(basinWidth / 2, waterHeight, -basinLength / 2),
                              new Vector3(basinWidth / 2, waterHeight, basinLength / 2)
                          });
-            var fluid = new FluidVolume(Vector3.UnitY, -9.81f, tris, waterHeight, .8f, .8f, .7f, Space.BroadPhase.QueryAccelerator, Space.ThreadManager);
+            var fluid = new FluidVolume(Vector3.Up, -9.81f, tris, waterHeight, .8f, .8f, .7f);
+            Space.ForceUpdater.Gravity = new Vector3(0, -9.81f, 0);
 
 
             //fluid.FlowDirection = Vector3.Right;
@@ -51,17 +51,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(new Box(new Vector3(basinWidth / 2 + .5f, basinHeight / 2 - .5f, 0), 1, basinHeight, basinLength));
             Space.Add(new Box(new Vector3(0, basinHeight / 2 - .5f, -basinLength / 2 - .5f), basinWidth + 2, basinHeight, 1));
             Space.Add(new Box(new Vector3(0, basinHeight / 2 - .5f, basinLength / 2 + .5f), basinWidth + 2, basinHeight, 1));
-            var random = new Random();
 
-            //Create a bunch of random blocks.
-            /*for (int k = 0; k < 1; k++)
-            {
-                toAddBox = new Box(new Vector3(random.Next((int)basinWidth) - basinWidth / 2f, 30 + (.1f) * k, random.Next((int)basinLength) - basinLength / 2f), 2, 4, 2, 12);
-                toAddBox.CollisionMargin = .2f;
-                toAddBox.AllowedPenetration = .1f;
-                toAddBox.Orientation = Quaternion.Normalize(new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()));
-                space.Add(toAddBox);
-            }*/
 
             //Create a tiled floor.
             Entity toAdd;
@@ -74,23 +64,24 @@ namespace BEPUphysicsDemos.Demos
                     toAdd = new Box(new Vector3(
                         -boxWidth * numBoxesWide / 2f + (boxWidth + .1f) * i,
                         15,
-                        -boxWidth * numBoxesWide / 2f + (boxWidth + .1f)* k),
+                        -boxWidth * numBoxesWide / 2f + (boxWidth + .1f) * k),
                         boxWidth, 5, boxWidth, 300);
-                    
+
                     Space.Add(toAdd);
                 }
             }
 
 
             //Create a bunch o' spheres and dump them into the water.
-            /*for (int k = 0; k < 80; k++)
-            {
-                toAddSphere = new Sphere(new Vector3(-48 + k * 1f, 12 + 4 * k, (float)random.Next(-15, 15)), 2, 27);
-                space.Add(toAddSphere);
-            }*/
+            //Random random = new Random();
+            //for (int k = 0; k < 80; k++)
+            //{
+            //    var toAddSphere = new Sphere(new Vector3(-48 + k * 1f, 12 + 4 * k, random.Next(-15, 15)), 2, 27);
+            //    Space.Add(toAddSphere);
+            //}
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, waterHeight + 5, 35);
+            game.Camera.Position = new Vector3(0, waterHeight + 5, 35);
         }
 
         /// <summary>

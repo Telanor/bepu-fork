@@ -1,18 +1,17 @@
-﻿using BEPUphysics.Collidables;
+﻿using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.CollisionShapes;
 using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysicsDemos.AlternateMovement.SphereCharacter;
 using System.Collections.Generic;
 using System;
 using BEPUphysicsDemos.AlternateMovement.Character;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
     /// <summary>
-    /// A nice driveble landscape.
+    /// A nice landscape full of strange people.
     /// </summary>
     public class CharacterStressTestDemo : StandardDemo
     {
@@ -31,21 +30,34 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             //This is a little convenience method used to extract vertices and indices from a model.
             //It doesn't do anything special; any approach that gets valid vertices and indices will work.
             ModelDataExtractor.GetVerticesAndIndicesFromModel(playgroundModel, out staticTriangleVertices, out staticTriangleIndices);
-            var staticMesh = new StaticMesh(staticTriangleVertices, staticTriangleIndices, new AffineTransform(Matrix3X3.CreateFromAxisAngle(Vector3.UnitY, MathHelper.Pi), new Vector3(0, -10, 0)));
-            staticMesh.Sidedness = TriangleSidedness.Counterclockwise;
+            var meshShape = new InstancedMeshShape(staticTriangleVertices, staticTriangleIndices);
+            var meshes = new List<Collidable>();
 
-            Space.Add(staticMesh);
-            game.ModelDrawer.Add(staticMesh);
-
-
+            var xSpacing = 400;
+            var ySpacing = 400;
+            var xCount = 11;
+            var yCount = 11;
+            for (int i = 0; i < xCount; i++)
+            {
+                for (int j = 0; j < yCount; j++)
+                {
+                    var staticMesh = new InstancedMesh(meshShape, new AffineTransform(Matrix3x3.Identity, new Vector3(-xSpacing * (xCount - 1) / 2 + i * xSpacing, 0, -ySpacing * (yCount - 1) / 2 + j * ySpacing)));
+                    staticMesh.Sidedness = TriangleSidedness.Counterclockwise;
+                    Space.Add(staticMesh);
+                    //meshes.Add(staticMesh);
+                    game.ModelDrawer.Add(staticMesh);
+                }
+            }
+            //var group = new StaticGroup(meshes);
+            //Space.Add(group);
 
 
 
             //Now drop the characters on it!
-            var numColumns = 8;
-            var numRows = 8;
+            var numColumns = 16;
+            var numRows = 16;
             var numHigh = 8;
-            float separation = 16;
+            float separation = 64;
 
             for (int i = 0; i < numRows; i++)
                 for (int j = 0; j < numColumns; j++)
@@ -64,10 +76,10 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     }
 
             //Now drop the ball-characters on it!
-            numColumns = 8;
-            numRows = 8;
+            numColumns = 16;
+            numRows = 16;
             numHigh = 8;
-            separation = 16;
+            separation = 64;
             for (int i = 0; i < numRows; i++)
                 for (int j = 0; j < numColumns; j++)
                     for (int k = 0; k < numHigh; k++)
@@ -85,13 +97,13 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     }
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 10, 40);
+            game.Camera.Position = new Vector3(0, 10, 40);
 
             //Dump some boxes on top of the characters for fun.
             numColumns = 16;
             numRows = 16;
-            numHigh = 1;
-            separation = 8;
+            numHigh = 8;
+            separation = 64;
             for (int i = 0; i < numRows; i++)
                 for (int j = 0; j < numColumns; j++)
                     for (int k = 0; k < numHigh; k++)
@@ -101,11 +113,13 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                             separation * i - numRows * separation / 2,
                             52f + k * separation,
                             separation * j - numColumns * separation / 2),
-                            2, 2, 2, 15);
+                            0.8f, 0.8f, 0.8f, 15);
+                        toAdd.PositionUpdateMode = BEPUphysics.PositionUpdating.PositionUpdateMode.Continuous;
 
                         Space.Add(toAdd);
                     }
         }
+
 
         List<CharacterController> characters = new List<CharacterController>();
         List<SphereCharacterController> sphereCharacters = new List<SphereCharacterController>();
@@ -146,8 +160,44 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                 if (random.NextDouble() < .01f)
                     sphereCharacters[i].Jump();
             }
+
+
             base.Update(dt);
         }
+
+        //public override void DrawUI()
+        //{
+        //    //Try compiling the library with the PROFILE symbol defined and using this!
+        //    Game.DataTextDrawer.Draw("Time Step Stage Times: ", new Vector2(20, 10));
+
+        //    Game.TinyTextDrawer.Draw("SpaceObjectBuffer: ", Space.SpaceObjectBuffer.Time * 1000, 2, new Vector2(20, 35));
+        //    Game.TinyTextDrawer.Draw("Entity State Write Buffer: ", Space.EntityStateWriteBuffer.Time * 1000, 2, new Vector2(20, 50));
+        //    Game.TinyTextDrawer.Draw("Deactivation: ", Space.DeactivationManager.Time * 1000, 2, new Vector2(20, 65));
+        //    Game.TinyTextDrawer.Draw("ForceUpdater: ", Space.ForceUpdater.Time * 1000, 2, new Vector2(20, 80));
+        //    Game.TinyTextDrawer.Draw("DuringForcesUpdateables: ", Space.DuringForcesUpdateables.Time * 1000, 2, new Vector2(20, 95));
+        //    Game.TinyTextDrawer.Draw("Bounding Boxes: ", Space.BoundingBoxUpdater.Time * 1000, 2, new Vector2(20, 110));
+        //    Game.TinyTextDrawer.Draw("BroadPhase: ", Space.BroadPhase.Time * 1000, 2, new Vector2(20, 125));
+        //    Game.TinyTextDrawer.Draw("     Refit: ", (Space.BroadPhase as DynamicHierarchy).RefitTime * 1000, 2, new Vector2(20, 140));
+        //    Game.TinyTextDrawer.Draw("     Overlap: ", (Space.BroadPhase as DynamicHierarchy).OverlapTime * 1000, 2, new Vector2(20, 155));
+        //    Game.TinyTextDrawer.Draw("BeforeNarrowPhaseUpdateables: ", Space.BeforeNarrowPhaseUpdateables.Time * 1000, 2, new Vector2(20, 170));
+        //    Game.TinyTextDrawer.Draw("NarrowPhase: ", Space.NarrowPhase.Time * 1000, 2, new Vector2(20, 185));
+        //    Game.TinyTextDrawer.Draw("     Pair Updates: ", Space.NarrowPhase.PairUpdateTime * 1000, 2, new Vector2(20, 200));
+        //    Game.TinyTextDrawer.Draw("     Flush New: ", Space.NarrowPhase.FlushNewPairsTime * 1000, 2, new Vector2(20, 215));
+        //    Game.TinyTextDrawer.Draw("     Flush Solver Updateables: ", Space.NarrowPhase.FlushSolverUpdateableChangesTime * 1000, 2, new Vector2(20, 230));
+        //    Game.TinyTextDrawer.Draw("     Stale Removal: ", Space.NarrowPhase.StaleOverlapRemovalTime * 1000, 2, new Vector2(20, 245));
+        //    Game.TinyTextDrawer.Draw("BeforeSolverUpdateables: ", Space.BeforeSolverUpdateables.Time * 1000, 2, new Vector2(20, 260));
+        //    Game.TinyTextDrawer.Draw("Solver: ", Space.Solver.Time * 1000, 2, new Vector2(20, 275));
+        //    Game.TinyTextDrawer.Draw("BeforePositionUpdateUpdateables: ", Space.BeforePositionUpdateUpdateables.Time * 1000, 2, new Vector2(20, 290));
+        //    Game.TinyTextDrawer.Draw("Position Update: ", Space.PositionUpdater.Time * 1000, 2, new Vector2(20, 305));
+        //    Game.TinyTextDrawer.Draw("Read Buffers States Update: ", Space.BufferedStates.ReadBuffers.Time * 1000, 2, new Vector2(20, 320));
+        //    Game.TinyTextDrawer.Draw("Deferred Event Dispatcher: ", Space.DeferredEventDispatcher.Time * 1000, 2, new Vector2(20, 335));
+        //    Game.TinyTextDrawer.Draw("EndOfTimeStepUpdateables: ", Space.EndOfTimeStepUpdateables.Time * 1000, 2, new Vector2(20, 350));
+
+
+        //    Game.DataTextDrawer.Draw("Total: ", Space.Time * 1000, 2, new Vector2(20, 375));
+        //    base.DrawUI();
+        //}
+
 
 
 

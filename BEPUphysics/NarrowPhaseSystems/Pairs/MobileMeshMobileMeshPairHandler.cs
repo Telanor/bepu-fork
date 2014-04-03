@@ -1,9 +1,7 @@
 ﻿using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.ResourceManagement;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUutilities.ResourceManagement;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -32,7 +30,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
         protected override TriangleCollidable GetOpposingCollidable(int index)
         {
             //Construct a TriangleCollidable from the static mesh.
-            var toReturn = BEPUphysics.ResourceManagement.Resources.GetTriangleCollidable();
+            var toReturn = PhysicsResources.GetTriangleCollidable();
             toReturn.Shape.sidedness = mesh.Shape.Sidedness;
             toReturn.Shape.collisionMargin = mobileMesh.Shape.MeshCollisionMargin;
             toReturn.Entity = mesh.entity;
@@ -49,11 +47,11 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
         {
             var shape = entry.Collidable.Shape;
             mesh.Shape.TriangleMesh.Data.GetTriangle(entry.Index, out shape.vA, out shape.vB, out shape.vC);
-            Matrix3X3 o;
-            Matrix3X3.CreateFromQuaternion(ref mesh.worldTransform.Orientation, out o);
-            Matrix3X3.Transform(ref shape.vA, ref o, out shape.vA);
-            Matrix3X3.Transform(ref shape.vB, ref o, out shape.vB);
-            Matrix3X3.Transform(ref shape.vC, ref o, out shape.vC);
+            Matrix3x3 o;
+            Matrix3x3.CreateFromQuaternion(ref mesh.worldTransform.Orientation, out o);
+            Matrix3x3.Transform(ref shape.vA, ref o, out shape.vA);
+            Matrix3x3.Transform(ref shape.vB, ref o, out shape.vB);
+            Matrix3x3.Transform(ref shape.vC, ref o, out shape.vC);
             Vector3 center;
             Vector3.Add(ref shape.vA, ref shape.vB, out center);
             Vector3.Add(ref center, ref shape.vC, out center);
@@ -103,7 +101,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
 
         protected override void UpdateContainedPairs(float dt)
         {
-            var overlappedElements = BEPUphysics.ResourceManagement.Resources.GetIntList();
+            var overlappedElements = CommonResources.GetIntList();
             BoundingBox localBoundingBox;
             AffineTransform meshTransform;
             AffineTransform.CreateFromRigidTransform(ref mesh.worldTransform, out meshTransform);
@@ -113,12 +111,12 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
             Vector3.Multiply(ref sweep, dt, out sweep);
             mobileMesh.Shape.GetSweptLocalBoundingBox(ref mobileMesh.worldTransform, ref meshTransform, ref sweep, out localBoundingBox);
             mesh.Shape.TriangleMesh.Tree.GetOverlaps(localBoundingBox, overlappedElements);
-            for (int i = 0; i < overlappedElements.count; i++)
+            for (int i = 0; i < overlappedElements.Count; i++)
             {
                 TryToAdd(overlappedElements.Elements[i]);
             }
 
-            BEPUphysics.ResourceManagement.Resources.GiveBack(overlappedElements);
+            CommonResources.GiveBack(overlappedElements);
 
         }
 

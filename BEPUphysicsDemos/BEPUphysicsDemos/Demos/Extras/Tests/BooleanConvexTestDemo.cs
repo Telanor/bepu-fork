@@ -1,11 +1,10 @@
 ﻿using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using BEPUphysics.DataStructures;
+using BEPUutilities;
 using System.Diagnostics;
 using System;
-using BEPUphysics.MathExtensions;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using SharpDX;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -72,13 +71,13 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                 RigidTransform aTransform;
                 var axis = Vector3.Normalize(new Vector3((float)((random.NextDouble() - .5f) * 2), (float)((random.NextDouble() - .5f) * 2), (float)((random.NextDouble() - .5f) * 2)));
                 var angle = (float)random.NextDouble() * MathHelper.TwoPi;
-                Quaternion.RotationAxis(ref axis, angle, out aTransform.Orientation);
+                Quaternion.CreateFromAxisAngle(ref axis, angle, out aTransform.Orientation);
                 GetRandomPointInBoundingBox(random, ref aPositionBounds, out aTransform.Position);
 
                 RigidTransform bTransform;
                 axis = Vector3.Normalize(new Vector3((float)((random.NextDouble() - .5f) * 2), (float)((random.NextDouble() - .5f) * 2), (float)((random.NextDouble() - .5f) * 2)));
                 angle = (float)random.NextDouble() * MathHelper.TwoPi;
-                Quaternion.RotationAxis(ref axis, angle, out bTransform.Orientation);
+                Quaternion.CreateFromAxisAngle(ref axis, angle, out bTransform.Orientation);
                 GetRandomPointInBoundingBox(random, ref bPositionBounds, out bTransform.Position);
 
                 //Perform MPR tests.
@@ -107,7 +106,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
                 //Perform GJK Separating Axis tests.
                 //Warm up the cache a bit.
-                Vector3 localSeparatingAxis = Vector3.UnitY;
+                Vector3 localSeparatingAxis = Vector3.Up;
                 GJKToolbox.AreShapesIntersecting(a, b, ref aTransform, ref bTransform, ref localSeparatingAxis);
                 start = Stopwatch.GetTimestamp();
                 for (int j = 0; j < numberOfTestsPerConfiguration; j++)
@@ -132,9 +131,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 #if XBOX360
             point = new Vector3();
 #endif
-            point.X = (float)(random.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X);
-            point.Y = (float)(random.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y);
-            point.Z = (float)(random.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z);
+            point.X = (float)(random.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X);
+            point.Y = (float)(random.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y);
+            point.Z = (float)(random.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z);
         }
 
 

@@ -7,9 +7,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using ConversionHelper;
-using SharpDX;
 
 namespace BEPUphysicsDemos.AlternateMovement
 {
@@ -39,16 +38,6 @@ namespace BEPUphysicsDemos.AlternateMovement
         /// </summary>
         public float BaseSlidingFriction;
 
-
-        /// <summary>
-        /// Camera to use for input.
-        /// </summary>
-        public Camera Camera;
-
-        /// <summary>
-        /// Current offset from the position of the vehicle to the 'eyes.'
-        /// </summary>
-        public Vector3 CameraOffset;
 
         /// <summary>
         /// Speed that the vehicle tries to reach when moving forward.
@@ -94,15 +83,22 @@ namespace BEPUphysicsDemos.AlternateMovement
         }
 
         /// <summary>
+        /// Gets the camera control scheme ued by this input manager.
+        /// </summary>
+        public ChaseCameraControlScheme CameraControlScheme { get; private set; }
+
+
+        /// <summary>
         /// Constructs the front end and the internal physics representation of the vehicle.
         /// </summary>
         /// <param name="position">Position of the tank.</param>
         /// <param name="owningSpace">Space to add the vehicle to.</param>
-        /// <param name="cameraToUse">Camera to attach to the vehicle.</param>
+        /// <param name="camera">Camera to attach to the vehicle.</param>
+        /// <param name="game">Running game.</param>
         /// <param name="drawer">Drawer used to draw the tank.</param>
         /// <param name="wheelModel">Model to use for the 'wheels' of the tank.</param>
         /// <param name="wheelTexture">Texture of the wheels on the tank.</param>
-        public TankInput(Vector3 position, Space owningSpace, Camera cameraToUse, ModelDrawer drawer, Model wheelModel, Texture2D wheelTexture)
+        public TankInput(Vector3 position, Space owningSpace, Camera camera, DemosGame game, ModelDrawer drawer, Model wheelModel, Texture2D wheelTexture)
         {
             var bodies = new List<CompoundShapeEntry>()
             {
@@ -120,12 +116,12 @@ namespace BEPUphysicsDemos.AlternateMovement
             MaximumDriveForce = 1800;
             BaseSlidingFriction = 3;
 
-            Matrix wheelGraphicRotation = Matrix.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2);
+            Matrix wheelGraphicRotation = Matrix.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2);
             for (int i = 0; i < 6; i++)
             {
                 var toAdd = new Wheel(
                     new RaycastWheelShape(.375f, wheelGraphicRotation),
-                    new WheelSuspension(2000, 300f, -Vector3.UnitY, 1.3f, new Vector3(-1.9f, 0, -2.9f + i * 1.15f)),
+                    new WheelSuspension(2000, 300f, Vector3.Down, 1.3f, new Vector3(-1.9f, 0, -2.9f + i * 1.15f)),
                     new WheelDrivingMotor(10, MaximumDriveForce, MaximumDriveForce),
                     new WheelBrake(7, 7, 1.0f),
                     new WheelSlidingFriction(BaseSlidingFriction, BaseSlidingFriction));
@@ -139,7 +135,7 @@ namespace BEPUphysicsDemos.AlternateMovement
             {
                 var toAdd = new Wheel(
                     new RaycastWheelShape(.375f, wheelGraphicRotation),
-                    new WheelSuspension(2000, 300f, -Vector3.UnitY, 1.3f, new Vector3(1.9f, 0, -2.9f + i * 1.15f)),
+                    new WheelSuspension(2000, 300f, Vector3.Down, 1.3f, new Vector3(1.9f, 0, -2.9f + i * 1.15f)),
                     new WheelDrivingMotor(10, 2000, 1000),
                     new WheelBrake(7, 7, 1.0f),
                     new WheelSlidingFriction(BaseSlidingFriction, BaseSlidingFriction));
@@ -159,10 +155,10 @@ namespace BEPUphysicsDemos.AlternateMovement
 
                 //By default, wheels use as many iterations as the space.  By lowering it,
                 //performance can be improved at the cost of a little accuracy.
-                wheel.Suspension.SolverSettings.MaximumIterations = 1;
-                wheel.Brake.SolverSettings.MaximumIterations = 1;
-                wheel.SlidingFriction.SolverSettings.MaximumIterations = 1;
-                wheel.DrivingMotor.SolverSettings.MaximumIterations = 1;
+                wheel.Suspension.SolverSettings.MaximumIterationCount = 1;
+                wheel.Brake.SolverSettings.MaximumIterationCount = 1;
+                wheel.SlidingFriction.SolverSettings.MaximumIterationCount = 1;
+                wheel.DrivingMotor.SolverSettings.MaximumIterationCount = 1;
             }
 
             Space = owningSpace;
@@ -181,24 +177,24 @@ namespace BEPUphysicsDemos.AlternateMovement
             }
 
 
-            Camera = cameraToUse;
+
+            CameraControlScheme = new ChaseCameraControlScheme(Vehicle.Body, new Vector3(0, 0.6f, 0), true, 10, camera, game);
+
         }
 
         /// <summary>
         /// Gives the vehicle control over the camera and movement input.
         /// </summary>
-        public void Activate()
+        public void Activate(Vector3 position)
         {
             if (!IsActive)
             {
                 IsActive = true;
-                Camera.UseMovementControls = false;
                 //Put the vehicle where the camera is.
-                Vehicle.Body.Position = MathConverter.Convert(Camera.Position) - CameraOffset;
+                Vehicle.Body.Position = position;
                 Vehicle.Body.LinearVelocity = Vector3.Zero;
                 Vehicle.Body.AngularVelocity = Vector3.Zero;
                 Vehicle.Body.Orientation = Quaternion.Identity;
-                Camera.ActivateChaseCameraMode(Vehicle.Body, new Microsoft.Xna.Framework.Vector3(0, .6f, 0), true, 10);
             }
         }
 
@@ -210,8 +206,6 @@ namespace BEPUphysicsDemos.AlternateMovement
             if (IsActive)
             {
                 IsActive = false;
-                Camera.UseMovementControls = true;
-                Camera.DeactivateChaseCameraMode();
             }
         }
 
@@ -227,11 +221,13 @@ namespace BEPUphysicsDemos.AlternateMovement
             //Update the wheel's graphics.
             for (int k = 0; k < WheelModels.Count; k++)
             {
-                WheelModels[k].WorldTransform = MathConverter.Convert(Vehicle.Wheels[k].Shape.WorldTransform);
+                WheelModels[k].WorldTransform = Vehicle.Wheels[k].Shape.WorldTransform;
             }
 
             if (IsActive)
             {
+                CameraControlScheme.Update(dt);
+
                 //The reason for the more complicated handling of turning is that real tanks'
                 //treads target a certain speed and will apply positive or negative forces
                 //to reach it.
@@ -373,7 +369,10 @@ namespace BEPUphysicsDemos.AlternateMovement
                     if (keyboardInput.IsKeyDown(Keys.S))
                     {
                         //Turn left while going forward
-                        wheelsToAccelerate = rightTrack;
+                        foreach (Wheel wheel in rightTrack)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
+                        }
                         foreach (Wheel wheel in leftTrack)
                         {
                             //Tell one of the tracks to reverse direction, but don't let it 
@@ -389,8 +388,11 @@ namespace BEPUphysicsDemos.AlternateMovement
                     }
                     else if (keyboardInput.IsKeyDown(Keys.F))
                     {
-                        //Turn right while going forward
-                        wheelsToAccelerate = leftTrack;
+                        //Turn right while going forward            
+                        foreach (Wheel wheel in leftTrack)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
+                        }
                         foreach (Wheel wheel in rightTrack)
                         {
                             wheel.DrivingMotor.TargetSpeed = BackwardSpeed;
@@ -400,21 +402,22 @@ namespace BEPUphysicsDemos.AlternateMovement
                     }
                     else
                     {
-                        wheelsToAccelerate = Vehicle.Wheels;
+                        foreach (Wheel wheel in Vehicle.Wheels)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
+                        }
                     }
 
-                    //Drive
-                    foreach (Wheel wheel in wheelsToAccelerate)
-                    {
-                        wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
-                    }
                 }
                 else if (keyboardInput.IsKeyDown(Keys.D))
                 {
                     if (keyboardInput.IsKeyDown(Keys.F))
                     {
                         //Turn right while going back
-                        wheelsToAccelerate = rightTrack;
+                        foreach (var wheel in rightTrack)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = BackwardSpeed;
+                        }
                         foreach (Wheel wheel in leftTrack)
                         {
                             wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
@@ -425,7 +428,10 @@ namespace BEPUphysicsDemos.AlternateMovement
                     else if (keyboardInput.IsKeyDown(Keys.S))
                     {
                         //Turn left while going back
-                        wheelsToAccelerate = leftTrack;
+                        foreach (var wheel in leftTrack)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = BackwardSpeed;
+                        }
                         foreach (Wheel wheel in rightTrack)
                         {
                             wheel.DrivingMotor.TargetSpeed = ForwardSpeed;
@@ -435,13 +441,12 @@ namespace BEPUphysicsDemos.AlternateMovement
                     }
                     else
                     {
-                        wheelsToAccelerate = Vehicle.Wheels;
+                        foreach (Wheel wheel in Vehicle.Wheels)
+                        {
+                            wheel.DrivingMotor.TargetSpeed = BackwardSpeed;
+                        }
                     }
-                    //Reverse                    
-                    foreach (Wheel wheel in wheelsToAccelerate)
-                    {
-                        wheel.DrivingMotor.TargetSpeed = BackwardSpeed;
-                    }
+      
                 }
                 else if (keyboardInput.IsKeyDown(Keys.S))
                 {

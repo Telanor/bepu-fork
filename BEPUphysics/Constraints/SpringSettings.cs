@@ -1,6 +1,6 @@
 ﻿using System;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints
 {
@@ -32,7 +32,7 @@ namespace BEPUphysics.Constraints
         public float Softness
         {
             get { return softness; }
-            set { softness = Math.Max(0, value); }
+            set { softness = MathHelper.Max(0, value); }
         }
 
         /// <summary>
@@ -55,8 +55,8 @@ namespace BEPUphysics.Constraints
     {
         private readonly SpringAdvancedSettings advanced = new SpringAdvancedSettings();
 
-        internal float dampingConstant = 90000;
-        internal float stiffnessConstant = 600000;
+        internal float damping = 90000;
+        internal float stiffness = 600000;
 
         /// <summary>
         /// Gets an object containing the solver's direct view of the spring behavior.
@@ -67,21 +67,21 @@ namespace BEPUphysics.Constraints
         }
 
         /// <summary>
-        /// Gets or sets the damping constant of this spring.  Higher values reduce oscillation more.
+        /// Gets or sets the damping coefficient of this spring.  Higher values reduce oscillation more.
         /// </summary>
-        public float DampingConstant
+        public float Damping
         {
-            get { return dampingConstant; }
-            set { dampingConstant = Math.Max(0, value); }
+            get { return damping; }
+            set { damping = MathHelper.Max(0, value); }
         }
 
         /// <summary>
-        /// Gets or sets the spring constant of this spring.  Higher values make the spring stiffer.
+        /// Gets or sets the stiffness coefficient of this spring.  Higher values make the spring stiffer.
         /// </summary>
-        public float StiffnessConstant
+        public float Stiffness
         {
-            get { return stiffnessConstant; }
-            set { stiffnessConstant = Math.Max(0, value); }
+            get { return stiffness; }
+            set { stiffness = Math.Max(0, value); }
         }
 
         /// <summary>
@@ -89,21 +89,23 @@ namespace BEPUphysics.Constraints
         /// Automatically called by constraint presteps to compute their per-frame values.
         /// </summary>
         /// <param name="dt">Simulation timestep.</param>
+        /// <param name="updateRate">Inverse simulation timestep.</param>
         /// <param name="errorReduction">Error reduction factor to use this frame.</param>
         /// <param name="softness">Adjusted softness of the constraint for this frame.</param>
-        public void ComputeErrorReductionAndSoftness(float dt, out float errorReduction, out float softness)
+        public void ComputeErrorReductionAndSoftness(float dt, float updateRate, out float errorReduction, out float softness)
         {
             if (advanced.useAdvancedSettings)
             {
-                errorReduction = advanced.errorReductionFactor / dt;
-                softness = advanced.softness / dt;
+                errorReduction = advanced.errorReductionFactor * updateRate;
+                softness = advanced.softness * updateRate;
             }
             else
             {
-                if (stiffnessConstant == 0 && dampingConstant == 0)
+                if (stiffness == 0 && damping == 0)
                     throw new InvalidOperationException("Constraints cannot have both 0 stiffness and 0 damping.");
-                errorReduction = stiffnessConstant / (dt * stiffnessConstant + dampingConstant);
-                softness = 1 / (dt * (dt * stiffnessConstant + dampingConstant));
+                float multiplier = 1 / (dt * stiffness + damping);
+                errorReduction = stiffness * multiplier;
+                softness = updateRate * multiplier;
             }
         }
     }

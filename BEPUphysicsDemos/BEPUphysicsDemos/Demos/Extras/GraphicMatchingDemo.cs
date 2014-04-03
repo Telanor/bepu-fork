@@ -1,8 +1,9 @@
-﻿using BEPUphysics.Entities.Prefabs;
+﻿
+using BEPUphysics.Entities.Prefabs;
 using BEPUphysicsDrawer.Models;
+using BEPUutilities;
 using ConversionHelper;
 using Microsoft.Xna.Framework.Graphics;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras
 {
@@ -26,7 +27,7 @@ namespace BEPUphysicsDemos.Demos.Extras
             //http://bepuphysics.codeplex.com/wikipage?title=Shape%20Recentering
 
             var model = game.Content.Load<Model>("guy");
-            Vector3[] vertices;
+            BEPUutilities.Vector3[] vertices;
             int[] indices;
             ModelDataExtractor.GetVerticesAndIndicesFromModel(model, out vertices, out indices);
 
@@ -55,11 +56,11 @@ namespace BEPUphysicsDemos.Demos.Extras
             //Space.Add(entity);
 
             //For more information about constructing entities, check out the EntityConstructionDemo.
-            
+
             //But for now, let's just use the prefab entity type.  As mentioned earlier, the constructor set the entity's Position using the computed center.
             //Since we didn't overwrite it with some other position yet, we can still use it.
             graphic = new DisplayEntityModel(hull, model, game.ModelDrawer);
-            graphic.LocalTransform = Microsoft.Xna.Framework.Matrix.CreateTranslation(MathConverter.Convert(-hull.Position));
+            graphic.LocalTransform = Matrix.CreateTranslation(-hull.Position);
             game.ModelDrawer.Add(graphic);
 
             //This graphic is perfectly aligned with the collision shape!  Hooray!
@@ -67,7 +68,7 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             Box ground = new Box(new Vector3(0, -1.5f, 0), 50, 1, 50);
             Space.Add(ground);
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 6, 15);
+            game.Camera.Position = new Vector3(0, 6, 15);
         }
 
         /// <summary>

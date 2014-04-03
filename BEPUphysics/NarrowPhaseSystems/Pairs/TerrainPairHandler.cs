@@ -1,17 +1,12 @@
 ﻿using System;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.CollisionTests;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
 using BEPUphysics.CollisionTests.Manifolds;
 using BEPUphysics.Constraints.Collision;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
-using SharpDX;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {
@@ -80,7 +75,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 convex = entryA as ConvexCollidable;
 
                 if (terrain == null || convex == null)
-                    throw new Exception("Inappropriate types used to initialize pair.");
+                    throw new ArgumentException("Inappropriate types used to initialize pair.");
             }
 
             //Contact normal goes from A to B.
@@ -128,15 +123,15 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                 Vector3.Multiply(ref convex.entity.linearVelocity, dt, out velocity);
                 float velocitySquared = velocity.LengthSquared();
 
-                var minimumRadius = convex.Shape.minimumRadius * MotionSettings.CoreShapeScaling;
+                var minimumRadius = convex.Shape.MinimumRadius * MotionSettings.CoreShapeScaling;
                 timeOfImpact = 1;
                 if (minimumRadius * minimumRadius < velocitySquared)
                 {
-                    var triangle = BEPUphysics.ResourceManagement.Resources.GetTriangle();
+                    var triangle = PhysicsThreadResources.GetTriangle();
                     triangle.collisionMargin = 0;
                     Vector3 terrainUp = new Vector3(terrain.worldTransform.LinearTransform.M21, terrain.worldTransform.LinearTransform.M22, terrain.worldTransform.LinearTransform.M23);
                     //Spherecast against all triangles to find the earliest time.
-                    for (int i = 0; i < TerrainManifold.overlappedTriangles.count; i++)
+                    for (int i = 0; i < TerrainManifold.overlappedTriangles.Count; i++)
                     {
                         terrain.Shape.GetTriangle(ref TerrainManifold.overlappedTriangles.Elements[i], ref terrain.worldTransform, out triangle.vA, out triangle.vB, out triangle.vC);
                         //Put the triangle into 'localish' space of the convex.
@@ -155,12 +150,12 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                             Vector3 normal;
                             Vector3.Cross(ref AC, ref AB, out normal);
                             float dot;
-                            Vector3Ex.Dot(ref normal, ref terrainUp, out dot);
+                            Vector3.Dot(ref normal, ref terrainUp, out dot);
                             if (dot < 0)
-                                Vector3Ex.Dot(ref normal, ref rayHit.Normal, out dot);
+                                Vector3.Dot(ref normal, ref rayHit.Normal, out dot);
                             else
                             {
-                                Vector3Ex.Dot(ref normal, ref rayHit.Normal, out dot);
+                                Vector3.Dot(ref normal, ref rayHit.Normal, out dot);
                                 dot = -dot;
                             }
                             //Only perform sweep if the object is in danger of hitting the object.
@@ -171,7 +166,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
                             }
                         }
                     }
-                    BEPUphysics.ResourceManagement.Resources.GiveBack(triangle);
+                    PhysicsThreadResources.GiveBack(triangle);
                 }
 
 
@@ -187,7 +182,7 @@ namespace BEPUphysics.NarrowPhaseSystems.Pairs
             //Find the contact's normal and friction forces.
             info.FrictionImpulse = 0;
             info.NormalImpulse = 0;
-            for (int i = 0; i < contactConstraint.frictionConstraints.count; i++)
+            for (int i = 0; i < contactConstraint.frictionConstraints.Count; i++)
             {
                 if (contactConstraint.frictionConstraints.Elements[i].PenetrationConstraint.contact == info.Contact)
                 {

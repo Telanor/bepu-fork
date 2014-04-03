@@ -1,25 +1,17 @@
-#region Using Statements
-
 using System;
-using System.Collections.Generic;
-using BEPUphysics.DeactivationManagement;
 using BEPUphysics.Entities;
 using BEPUphysicsDemos.Demos;
+using BEPUphysicsDemos.Demos.Extras;
+using BEPUphysicsDemos.Demos.Extras.SolverTypeTests;
+using BEPUphysicsDemos.Demos.Extras.Tests;
 using BEPUphysicsDemos.SampleCode;
 using BEPUphysicsDrawer.Font;
 using BEPUphysicsDrawer.Lines;
 using BEPUphysicsDrawer.Models;
+using ConversionHelper;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.Settings;
-using BEPUphysics.DataStructures;
-using BEPUphysicsDemos.Demos.Extras;
-using BEPUphysicsDemos.Demos.Extras.Tests;
-using BEPUphysicsDemos.Demos.Tests;
-
-#endregion
 
 namespace BEPUphysicsDemos
 {
@@ -66,13 +58,14 @@ namespace BEPUphysicsDemos
         public GamePadState PreviousGamePadInput;
 #if WINDOWS
         public MouseState MouseInput;
+        public MouseState PreviousMouseInput;
 #endif
 
         //Display Booleans        
-        private bool displayEntities = true;
-        private bool displayUI = true;
-        private bool displayActiveEntityCount = true;
-        private bool displayConstraints = true;
+        public bool displayEntities = true;
+        public bool displayUI = true;
+        public bool displayActiveEntityCount = true;
+        public bool displayConstraints = true;
         private bool displayMenu;
         private bool displayContacts;
         private bool displayBoundingBoxes;
@@ -81,12 +74,12 @@ namespace BEPUphysicsDemos
         private readonly Type[] demoTypes = new[]
                                                 {
                                                     typeof (CharacterPlaygroundDemo),
+                                                    typeof (TankDemo),
                                                     typeof (WallDemo),
                                                     typeof (PyramidDemo),
                                                     typeof (ColosseumDemo),
                                                     typeof (LotsOSpheresDemo),
                                                     typeof (JengaDemo),
-                                                    typeof (IncomingDemo),
                                                     typeof (FancyShapesDemo),
                                                     typeof (CompoundBodiesDemo),
                                                     typeof (TerrainDemo),
@@ -95,12 +88,12 @@ namespace BEPUphysicsDemos
                                                     typeof (MobileMeshDemo),
                                                     typeof (StaticGroupDemo),
                                                     typeof (EntityConstructionDemo),
-                                                    typeof (MultipendulumDemo),
-                                                    typeof (ClothDemo),
+                                                    typeof (SpiderDemo),
+                                                    typeof (SelfCollidingClothDemo),
                                                     typeof (EarthquakeDemo),
                                                     typeof (BridgeDemo),
                                                     typeof (ActionFigureDemo),
-                                                    typeof (UnfortunateGuyDemo),
+                                                    typeof (RagdollDemo),
                                                     typeof (SawContraptionDemo),
                                                     typeof (DogbotDemo),
                                                     typeof (RobotArmDemo),
@@ -115,7 +108,8 @@ namespace BEPUphysicsDemos
                                                     typeof (PlanetDemo),
                                                     typeof (PathFollowingDemo),
                                                     typeof (FishInABarrelDemo),
-                                                    typeof (DetectorVolumeDemo)
+                                                    typeof (DetectorVolumeDemo),
+                                                    typeof (InverseKinematicsTestDemo)
                                                 };
 
 
@@ -126,8 +120,7 @@ namespace BEPUphysicsDemos
 
             Graphics.PreferredBackBufferWidth = 1280;
             Graphics.PreferredBackBufferHeight = 720;
-            Camera = new Camera(this, Vector3.Zero, 4, 0, 0, Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, Graphics.PreferredBackBufferWidth / (float)Graphics.PreferredBackBufferHeight, .1f, 10000));
-
+            Camera = new Camera(BEPUutilities.Vector3.Zero, 0, 0, BEPUutilities.Matrix.CreatePerspectiveFieldOfViewRH(MathHelper.PiOver4, Graphics.PreferredBackBufferWidth / (float)Graphics.PreferredBackBufferHeight, .1f, 10000));
 
             Exiting += DemosGameExiting;
         }
@@ -226,6 +219,7 @@ namespace BEPUphysicsDemos
 #endif
 
             SwitchSimulation(1);
+
         }
 
 
@@ -260,6 +254,7 @@ namespace BEPUphysicsDemos
             KeyboardInput = Keyboard.GetState();
             var dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 #if WINDOWS
+            PreviousMouseInput = MouseInput;
             MouseInput = Mouse.GetState();
 
             //Keep the mouse within the screen
@@ -282,17 +277,7 @@ namespace BEPUphysicsDemos
             if (WasKeyPressed(Keys.Tab))
                 IsMouseVisible = !IsMouseVisible;
 
-            #region Camera
-
-            //Update the camera
-#if !WINDOWS
-
-            Camera.Update(dt, KeyboardInput, GamePadInput);
-#else
-            Camera.Update(dt, KeyboardInput, MouseInput, GamePadInput);
-#endif
-
-            #endregion
+     
 
             #region UI Toggles
 
@@ -378,7 +363,6 @@ namespace BEPUphysicsDemos
 
                     if (simNumber <= demoTypes.Length)
                     {
-                        currentSimulation.Space.ThreadManager.Dispose(); //While it would clean up by itself, this gets it done a little quicker.
                         SwitchSimulation(simNumber);
                     }
                 }
@@ -407,17 +391,19 @@ namespace BEPUphysicsDemos
         {
             GraphicsDevice.Clear(new Color(.41f, .41f, .45f, 1));
 
+            var viewMatrix = Camera.ViewMatrix;
+            var projectionMatrix = Camera.ProjectionMatrix;
             if (displayEntities)
-                ModelDrawer.Draw(Camera.ViewMatrix, Camera.ProjectionMatrix);
+                ModelDrawer.Draw(viewMatrix, projectionMatrix);
 
             if (displayConstraints)
-                ConstraintDrawer.Draw(Camera.ViewMatrix, Camera.ProjectionMatrix);
+                ConstraintDrawer.Draw(viewMatrix, projectionMatrix);
 
             LineDrawer.LightingEnabled = false;
             LineDrawer.VertexColorEnabled = true;
             LineDrawer.World = Matrix.Identity;
-            LineDrawer.View = Camera.ViewMatrix;
-            LineDrawer.Projection = Camera.ProjectionMatrix;
+            LineDrawer.View = MathConverter.Convert(viewMatrix);
+            LineDrawer.Projection = MathConverter.Convert(projectionMatrix);
 
             if (displayContacts)
                 ContactDrawer.Draw(LineDrawer, currentSimulation.Space);
@@ -428,6 +414,12 @@ namespace BEPUphysicsDemos
             if (displaySimulationIslands)
                 SimulationIslandDrawer.Draw(LineDrawer, currentSimulation.Space);
 
+
+            //This doesn't actually draw the elements in the demo (that's the modeldrawer's job),
+            //but some demos can specify their own extra stuff to draw.
+            currentSimulation.Draw();
+
+            base.Draw(gameTime);
 
             #region UI Drawing
 
@@ -479,12 +471,6 @@ namespace BEPUphysicsDemos
             UIDrawer.End();
 
             #endregion
-
-            //This doesn't actually draw the elements in the demo (that's the modeldrawer's job),
-            //but some demos can specify their own extra stuff to draw.
-            currentSimulation.Draw();
-
-            base.Draw(gameTime);
         }
     }
 }

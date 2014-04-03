@@ -1,5 +1,5 @@
 ﻿using BEPUphysics.Entities.Prefabs;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -95,7 +95,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             Space.Add(alwaysActiveBox);
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 7, 30);
+            game.Camera.Position = new Vector3(0, 7, 30);
 
         }
 

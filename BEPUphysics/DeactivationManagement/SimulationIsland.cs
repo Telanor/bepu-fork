@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading;
-using BEPUphysics.DataStructures;
+using BEPUutilities.DataStructures;
 using System.Collections.ObjectModel;
 
 namespace BEPUphysics.DeactivationManagement
@@ -24,7 +24,7 @@ namespace BEPUphysics.DeactivationManagement
         internal bool allowDeactivation = true;
         internal bool isActive = true;
         ///<summary>
-        /// Gets whether or not the island is currently active.
+        /// Gets or sets whether or not the island is currently active.
         ///</summary>
         public bool IsActive
         {
@@ -38,7 +38,23 @@ namespace BEPUphysics.DeactivationManagement
             }
         }
         internal int memberCount;
+
+        /// <summary>
+        /// Gets the number of simulation island members within this simulation island.
+        /// </summary>
+        public int MemberCount
+        {
+            get { return memberCount; }
+        }
+
         internal int deactivationCandidateCount;
+        /// <summary>
+        /// Gets the number of simulation island members in the simulation island which are prepared to go to sleep.
+        /// </summary>
+        public int DeactivationCandidateCount
+        {
+            get { return deactivationCandidateCount; }
+        }
 
         ///<summary>
         /// Constructs a simulation island.
@@ -54,7 +70,7 @@ namespace BEPUphysics.DeactivationManagement
         Action<SimulationIslandMember> memberActivatedDelegate;
         void MemberActivated(SimulationIslandMember member)
         {
-            Activate();
+            IsActive = true;
         }
 
         Action<SimulationIslandMember> becameDeactivationCandidateDelegate;
@@ -70,28 +86,16 @@ namespace BEPUphysics.DeactivationManagement
             Interlocked.Decrement(ref deactivationCandidateCount);
         }
 
-        ///<summary>
-        /// Activates the simulation island.
-        ///</summary>
-        public void Activate()
-        {
-            //TODO: CONSIDER ACTIVE ISLAND WITH FORCE-DEACTIVATED MEMBER.  ACTIVATING SIMULATION ISLAND WILL NOT WAKE FORCE-DEACTIVATED MEMBER.  DESIRED?
-            if (!isActive)
-            {
-                isActive = true;
-            }
-        }
-
 
         ///<summary>
-        /// Attempts to deactivate the simulation island.
+        /// Attempts to deactivate the simulation island. Only deactivates if the island is settled and ready to go to sleep.
         ///</summary>
         ///<returns>Whether or not the simulation island was successfully deactivated.</returns>
         public bool TryToDeactivate()
         {
             if (allowDeactivation)
             {
-                //TODO: Check the deactivation count.  If it's a fully deactivated simulation island, then try to deactivate !:)
+                //Check the deactivation count.  If it's a fully deactivated simulation island, then try to deactivate !:)
                 //DO NOT WORRY ABOUT THREAD SAFETY HERE.
                 //TryToDeactivate will be called sequentially in a 'limited work per frame' scheme.
                 //Avoids load balancing problems and makes implementation easier.
@@ -133,7 +137,7 @@ namespace BEPUphysics.DeactivationManagement
                 }
             }
             else
-                throw new Exception("Member either is not dynamic or already has a simulation island; cannot add.");
+                throw new ArgumentException("Member either is not dynamic or already has a simulation island; cannot add.");
         }
 
         ///<summary>
@@ -164,7 +168,7 @@ namespace BEPUphysics.DeactivationManagement
                 }
             }
             else
-                throw new Exception("Member does not belong to island; cannot remove.");
+                throw new ArgumentException("Member does not belong to island; cannot remove.");
         }
 
 

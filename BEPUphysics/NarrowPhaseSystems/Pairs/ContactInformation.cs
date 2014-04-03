@@ -1,6 +1,7 @@
 ﻿using System;
 using BEPUphysics.CollisionTests;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.NarrowPhaseSystems.Pairs
 {

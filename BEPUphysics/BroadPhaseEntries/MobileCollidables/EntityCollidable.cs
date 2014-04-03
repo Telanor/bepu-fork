@@ -1,13 +1,13 @@
-﻿using BEPUphysics.Collidables.Events;
+﻿using BEPUphysics.BroadPhaseEntries.Events;
 using BEPUphysics.CollisionShapes;
 using BEPUphysics.Entities;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
+ 
 using BEPUphysics.Settings;
 using System;
 using BEPUphysics.PositionUpdating;
 
-namespace BEPUphysics.Collidables.MobileCollidables
+namespace BEPUphysics.BroadPhaseEntries.MobileCollidables
 {
     ///<summary>
     /// Mobile collidable acting as a collision proxy for an entity.
@@ -84,7 +84,7 @@ namespace BEPUphysics.Collidables.MobileCollidables
                 Quaternion conjugate;
                 Quaternion.Conjugate(ref value.Orientation, out conjugate);
                 Vector3 worldOffset;
-                Vector3.Transform(ref localPosition, ref conjugate, out worldOffset);
+                Quaternion.Transform(ref localPosition, ref conjugate, out worldOffset);
                 Vector3.Subtract(ref value.Position, ref worldOffset, out value.Position);
                 UpdateBoundingBoxForTransform(ref value);
             }
@@ -152,7 +152,7 @@ namespace BEPUphysics.Collidables.MobileCollidables
         ///<param name="orientation">Orientation to use for the calculation.</param>
         public virtual void UpdateWorldTransform(ref Vector3 position, ref Quaternion orientation)
         {
-            Vector3.Transform(ref localPosition, ref orientation, out worldTransform.Position);
+            Quaternion.Transform(ref localPosition, ref orientation, out worldTransform.Position);
             Vector3.Add(ref worldTransform.Position, ref position, out worldTransform.Position);
             worldTransform.Orientation = orientation;
 
@@ -197,19 +197,19 @@ namespace BEPUphysics.Collidables.MobileCollidables
                 bool useExtraExpansion = MotionSettings.UseExtraExpansionForContinuousBoundingBoxes && entity.PositionUpdateMode == PositionUpdateMode.Continuous;
                 float velocityScaling = useExtraExpansion ? 2 : 1;
                 if (entity.linearVelocity.X > 0)
-                    boundingBox.Maximum.X += entity.linearVelocity.X * dt * velocityScaling;
+                    boundingBox.Max.X += entity.linearVelocity.X * dt * velocityScaling;
                 else
-                    boundingBox.Minimum.X += entity.linearVelocity.X * dt * velocityScaling;
+                    boundingBox.Min.X += entity.linearVelocity.X * dt * velocityScaling;
 
                 if (entity.linearVelocity.Y > 0)
-                    boundingBox.Maximum.Y += entity.linearVelocity.Y * dt * velocityScaling;
+                    boundingBox.Max.Y += entity.linearVelocity.Y * dt * velocityScaling;
                 else
-                    boundingBox.Minimum.Y += entity.linearVelocity.Y * dt * velocityScaling;
+                    boundingBox.Min.Y += entity.linearVelocity.Y * dt * velocityScaling;
 
                 if (entity.linearVelocity.Z > 0)
-                    boundingBox.Maximum.Z += entity.linearVelocity.Z * dt * velocityScaling;
+                    boundingBox.Max.Z += entity.linearVelocity.Z * dt * velocityScaling;
                 else
-                    boundingBox.Minimum.Z += entity.linearVelocity.Z * dt * velocityScaling;
+                    boundingBox.Min.Z += entity.linearVelocity.Z * dt * velocityScaling;
 
 
 
@@ -232,13 +232,13 @@ namespace BEPUphysics.Collidables.MobileCollidables
                     expansion = (float)Math.Sqrt(expansion) * dt;
 
 
-                    boundingBox.Minimum.X -= expansion;
-                    boundingBox.Minimum.Y -= expansion;
-                    boundingBox.Minimum.Z -= expansion;
+                    boundingBox.Min.X -= expansion;
+                    boundingBox.Min.Y -= expansion;
+                    boundingBox.Min.Z -= expansion;
 
-                    boundingBox.Maximum.X += expansion;
-                    boundingBox.Maximum.Y += expansion;
-                    boundingBox.Maximum.Z += expansion;
+                    boundingBox.Max.X += expansion;
+                    boundingBox.Max.Y += expansion;
+                    boundingBox.Max.Z += expansion;
 
                 }
 
@@ -278,7 +278,7 @@ namespace BEPUphysics.Collidables.MobileCollidables
             {
                 if (value.Owner != null && //Can't use a manager which is owned by a different entity.
                     value != events) //Stay quiet if for some reason the same event manager is being set.
-                    throw new Exception("Event manager is already owned by an entity; event managers cannot be shared.");
+                    throw new ArgumentException("Event manager is already owned by an entity; event managers cannot be shared.");
                 //Must pass on the link to the parent event manager to the new event manager in case we are the child of a compound.
                 CompoundEventManager oldParent = null;
                 if (events != null)

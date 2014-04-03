@@ -1,24 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.Constraints.TwoEntity;
 using BEPUphysics.DeactivationManagement;
 using BEPUphysics.EntityStateManagement;
 using BEPUphysics.OtherSpaceStages;
 using BEPUphysics.PositionUpdating;
 using BEPUphysics.Settings;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 using BEPUphysics.Materials;
-using BEPUphysics.Constraints;
-using System.Collections.ObjectModel;
 using BEPUphysics.CollisionShapes;
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.DataStructures;
-using BEPUphysics.Threading;
+using MathChecker = BEPUutilities.MathChecker;
 
 namespace BEPUphysics.Entities
 {
@@ -38,11 +33,12 @@ namespace BEPUphysics.Entities
     {
         internal Vector3 position;
         internal Quaternion orientation = Quaternion.Identity;
-        internal Matrix3X3 orientationMatrix = Matrix3X3.Identity;
+        internal Matrix3x3 orientationMatrix = Matrix3x3.Identity;
         internal Vector3 linearVelocity;
-        internal Vector3 linearMomentum;
         internal Vector3 angularVelocity;
+#if CONSERVE
         internal Vector3 angularMomentum;
+#endif
         internal bool isDynamic;
 
 
@@ -62,7 +58,7 @@ namespace BEPUphysics.Entities
                 position = value;
                 activityInformation.Activate();
 
-                position.Validate();
+                MathChecker.Validate(position);
             }
         }
         ///<summary>
@@ -77,22 +73,22 @@ namespace BEPUphysics.Entities
             set
             {
                 Quaternion.Normalize(ref value, out orientation);
-                Matrix3X3.CreateFromQuaternion(ref orientation, out orientationMatrix);
+                Matrix3x3.CreateFromQuaternion(ref orientation, out orientationMatrix);
                 //Update inertia tensors for consistency.
-                Matrix3X3 multiplied;
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
+                Matrix3x3 multiplied;
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
                 activityInformation.Activate();
 
-                orientation.Validate();
+                MathChecker.Validate(orientation);
             }
         }
         /// <summary>
         /// Gets or sets the orientation matrix of the entity.
         /// </summary>
-        public Matrix3X3 OrientationMatrix
+        public Matrix3x3 OrientationMatrix
         {
             get
             {
@@ -100,7 +96,7 @@ namespace BEPUphysics.Entities
             }
             set
             {
-                Matrix3X3.CreateQuaternion(ref value, out orientation);
+                Quaternion.CreateFromRotationMatrix(ref value, out orientation);
                 Orientation = orientation; //normalizes and sets.
             }
         }
@@ -115,18 +111,18 @@ namespace BEPUphysics.Entities
             get
             {
                 Matrix worldTransform;
-                Matrix3X3.ToMatrix4X4(ref orientationMatrix, out worldTransform);
-                MatrixEx.SetTranslation(ref worldTransform, position);
+                Matrix3x3.ToMatrix4X4(ref orientationMatrix, out worldTransform);
+                worldTransform.Translation = position;
                 return worldTransform;
             }
             set
             {
-                Quaternion.RotationMatrix(ref value, out orientation);
+                Quaternion.CreateFromRotationMatrix(ref value, out orientation);
                 Orientation = orientation; //normalizes and sets.
-                position = value.GetTranslation();
+                position = value.Translation;
                 activityInformation.Activate();
 
-                position.Validate();
+                MathChecker.Validate(position);
             }
 
         }
@@ -142,11 +138,13 @@ namespace BEPUphysics.Entities
             set
             {
                 angularVelocity = value;
-                Matrix3X3.Transform(ref value, ref inertiaTensor, out angularMomentum);
+                MathChecker.Validate(angularVelocity);
+#if CONSERVE
+                Matrix3x3.Transform(ref value, ref inertiaTensor, out angularMomentum);
+                MathChecker.Validate(angularMomentum);
+#endif
                 activityInformation.Activate();
 
-                angularVelocity.Validate();
-                angularMomentum.Validate();
             }
         }
         /// <summary>
@@ -156,23 +154,24 @@ namespace BEPUphysics.Entities
         {
             get
             {
-                if (MotionSettings.ConserveAngularMomentum)
-                    return angularMomentum;
-                else
-                {
-                    Vector3 v;
-                    Matrix3X3.Transform(ref angularVelocity, ref inertiaTensor, out v);
-                    return v;
-                }
+#if CONSERVE
+                return angularMomentum;
+#else
+                Vector3 v;
+                Matrix3x3.Transform(ref angularVelocity, ref inertiaTensor, out v);
+                return v;
+#endif
             }
             set
             {
+#if CONSERVE
                 angularMomentum = value;
-                Matrix3X3.Transform(ref value, ref inertiaTensorInverse, out angularVelocity);
+                MathChecker.Validate(angularMomentum);
+#else
+                Matrix3x3.Transform(ref value, ref inertiaTensorInverse, out angularVelocity);
                 activityInformation.Activate();
-
-                angularVelocity.Validate();
-                angularMomentum.Validate();
+#endif
+                MathChecker.Validate(angularVelocity);
             }
         }
         /// <summary>
@@ -187,11 +186,9 @@ namespace BEPUphysics.Entities
             set
             {
                 linearVelocity = value;
-                Vector3.Multiply(ref linearVelocity, mass, out linearMomentum);
                 activityInformation.Activate();
 
-                linearVelocity.Validate();
-                linearMomentum.Validate();
+                MathChecker.Validate(linearVelocity);
             }
         }
         /// <summary>
@@ -201,16 +198,16 @@ namespace BEPUphysics.Entities
         {
             get
             {
-                return linearMomentum;
+                Vector3 momentum;
+                Vector3.Multiply(ref linearVelocity, mass, out momentum);
+                return momentum;
             }
             set
             {
-                linearMomentum = value;
-                Vector3.Multiply(ref linearMomentum, inverseMass, out linearVelocity);
+                Vector3.Multiply(ref value, inverseMass, out linearVelocity);
                 activityInformation.Activate();
 
-                linearVelocity.Validate();
-                linearMomentum.Validate();
+                MathChecker.Validate(linearVelocity);
             }
         }
         /// <summary>
@@ -278,31 +275,31 @@ namespace BEPUphysics.Entities
         ///</summary>
         public EntityBufferedStates BufferedStates { get; private set; }
 
-        internal Matrix3X3 inertiaTensorInverse;
+        internal Matrix3x3 inertiaTensorInverse;
         ///<summary>
         /// Gets the world space inertia tensor inverse of the entity.
         ///</summary>
-        public Matrix3X3 InertiaTensorInverse
+        public Matrix3x3 InertiaTensorInverse
         {
             get
             {
                 return inertiaTensorInverse;
             }
         }
-        internal Matrix3X3 inertiaTensor;
+        internal Matrix3x3 inertiaTensor;
         ///<summary>
         /// Gets the world space inertia tensor of the entity.
         ///</summary>
-        public Matrix3X3 InertiaTensor
+        public Matrix3x3 InertiaTensor
         {
             get { return inertiaTensor; }
         }
 
-        internal Matrix3X3 localInertiaTensor;
+        internal Matrix3x3 localInertiaTensor;
         ///<summary>
         /// Gets or sets the local inertia tensor of the entity.
         ///</summary>
-        public Matrix3X3 LocalInertiaTensor
+        public Matrix3x3 LocalInertiaTensor
         {
             get
             {
@@ -311,22 +308,22 @@ namespace BEPUphysics.Entities
             set
             {
                 localInertiaTensor = value;
-                Matrix3X3.AdaptiveInvert(ref localInertiaTensor, out localInertiaTensorInverse);
-                Matrix3X3 multiplied;
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
+                Matrix3x3.AdaptiveInvert(ref localInertiaTensor, out localInertiaTensorInverse);
+                Matrix3x3 multiplied;
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
 
                 localInertiaTensor.Validate();
                 localInertiaTensorInverse.Validate();
             }
         }
-        internal Matrix3X3 localInertiaTensorInverse;
+        internal Matrix3x3 localInertiaTensorInverse;
         /// <summary>
         /// Gets or sets the local inertia tensor inverse of the entity.
         /// </summary>
-        public Matrix3X3 LocalInertiaTensorInverse
+        public Matrix3x3 LocalInertiaTensorInverse
         {
             get
             {
@@ -335,13 +332,13 @@ namespace BEPUphysics.Entities
             set
             {
                 localInertiaTensorInverse = value;
-                Matrix3X3.AdaptiveInvert(ref localInertiaTensorInverse, out localInertiaTensor);
+                Matrix3x3.AdaptiveInvert(ref localInertiaTensorInverse, out localInertiaTensor);
                 //Update the world space versions.
-                Matrix3X3 multiplied;
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
-                Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
-                Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
+                Matrix3x3 multiplied;
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
+                Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
+                Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
 
                 localInertiaTensor.Validate();
                 localInertiaTensorInverse.Validate();
@@ -370,8 +367,8 @@ namespace BEPUphysics.Entities
                     {
                         //If it's already dynamic, then we don't need to recompute the inertia tensor.
                         //Instead, scale the one we have already.
-                        Matrix3X3 newInertia;
-                        Matrix3X3.Multiply(ref localInertiaTensor, value * inverseMass, out newInertia);
+                        Matrix3x3 newInertia;
+                        Matrix3x3.Multiply(ref localInertiaTensor, value * inverseMass, out newInertia);
                         BecomeDynamic(value, newInertia);
                     }
                     else
@@ -400,16 +397,6 @@ namespace BEPUphysics.Entities
                     Mass = 0;
             }
         }
-
-
-        internal float volume;
-        /// <summary>
-        /// Gets or sets the volume of the entity.
-        /// This is computed along with other physical properties at initialization,
-        /// but it's only used for auxiliary systems like the FluidVolume.
-        /// Changing this can tune behavior of those systems.
-        /// </summary>
-        public float Volume { get { return volume; } set { volume = value; volume.Validate(); } }
 
 
 
@@ -550,10 +537,10 @@ namespace BEPUphysics.Entities
         }
 
         ///<summary>
-        /// Constructs a new dynamic entity.
+        /// Constructs a new entity.
         ///</summary>
         ///<param name="collisionInformation">Collidable to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
+        ///<param name="mass">Mass of the entity. If positive, the entity will be dynamic. Otherwise, it will be kinematic.</param>
         public Entity(EntityCollidable collisionInformation, float mass)
             : this()
         {
@@ -561,27 +548,15 @@ namespace BEPUphysics.Entities
         }
 
         ///<summary>
-        /// Constructs a new dynamic entity.
+        /// Constructs a new entity.
         ///</summary>
         ///<param name="collisionInformation">Collidable to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
-        /// <param name="inertiaTensor">Inertia tensor of the entity.</param>
-        public Entity(EntityCollidable collisionInformation, float mass, Matrix3X3 inertiaTensor)
+        ///<param name="mass">Mass of the entity. If positive, the entity will be dynamic. Otherwise, it will be kinematic.</param>
+        /// <param name="inertiaTensor">Inertia tensor of the entity. Only used for a dynamic entity.</param>
+        public Entity(EntityCollidable collisionInformation, float mass, Matrix3x3 inertiaTensor)
             : this()
         {
             Initialize(collisionInformation, mass, inertiaTensor);
-        }
-        ///<summary>
-        /// Constructs a new dynamic entity.
-        ///</summary>
-        ///<param name="collisionInformation">Collidable to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
-        /// <param name="inertiaTensor">Inertia tensor of the entity.</param>
-        /// <param name="volume">Volume of the entity.</param>
-        public Entity(EntityCollidable collisionInformation, float mass, Matrix3X3 inertiaTensor, float volume)
-            : this()
-        {
-            Initialize(collisionInformation, mass, inertiaTensor, volume);
         }
 
         ///<summary>
@@ -595,10 +570,10 @@ namespace BEPUphysics.Entities
         }
 
         ///<summary>
-        /// Constructs a new dynamic entity.
+        /// Constructs a new entity.
         ///</summary>
         ///<param name="shape">Shape to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
+        ///<param name="mass">Mass of the entity. If positive, the entity will be dynamic. Otherwise, it will be kinematic.</param>
         public Entity(EntityShape shape, float mass)
             : this()
         {
@@ -606,29 +581,17 @@ namespace BEPUphysics.Entities
         }
 
         ///<summary>
-        /// Constructs a new dynamic entity.
+        /// Constructs a new entity.
         ///</summary>
         ///<param name="shape">Shape to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
-        /// <param name="inertiaTensor">Inertia tensor of the entity.</param>
-        public Entity(EntityShape shape, float mass, Matrix3X3 inertiaTensor)
+        ///<param name="mass">Mass of the entity. If positive, the entity will be dynamic. Otherwise, it will be kinematic.</param>
+        /// <param name="inertiaTensor">Inertia tensor of the entity. Only used for a dynamic entity.</param>
+        public Entity(EntityShape shape, float mass, Matrix3x3 inertiaTensor)
             : this()
         {
             Initialize(shape.GetCollidableInstance(), mass, inertiaTensor);
         }
 
-        ///<summary>
-        /// Constructs a new dynamic entity.
-        ///</summary>
-        ///<param name="shape">Shape to use with the entity.</param>
-        ///<param name="mass">Mass of the entity.</param>
-        /// <param name="inertiaTensor">Inertia tensor of the entity.</param>
-        /// <param name="volume">Volume of the entity.</param>
-        public Entity(EntityShape shape, float mass, Matrix3X3 inertiaTensor, float volume)
-            : this()
-        {
-            Initialize(shape.GetCollidableInstance(), mass, inertiaTensor, volume);
-        }
 
 
 
@@ -645,36 +608,30 @@ namespace BEPUphysics.Entities
         {
             CollisionInformation = collisionInformation;
 
-            ShapeDistributionInformation shapeInfo;
-            collisionInformation.Shape.ComputeDistributionInformation(out shapeInfo);
-            Matrix3X3.Multiply(ref shapeInfo.VolumeDistribution, mass * InertiaHelper.InertiaTensorScale, out shapeInfo.VolumeDistribution);
-
-            volume = shapeInfo.Volume;
-
-            BecomeDynamic(mass, shapeInfo.VolumeDistribution);
+            if (mass > 0)
+            {
+                BecomeDynamic(mass, collisionInformation.Shape.VolumeDistribution * (mass * InertiaHelper.InertiaTensorScale));
+            }
+            else
+            {
+                BecomeKinematic();
+            }
 
             collisionInformation.Entity = this;
         }
 
-        protected internal void Initialize(EntityCollidable collisionInformation, float mass, Matrix3X3 inertiaTensor)
+        protected internal void Initialize(EntityCollidable collisionInformation, float mass, Matrix3x3 inertiaTensor)
         {
             CollisionInformation = collisionInformation;
-
-            volume = collisionInformation.Shape.ComputeVolume();
-
-            BecomeDynamic(mass, inertiaTensor);
-
-            collisionInformation.Entity = this;
-        }
-
-        protected internal void Initialize(EntityCollidable collisionInformation, float mass, Matrix3X3 inertiaTensor, float volume)
-        {
-            CollisionInformation = collisionInformation;
-            this.volume = volume;
-            BecomeDynamic(mass, inertiaTensor);
+            
+            if (mass > 0)
+                BecomeDynamic(mass, inertiaTensor);
+            else
+                BecomeKinematic();
 
             collisionInformation.Entity = this;
         }
+
 
         #endregion
 
@@ -760,22 +717,10 @@ namespace BEPUphysics.Entities
         /// <param name="impulse">Impulse to apply.</param>
         public void ApplyLinearImpulse(ref Vector3 impulse)
         {
-#if WINDOWS_PHONE
-            //Some XNA math methods support SIMD on the phone.
-            //This would most likely be inlined on the PC anyway, but the XBOX360 is a questionmark.
-            //Just inline those platforms manually.
-            Vector3.Add(ref linearMomentum, ref impulse, out linearMomentum);
-            Vector3.Multiply(ref linearMomentum, inverseMass, out linearVelocity);
-#else
-            linearMomentum.X += impulse.X;
-            linearMomentum.Y += impulse.Y;
-            linearMomentum.Z += impulse.Z;
-            linearVelocity.X = linearMomentum.X * inverseMass;
-            linearVelocity.Y = linearMomentum.Y * inverseMass;
-            linearVelocity.Z = linearMomentum.Z * inverseMass;
-#endif
-            linearVelocity.Validate();
-            linearMomentum.Validate();
+            linearVelocity.X += impulse.X * inverseMass;
+            linearVelocity.Y += impulse.Y * inverseMass;
+            linearVelocity.Z += impulse.Z * inverseMass;
+            MathChecker.Validate(linearVelocity);
 
         }
         /// <summary>
@@ -788,24 +733,22 @@ namespace BEPUphysics.Entities
         public void ApplyAngularImpulse(ref Vector3 impulse)
         {
             //There's some room here for SIMD-friendliness.  However, since the phone doesn't accelerate non-XNA types, the matrix3x3 operations don't gain much.
+#if CONSERVE
             angularMomentum.X += impulse.X;
             angularMomentum.Y += impulse.Y;
             angularMomentum.Z += impulse.Z;
-            if (MotionSettings.ConserveAngularMomentum)
-            {
-                angularVelocity.X = angularMomentum.X * inertiaTensorInverse.M11 + angularMomentum.Y * inertiaTensorInverse.M21 + angularMomentum.Z * inertiaTensorInverse.M31;
-                angularVelocity.Y = angularMomentum.X * inertiaTensorInverse.M12 + angularMomentum.Y * inertiaTensorInverse.M22 + angularMomentum.Z * inertiaTensorInverse.M32;
-                angularVelocity.Z = angularMomentum.X * inertiaTensorInverse.M13 + angularMomentum.Y * inertiaTensorInverse.M23 + angularMomentum.Z * inertiaTensorInverse.M33;
-            }
-            else
-            {
-                angularVelocity.X += impulse.X * inertiaTensorInverse.M11 + impulse.Y * inertiaTensorInverse.M21 + impulse.Z * inertiaTensorInverse.M31;
-                angularVelocity.Y += impulse.X * inertiaTensorInverse.M12 + impulse.Y * inertiaTensorInverse.M22 + impulse.Z * inertiaTensorInverse.M32;
-                angularVelocity.Z += impulse.X * inertiaTensorInverse.M13 + impulse.Y * inertiaTensorInverse.M23 + impulse.Z * inertiaTensorInverse.M33;
-            }
+            angularVelocity.X = angularMomentum.X * inertiaTensorInverse.M11 + angularMomentum.Y * inertiaTensorInverse.M21 + angularMomentum.Z * inertiaTensorInverse.M31;
+            angularVelocity.Y = angularMomentum.X * inertiaTensorInverse.M12 + angularMomentum.Y * inertiaTensorInverse.M22 + angularMomentum.Z * inertiaTensorInverse.M32;
+            angularVelocity.Z = angularMomentum.X * inertiaTensorInverse.M13 + angularMomentum.Y * inertiaTensorInverse.M23 + angularMomentum.Z * inertiaTensorInverse.M33;
+            
+            MathChecker.Validate(angularMomentum);
+#else
+            angularVelocity.X += impulse.X * inertiaTensorInverse.M11 + impulse.Y * inertiaTensorInverse.M21 + impulse.Z * inertiaTensorInverse.M31;
+            angularVelocity.Y += impulse.X * inertiaTensorInverse.M12 + impulse.Y * inertiaTensorInverse.M22 + impulse.Z * inertiaTensorInverse.M32;
+            angularVelocity.Z += impulse.X * inertiaTensorInverse.M13 + impulse.Y * inertiaTensorInverse.M23 + impulse.Z * inertiaTensorInverse.M33;
+#endif
 
-            angularVelocity.Validate();
-            angularMomentum.Validate();
+            MathChecker.Validate(angularVelocity);
         }
 
         /// <summary>
@@ -818,17 +761,15 @@ namespace BEPUphysics.Entities
         {
             if (!IgnoreShapeChanges)
             {
-                ShapeDistributionInformation shapeInfo;
-                collisionInformation.Shape.ComputeDistributionInformation(out shapeInfo);
-                volume = shapeInfo.Volume;
+                //When the shape changes, force the entity awake so that it performs any necessary updates.
+                activityInformation.Activate();
                 if (isDynamic)
                 {
-                    Matrix3X3.Multiply(ref shapeInfo.VolumeDistribution, InertiaHelper.InertiaTensorScale * mass, out shapeInfo.VolumeDistribution);
-                    LocalInertiaTensor = shapeInfo.VolumeDistribution;
+                    LocalInertiaTensor = collisionInformation.Shape.VolumeDistribution * (InertiaHelper.InertiaTensorScale * mass);
                 }
                 else
                 {
-                    LocalInertiaTensorInverse = new Matrix3X3();
+                    LocalInertiaTensorInverse = new Matrix3x3();
                 }
             }
         }
@@ -842,7 +783,7 @@ namespace BEPUphysics.Entities
         {
             bool previousState = isDynamic;
             isDynamic = false;
-            LocalInertiaTensorInverse = new Matrix3X3();
+            LocalInertiaTensorInverse = new Matrix3x3();
             mass = 0;
             inverseMass = 0;
 
@@ -874,9 +815,7 @@ namespace BEPUphysics.Entities
         ///<param name="mass">Mass to use for the entity.</param>
         public void BecomeDynamic(float mass)
         {
-            Matrix3X3 inertiaTensor = collisionInformation.Shape.ComputeVolumeDistribution();
-            Matrix3X3.Multiply(ref inertiaTensor, mass * InertiaHelper.InertiaTensorScale, out inertiaTensor);
-            BecomeDynamic(mass, inertiaTensor);
+            BecomeDynamic(mass, collisionInformation.Shape.VolumeDistribution * (mass * InertiaHelper.InertiaTensorScale));
         }
 
         ///<summary>
@@ -884,7 +823,7 @@ namespace BEPUphysics.Entities
         ///</summary>
         ///<param name="mass">Mass to use for the entity.</param>
         /// <param name="localInertiaTensor">Inertia tensor to use for the entity.</param>
-        public void BecomeDynamic(float mass, Matrix3X3 localInertiaTensor)
+        public void BecomeDynamic(float mass, Matrix3x3 localInertiaTensor)
         {
             if (mass <= 0 || float.IsInfinity(mass) || float.IsNaN(mass))
                 throw new InvalidOperationException("Cannot use a mass of " + mass + " for a dynamic entity.  Consider using a kinematic entity instead.");
@@ -935,7 +874,7 @@ namespace BEPUphysics.Entities
                 float energy = linearVelocity.LengthSquared() + angularVelocity.LengthSquared();
                 if (energy < activityInformation.DeactivationManager.velocityLowerLimitSquared)
                 {
-                    float boost = 1 - energy / (2f * activityInformation.DeactivationManager.velocityLowerLimitSquared);
+                    float boost = 1 - (float)(Math.Sqrt(energy) / (2f * activityInformation.DeactivationManager.velocityLowerLimit));
                     ModifyAngularDamping(boost);
                     ModifyLinearDamping(boost);
                 }
@@ -949,43 +888,34 @@ namespace BEPUphysics.Entities
             }
             //When applying angular damping, the momentum or velocity is damped depending on the conservation setting.
             float angular = AngularDamping + angularDampingBoost;
-            if (angular > 0 && MotionSettings.ConserveAngularMomentum)
+            if (angular > 0)
             {
+#if CONSERVE
                 Vector3.Multiply(ref angularMomentum, (float)Math.Pow(MathHelper.Clamp(1 - angular, 0, 1), dt), out angularMomentum);
-            }
-            else if (angular > 0)
-            {
+#else
                 Vector3.Multiply(ref angularVelocity, (float)Math.Pow(MathHelper.Clamp(1 - angular, 0, 1), dt), out angularVelocity);
+#endif
             }
 
             linearDampingBoost = 0;
             angularDampingBoost = 0;
-
-            //Linear momentum
-            Vector3.Multiply(ref linearVelocity, mass, out linearMomentum);
-
-
+            
             //Update world inertia tensors.
-            Matrix3X3 multiplied;
-            Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
-            Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
-            Matrix3X3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
-            Matrix3X3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
+            Matrix3x3 multiplied;
+            Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensorInverse, out multiplied);
+            Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensorInverse);
+            Matrix3x3.MultiplyTransposed(ref orientationMatrix, ref localInertiaTensor, out multiplied);
+            Matrix3x3.Multiply(ref multiplied, ref orientationMatrix, out inertiaTensor);
 
-            //Update angular velocity or angular momentum.
-            if (MotionSettings.ConserveAngularMomentum)
-            {
-                Matrix3X3.Transform(ref angularMomentum, ref inertiaTensorInverse, out angularVelocity);
-            }
-            else
-            {
-                Matrix3X3.Transform(ref angularVelocity, ref inertiaTensor, out angularMomentum);
-            }
-
-            linearVelocity.Validate();
-            linearMomentum.Validate();
-            angularVelocity.Validate();
-            angularMomentum.Validate();
+#if CONSERVE
+            //Update angular velocity.
+            //Note that this doesn't play nice with singular inertia tensors.
+            //Locked tensors result in zero angular velocity.
+            Matrix3x3.Transform(ref angularMomentum, ref inertiaTensorInverse, out angularVelocity);
+            MathChecker.Validate(angularMomentum);
+#endif
+            MathChecker.Validate(linearVelocity);
+            MathChecker.Validate(angularVelocity);
 
 
         }
@@ -1005,8 +935,8 @@ namespace BEPUphysics.Entities
 
         #region ISpaceObject
 
-        ISpace space;
-        ISpace ISpaceObject.Space
+        Space space;
+        Space ISpaceObject.Space
         {
             get
             {
@@ -1020,7 +950,7 @@ namespace BEPUphysics.Entities
         ///<summary>
         /// Gets the space that owns the entity.
         ///</summary>
-        public ISpace Space
+        public Space Space
         {
             get
             {
@@ -1029,21 +959,21 @@ namespace BEPUphysics.Entities
         }
 
 
-        void ISpaceObject.OnAdditionToSpace(ISpace newSpace)
+        void ISpaceObject.OnAdditionToSpace(Space newSpace)
         {
             OnAdditionToSpace(newSpace);
         }
 
-        protected virtual void OnAdditionToSpace(ISpace newSpace)
+        protected virtual void OnAdditionToSpace(Space newSpace)
         {
         }
 
-        void ISpaceObject.OnRemovalFromSpace(ISpace oldSpace)
+        void ISpaceObject.OnRemovalFromSpace(Space oldSpace)
         {
             OnRemovalFromSpace(oldSpace);
         }
 
-        protected virtual void OnRemovalFromSpace(ISpace oldSpace)
+        protected virtual void OnRemovalFromSpace(Space oldSpace)
         {
         }
         #endregion
@@ -1082,17 +1012,25 @@ namespace BEPUphysics.Entities
             }
         }
 
-        void ICCDPositionUpdateable.UpdateTimeOfImpacts(float dt)
+        void ICCDPositionUpdateable.UpdateTimesOfImpact(float dt)
         {
             //I am a continuous object.  If I am in a pair with another object, even if I am inactive,
             //I must order the pairs to compute a time of impact.
 
             //The pair method works in such a way that, when this method is run asynchronously, there will be no race conditions.
-            for (int i = 0; i < collisionInformation.pairs.count; i++)
+            for (int i = 0; i < collisionInformation.pairs.Count; i++)
             {
                 //Only perform CCD if we're either supposed to test against no solver pairs or if this isn't a no solver pair.
                 if (MotionSettings.PairAllowsCCD(this, collisionInformation.pairs.Elements[i]))
                     collisionInformation.pairs.Elements[i].UpdateTimeOfImpact(collisionInformation, dt);
+            }
+        }
+        void ICCDPositionUpdateable.ResetTimesOfImpact()
+        {
+            //Reset all of the times of impact to 1, allowing the entity to move all the way through its velocity-defined motion.
+            for (int i = 0; i < collisionInformation.pairs.Count; i++)
+            {
+                collisionInformation.pairs.Elements[i].timeOfImpact = 1;
             }
         }
 
@@ -1118,30 +1056,26 @@ namespace BEPUphysics.Entities
             if (PositionUpdated != null)
                 PositionUpdated(this);
 
-            linearMomentum.Validate();
-            linearVelocity.Validate();
-            angularMomentum.Validate();
-            angularVelocity.Validate();
-            position.Validate();
-            orientation.Validate();
+            MathChecker.Validate(linearVelocity);
+            MathChecker.Validate(angularVelocity);
+            MathChecker.Validate(position);
+            MathChecker.Validate(orientation);
+#if CONSERVE
+            MathChecker.Validate(angularMomentum);
+#endif
         }
 
         void IPositionUpdateable.PreUpdatePosition(float dt)
         {
             Vector3 increment;
-            if (MotionSettings.UseRk4AngularIntegration && isDynamic)
-            {
-                Toolbox.UpdateOrientationRK4(ref orientation, ref localInertiaTensorInverse, ref angularMomentum, dt, out orientation);
-            }
-            else
-            {
-                Vector3.Multiply(ref angularVelocity, dt * .5f, out increment);
-                var multiplier = new Quaternion(increment.X, increment.Y, increment.Z, 0);
-                QuaternionEx.Multiply(ref multiplier, ref orientation, out multiplier);
-                Quaternion.Add(ref orientation, ref multiplier, out orientation);
-                orientation.Normalize();
-            }
-            Matrix3X3.CreateFromQuaternion(ref orientation, out orientationMatrix);
+
+            Vector3.Multiply(ref angularVelocity, dt * .5f, out increment);
+            var multiplier = new Quaternion(increment.X, increment.Y, increment.Z, 0);
+            Quaternion.Multiply(ref multiplier, ref orientation, out multiplier);
+            Quaternion.Add(ref orientation, ref multiplier, out orientation);
+            orientation.Normalize();
+
+            Matrix3x3.CreateFromQuaternion(ref orientation, out orientationMatrix);
 
             //Only do the linear motion if this object doesn't obey CCD.
             if (PositionUpdateMode == PositionUpdateMode.Discrete)
@@ -1154,15 +1088,14 @@ namespace BEPUphysics.Entities
                 if (PositionUpdated != null)
                     PositionUpdated(this);
             }
-            collisionInformation.UpdateWorldTransform(ref position, ref orientation);
 
-            linearMomentum.Validate();
-            linearVelocity.Validate();
-            angularMomentum.Validate();
-            angularVelocity.Validate();
-            position.Validate();
-            orientation.Validate();
-
+            MathChecker.Validate(linearVelocity);
+            MathChecker.Validate(angularVelocity);
+            MathChecker.Validate(position);
+            MathChecker.Validate(orientation);
+#if CONSERVE
+            MathChecker.Validate(angularMomentum);
+#endif
         }
 
 
@@ -1192,7 +1125,7 @@ namespace BEPUphysics.Entities
         }
         ///<summary>
         /// Gets or sets the linear damping of the entity.
-        /// Values range from 0 to 1, correspondong to a fraction of linear momentum removed
+        /// Values range from 0 to 1, corresponding to a fraction of linear momentum removed
         /// from the entity over a unit of time.
         ///</summary>
         public float LinearDamping

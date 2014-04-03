@@ -8,10 +8,9 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using ConversionHelper;
 using System.Diagnostics;
-using SharpDX;
 
 namespace BEPUphysicsDemos.AlternateMovement
 {
@@ -25,16 +24,6 @@ namespace BEPUphysicsDemos.AlternateMovement
         /// Speed that the Vehicle tries towreach when moving backward.
         /// </summary>
         public float BackwardSpeed = -13;
-
-        /// <summary>
-        /// Camera to use for input.
-        /// </summary>
-        public Camera Camera;
-
-        /// <summary>
-        /// Current offset from the position of the Vehicle to the 'eyes.'
-        /// </summary>
-        public Vector3 CameraOffset;
 
         /// <summary>
         /// Speed that the Vehicle tries to reach when moving forward.
@@ -77,58 +66,62 @@ namespace BEPUphysicsDemos.AlternateMovement
         /// </summary>
         public List<DisplayModel> WheelModels;
 
+        /// <summary>
+        /// Gets the camera control scheme ued by this input manager.
+        /// </summary>
+        public ChaseCameraControlScheme CameraControlScheme { get; private set; }
+
 
         /// <summary>
         /// Constructs the front end and the internal physics representation of the Vehicle.
         /// </summary>
         /// <param name="position">Position of the Vehicle.</param>
-        /// <param name="owningSpace">Space to add the Vehicle to.</param>
-        /// <param name="cameraToUse">Camera to attach to the Vehicle.</param>
+        /// <param name="space">Space to add the Vehicle to.</param>
+        /// <param name="camera">Camera to attach to the Vehicle.</param>
+        /// <param name="game">The running game.</param>
         /// <param name="drawer">Drawer used to draw the Vehicle.</param>
         /// <param name="wheelModel">Model of the wheels.</param>
         /// <param name="wheelTexture">Texture to use for the wheels.</param>
-        public VehicleInput(Vector3 position, Space owningSpace, Camera cameraToUse, ModelDrawer drawer, Model wheelModel, Texture2D wheelTexture)
+        public VehicleInput(Vector3 position, Space space, Camera camera, DemosGame game, ModelDrawer drawer, Model wheelModel, Texture2D wheelTexture)
         {
-            var bodies = new List<CompoundShapeEntry>()
-            {
-                new CompoundShapeEntry(new BoxShape(2.5f, .75f, 4.5f), new Vector3(0, 0, 0), 60),
-                new CompoundShapeEntry(new BoxShape(2.5f, .3f, 2f), new Vector3(0, .75f / 2 + .3f / 2, .5f), 1)
-            };
+            var bodies = new List<CompoundShapeEntry>
+                {
+                    new CompoundShapeEntry(new BoxShape(2.5f, .75f, 4.5f), new Vector3(0, 0, 0), 60),
+                    new CompoundShapeEntry(new BoxShape(2.5f, .3f, 2f), new Vector3(0, .75f / 2 + .3f / 2, .5f), 1)
+                };
             var body = new CompoundBody(bodies, 61);
             body.CollisionInformation.LocalPosition = new Vector3(0, .5f, 0);
             body.Position = position; //At first, just keep it out of the way.
             Vehicle = new Vehicle(body);
 
-            #region RaycastWheelShapes
+            var localWheelRotation = Quaternion.CreateFromAxisAngle(new Vector3(0, 0, 1), MathHelper.PiOver2);
 
             //The wheel model used is not aligned initially with how a wheel would normally look, so rotate them.
-            Matrix wheelGraphicRotation = Matrix.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2);
+            Matrix wheelGraphicRotation = Matrix.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2);
             Vehicle.AddWheel(new Wheel(
-                                 new RaycastWheelShape(.375f, wheelGraphicRotation),
-                                 new WheelSuspension(2000, 100f, -Vector3.UnitY, .8f, new Vector3(-1.1f, 0, 1.8f)),
+                                 new CylinderCastWheelShape(.375f, 0.2f, localWheelRotation, wheelGraphicRotation, false),
+                                 new WheelSuspension(2000, 100f, Vector3.Down, .8f - .375f, new Vector3(-1.1f, 0, 1.8f)),
                                  new WheelDrivingMotor(2.5f, 30000, 10000),
                                  new WheelBrake(1.5f, 2, .02f),
                                  new WheelSlidingFriction(4, 5)));
             Vehicle.AddWheel(new Wheel(
-                                 new RaycastWheelShape(.375f, wheelGraphicRotation),
-                                 new WheelSuspension(2000, 100f, -Vector3.UnitY, .8f, new Vector3(-1.1f, 0, -1.8f)),
+                                 new CylinderCastWheelShape(.375f, 0.2f, localWheelRotation, wheelGraphicRotation, false),
+                                 new WheelSuspension(2000, 100f, Vector3.Down, .8f - .375f, new Vector3(-1.1f, 0, -1.8f)),
                                  new WheelDrivingMotor(2.5f, 30000, 10000),
                                  new WheelBrake(1.5f, 2, .02f),
                                  new WheelSlidingFriction(4, 5)));
             Vehicle.AddWheel(new Wheel(
-                                 new RaycastWheelShape(.375f, wheelGraphicRotation),
-                                 new WheelSuspension(2000, 100f, -Vector3.UnitY, .8f, new Vector3(1.1f, 0, 1.8f)),
+                                 new CylinderCastWheelShape(.375f, 0.2f, localWheelRotation, wheelGraphicRotation, false),
+                                 new WheelSuspension(2000, 100f, Vector3.Down, .8f - .375f, new Vector3(1.1f, 0, 1.8f)),
                                  new WheelDrivingMotor(2.5f, 30000, 10000),
                                  new WheelBrake(1.5f, 2, .02f),
                                  new WheelSlidingFriction(4, 5)));
             Vehicle.AddWheel(new Wheel(
-                                 new RaycastWheelShape(.375f, wheelGraphicRotation),
-                                 new WheelSuspension(2000, 100f, -Vector3.UnitY, .8f, new Vector3(1.1f, 0, -1.8f)),
+                                 new CylinderCastWheelShape(.375f, 0.2f, localWheelRotation, wheelGraphicRotation, false),
+                                 new WheelSuspension(2000, 100f, Vector3.Down, .8f - .375f, new Vector3(1.1f, 0, -1.8f)),
                                  new WheelDrivingMotor(2.5f, 30000, 10000),
                                  new WheelBrake(1.5f, 2, .02f),
                                  new WheelSlidingFriction(4, 5)));
-
-            #endregion
 
 
             foreach (Wheel wheel in Vehicle.Wheels)
@@ -140,13 +133,13 @@ namespace BEPUphysicsDemos.AlternateMovement
                 //performance can be improved at the cost of a little accuracy.
                 //However, because the suspension and friction are not really rigid,
                 //the lowered accuracy is not so much of a problem.
-                wheel.Suspension.SolverSettings.MaximumIterations = 1;
-                wheel.Brake.SolverSettings.MaximumIterations = 1;
-                wheel.SlidingFriction.SolverSettings.MaximumIterations = 1;
-                wheel.DrivingMotor.SolverSettings.MaximumIterations = 1;
+                wheel.Suspension.SolverSettings.MaximumIterationCount = 1;
+                wheel.Brake.SolverSettings.MaximumIterationCount = 1;
+                wheel.SlidingFriction.SolverSettings.MaximumIterationCount = 1;
+                wheel.DrivingMotor.SolverSettings.MaximumIterationCount = 1;
             }
 
-            Space = owningSpace;
+            Space = space;
 
             Space.Add(Vehicle);
             ModelDrawer = drawer;
@@ -162,24 +155,24 @@ namespace BEPUphysicsDemos.AlternateMovement
             }
 
 
-            Camera = cameraToUse;
+
+            CameraControlScheme = new ChaseCameraControlScheme(Vehicle.Body, new Vector3(0, 0.6f, 0), true, 10, camera, game);
+
         }
 
         /// <summary>
         /// Gives the Vehicle control over the camera and movement input.
         /// </summary>
-        public void Activate()
+        public void Activate(Vector3 position)
         {
             if (!IsActive)
             {
                 IsActive = true;
-                Camera.UseMovementControls = false;
                 //Put the Vehicle where the camera is.
-                Vehicle.Body.Position = MathConverter.Convert(Camera.Position) - CameraOffset;
+                Vehicle.Body.Position = position;
                 Vehicle.Body.LinearVelocity = Vector3.Zero;
                 Vehicle.Body.AngularVelocity = Vector3.Zero;
                 Vehicle.Body.Orientation = Quaternion.Identity;
-                Camera.ActivateChaseCameraMode(Vehicle.Body, new Microsoft.Xna.Framework.Vector3(0, .6f, 0), true, 10);
             }
         }
 
@@ -191,8 +184,6 @@ namespace BEPUphysicsDemos.AlternateMovement
             if (IsActive)
             {
                 IsActive = false;
-                Camera.UseMovementControls = true;
-                Camera.DeactivateChaseCameraMode();
             }
         }
 
@@ -205,15 +196,16 @@ namespace BEPUphysicsDemos.AlternateMovement
         /// <param name="gamePadInput">Gamepad state.</param>
         public void Update(float dt, KeyboardState keyboardInput, GamePadState gamePadInput)
         {
-        
-            //Update the wheel's graphics.))))
+
+            //Update the wheel's graphics.
             for (int k = 0; k < 4; k++)
             {
-                WheelModels[k].WorldTransform = MathConverter.Convert(Vehicle.Wheels[k].Shape.WorldTransform);
+                WheelModels[k].WorldTransform = Vehicle.Wheels[k].Shape.WorldTransform;
             }
 
             if (IsActive)
             {
+                CameraControlScheme.Update(dt);
 #if XBOX360
                 float speed = gamePadInput.Triggers.Right * ForwardSpeed + gamePadInput.Triggers.Left * BackwardSpeed;
                 Vehicle.Wheels[1].DrivingMotor.TargetSpeed = speed;

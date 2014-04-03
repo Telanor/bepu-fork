@@ -1,6 +1,7 @@
 ﻿using System;
-using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.DeactivationManagement
 {
@@ -33,7 +34,7 @@ namespace BEPUphysics.DeactivationManagement
             this.owner = owner;
         }
 
-        internal RawList<SimulationIslandConnection> connections = new RawList<SimulationIslandConnection>(8);
+        internal RawList<SimulationIslandConnection> connections = new RawList<SimulationIslandConnection>(16);
         ///<summary>
         /// Gets the connections associated with this member.
         ///</summary>
@@ -126,10 +127,10 @@ namespace BEPUphysics.DeactivationManagement
                         //To solve this, when we encounter active kinematic objects,
                         //tell simulation islands associated with connected objects that they aren't allowed to deactivate.
 
-                        for (int i = 0; i < connections.count; i++)
+                        for (int i = 0; i < connections.Count; i++)
                         {
                             var connectedMembers = connections.Elements[i].entries;
-                            for (int j = connectedMembers.count - 1; j >= 0; j--)
+                            for (int j = connectedMembers.Count - 1; j >= 0; j--)
                             {
                                 //The change locker must be obtained before attempting to access the SimulationIsland.
                                 //Path compression can force the simulation island to evaluate to null briefly.
@@ -143,7 +144,7 @@ namespace BEPUphysics.DeactivationManagement
                                     //do not automatically wake up touching dynamic entities, we must do so manually.
                                     //This is safe because the island.Activate command is a single boolean set.
                                     //We're also inside the island change locker, so we don't have to worry about the island changing beneath our feet.
-                                    island.Activate();
+                                    island.IsActive = true;
                                     island.allowDeactivation = false;
                                 }
                                 connectedMembers.Elements[j].Member.simulationIslandChangeLocker.Exit();
@@ -189,7 +190,7 @@ namespace BEPUphysics.DeactivationManagement
             }
         }
 
-        internal BEPUphysics.Threading.SpinLock simulationIslandChangeLocker = new BEPUphysics.Threading.SpinLock();
+        internal BEPUutilities.SpinLock simulationIslandChangeLocker = new BEPUutilities.SpinLock();
         void TryToCompressIslandHierarchy()
         {
 
@@ -314,6 +315,7 @@ namespace BEPUphysics.DeactivationManagement
         }
 
 
+
         //simulationisland should hook into the activated event.  If it is fired and the simulation island is inactive, the simulation island should activate.
         //Obviously only call event if it goes from inactive to active.
         ///<summary>
@@ -405,10 +407,10 @@ namespace BEPUphysics.DeactivationManagement
         ///<param name="index">Index of the connection in this member's list</param>
         internal void RemoveConnectionReference(SimulationIslandConnection connection, int index)
         {
-            if (connections.count > index)
+            if (connections.Count > index)
             {
                 connections.FastRemoveAt(index);
-                if (connections.count > index)
+                if (connections.Count > index)
                     connections.Elements[index].SetListIndex(this, index);
             }
         }
@@ -421,7 +423,7 @@ namespace BEPUphysics.DeactivationManagement
         internal int AddConnectionReference(SimulationIslandConnection connection)
         {
             connections.Add(connection);
-            return connections.count - 1;
+            return connections.Count - 1;
         }
 
 

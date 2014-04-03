@@ -1,6 +1,6 @@
 ﻿using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.Joints
 {
@@ -64,7 +64,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localPlaneAnchor = value;
-                Matrix3X3.Transform(ref localPlaneAnchor, ref connectionA.orientationMatrix, out worldPlaneAnchor);
+                Matrix3x3.Transform(ref localPlaneAnchor, ref connectionA.orientationMatrix, out worldPlaneAnchor);
                 Vector3.Add(ref connectionA.position, ref worldPlaneAnchor, out worldPlaneAnchor);
             }
         }
@@ -78,7 +78,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localPlaneNormal = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localPlaneNormal, ref connectionA.orientationMatrix, out worldPlaneNormal);
+                Matrix3x3.Transform(ref localPlaneNormal, ref connectionA.orientationMatrix, out worldPlaneNormal);
             }
         }
 
@@ -91,7 +91,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 localPointAnchor = value;
-                Matrix3X3.Transform(ref localPointAnchor, ref connectionB.orientationMatrix, out worldPointAnchor);
+                Matrix3x3.Transform(ref localPointAnchor, ref connectionB.orientationMatrix, out worldPointAnchor);
                 Vector3.Add(ref worldPointAnchor, ref connectionB.position, out worldPointAnchor);
             }
         }
@@ -122,7 +122,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             {
                 worldPlaneAnchor = value;
                 localPlaneAnchor = value - connectionA.position;
-                Matrix3X3.TransformTranspose(ref localPlaneAnchor, ref connectionA.orientationMatrix, out localPlaneAnchor);
+                Matrix3x3.TransformTranspose(ref localPlaneAnchor, ref connectionA.orientationMatrix, out localPlaneAnchor);
 
             }
         }
@@ -136,7 +136,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             set
             {
                 worldPlaneNormal = Vector3.Normalize(value);
-                Matrix3X3.TransformTranspose(ref worldPlaneNormal, ref connectionA.orientationMatrix, out localPlaneNormal);
+                Matrix3x3.TransformTranspose(ref worldPlaneNormal, ref connectionA.orientationMatrix, out localPlaneNormal);
             }
         }
 
@@ -150,7 +150,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             {
                 worldPointAnchor = value;
                 localPointAnchor = value - connectionB.position;
-                Matrix3X3.TransformTranspose(ref localPointAnchor, ref connectionB.orientationMatrix, out localPointAnchor);
+                Matrix3x3.TransformTranspose(ref localPointAnchor, ref connectionB.orientationMatrix, out localPointAnchor);
 
             }
         }
@@ -172,7 +172,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 Vector3.Add(ref bVel, ref connectionB.linearVelocity, out bVel);
                 Vector3.Subtract(ref aVel, ref bVel, out dv);
                 float velocityDifference;
-                Vector3Ex.Dot(ref dv, ref worldPlaneNormal, out velocityDifference);
+                Vector3.Dot(ref dv, ref worldPlaneNormal, out velocityDifference);
                 return velocityDifference;
             }
         }
@@ -264,7 +264,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             Vector3.Add(ref bVel, ref connectionB.linearVelocity, out bVel);
             Vector3.Subtract(ref aVel, ref bVel, out dv);
             float velocityDifference;
-            Vector3Ex.Dot(ref dv, ref worldPlaneNormal, out velocityDifference);
+            Vector3.Dot(ref dv, ref worldPlaneNormal, out velocityDifference);
             //if(velocityDifference > 0)
             //    Debug.WriteLine("Velocity difference: " + velocityDifference);
             //Debug.WriteLine("softness velocity: " + softness * accumulatedImpulse);
@@ -297,18 +297,18 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         ///<param name="dt">Timestep duration.</param>
         public override void Update(float dt)
         {
-            Matrix3X3.Transform(ref localPlaneNormal, ref connectionA.orientationMatrix, out worldPlaneNormal);
-            Matrix3X3.Transform(ref localPlaneAnchor, ref connectionA.orientationMatrix, out worldPlaneAnchor);
+            Matrix3x3.Transform(ref localPlaneNormal, ref connectionA.orientationMatrix, out worldPlaneNormal);
+            Matrix3x3.Transform(ref localPlaneAnchor, ref connectionA.orientationMatrix, out worldPlaneAnchor);
             Vector3.Add(ref worldPlaneAnchor, ref connectionA.position, out worldPlaneAnchor);
 
-            Matrix3X3.Transform(ref localPointAnchor, ref connectionB.orientationMatrix, out rB);
+            Matrix3x3.Transform(ref localPointAnchor, ref connectionB.orientationMatrix, out rB);
             Vector3.Add(ref rB, ref connectionB.position, out worldPointAnchor);
 
             //Find rA and rB.
             //So find the closest point on the plane to worldPointAnchor.
             float pointDistance, planeDistance;
-            Vector3Ex.Dot(ref worldPointAnchor, ref worldPlaneNormal, out pointDistance);
-            Vector3Ex.Dot(ref worldPlaneAnchor, ref worldPlaneNormal, out planeDistance);
+            Vector3.Dot(ref worldPointAnchor, ref worldPlaneNormal, out pointDistance);
+            Vector3.Dot(ref worldPlaneAnchor, ref worldPlaneNormal, out planeDistance);
             float distanceChange = planeDistance - pointDistance;
             Vector3 closestPointOnPlane;
             Vector3.Multiply(ref worldPlaneNormal, distanceChange, out closestPointOnPlane);
@@ -322,37 +322,37 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
 
             Vector3 offset;
             Vector3.Subtract(ref worldPointAnchor, ref closestPointOnPlane, out offset);
-            Vector3Ex.Dot(ref offset, ref worldPlaneNormal, out error);
+            Vector3.Dot(ref offset, ref worldPlaneNormal, out error);
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
             biasVelocity = MathHelper.Clamp(-errorReduction * error, -maxCorrectiveVelocity, maxCorrectiveVelocity);
 
             if (connectionA.IsDynamic && connectionB.IsDynamic)
             {
                 Vector3 IrACrossN, IrBCrossN;
-                Matrix3X3.Transform(ref rAcrossN, ref connectionA.inertiaTensorInverse, out IrACrossN);
-                Matrix3X3.Transform(ref rBcrossN, ref connectionB.inertiaTensorInverse, out IrBCrossN);
+                Matrix3x3.Transform(ref rAcrossN, ref connectionA.inertiaTensorInverse, out IrACrossN);
+                Matrix3x3.Transform(ref rBcrossN, ref connectionB.inertiaTensorInverse, out IrBCrossN);
                 float angularA, angularB;
-                Vector3Ex.Dot(ref rAcrossN, ref IrACrossN, out angularA);
-                Vector3Ex.Dot(ref rBcrossN, ref IrBCrossN, out angularB);
+                Vector3.Dot(ref rAcrossN, ref IrACrossN, out angularA);
+                Vector3.Dot(ref rBcrossN, ref IrBCrossN, out angularB);
                 negativeEffectiveMass = connectionA.inverseMass + connectionB.inverseMass + angularA + angularB;
                 negativeEffectiveMass = -1 / (negativeEffectiveMass + softness);
             }
             else if (connectionA.IsDynamic && !connectionB.IsDynamic)
             {
                 Vector3 IrACrossN;
-                Matrix3X3.Transform(ref rAcrossN, ref connectionA.inertiaTensorInverse, out IrACrossN);
+                Matrix3x3.Transform(ref rAcrossN, ref connectionA.inertiaTensorInverse, out IrACrossN);
                 float angularA;
-                Vector3Ex.Dot(ref rAcrossN, ref IrACrossN, out angularA);
+                Vector3.Dot(ref rAcrossN, ref IrACrossN, out angularA);
                 negativeEffectiveMass = connectionA.inverseMass + angularA;
                 negativeEffectiveMass = -1 / (negativeEffectiveMass + softness);
             }
             else if (!connectionA.IsDynamic && connectionB.IsDynamic)
             {
                 Vector3 IrBCrossN;
-                Matrix3X3.Transform(ref rBcrossN, ref connectionB.inertiaTensorInverse, out IrBCrossN);
+                Matrix3x3.Transform(ref rBcrossN, ref connectionB.inertiaTensorInverse, out IrBCrossN);
                 float angularB;
-                Vector3Ex.Dot(ref rBcrossN, ref IrBCrossN, out angularB);
+                Vector3.Dot(ref rBcrossN, ref IrBCrossN, out angularB);
                 negativeEffectiveMass = connectionB.inverseMass + angularB;
                 negativeEffectiveMass = -1 / (negativeEffectiveMass + softness);
             }

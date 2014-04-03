@@ -3,7 +3,7 @@ using BEPUphysics.Entities.Prefabs;
 using BEPUphysics;
 using System.Collections.Generic;
 using BEPUphysics.Entities;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -23,7 +23,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
         {
             for (int i = 0; i < 32; i++)
             {
-                var space = new Space();
+                var space = new Space(null);
                 space.ForceUpdater.Gravity = new Vector3(0, -9.81f, 0);
                 var box = new Box(new Vector3(20 * i, 0, 0), 100, 1, 100);
                 space.Add(box);
@@ -40,7 +40,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                 }
                 spaces.Add(space);
             }
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(20, 10, 70);
+            game.Camera.Position = new Vector3(20, 10, 70);
 
         }
 
@@ -61,7 +61,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             //    spaces[i].Update();
             //}
             //The "real" space has a convenient thread pool we can use.
-            Space.ThreadManager.ForLoop(0, spaces.Count, i =>
+            Space.ParallelLooper.ForLoop(0, spaces.Count, i =>
             {
                 spaces[i].Update();
             });

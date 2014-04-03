@@ -1,9 +1,9 @@
 ﻿using System;
 using BEPUphysics.Constraints;
 using BEPUphysics.Entities;
-using SharpDX;
+ 
 using BEPUphysics.Materials;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.Vehicle
 {
@@ -32,7 +32,7 @@ namespace BEPUphysics.Vehicle
         /// <param name="usingKineticFriction">True if the friction coefficients passed into the blender are kinetic coefficients, false otherwise.</param>
         /// <param name="wheel">Wheel being blended.</param>
         /// <returns>Blended friction coefficient.</returns>
-        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKinematicFriction, Wheel wheel)
+        public static float BlendFriction(float wheelFriction, float materialFriction, bool usingKineticFriction, Wheel wheel)
         {
             return wheelFriction * materialFriction;
         }
@@ -100,7 +100,7 @@ namespace BEPUphysics.Vehicle
         public float KineticBrakingFrictionCoefficient
         {
             get { return kineticBrakingFrictionCoefficient; }
-            set { kineticBrakingFrictionCoefficient = Math.Max(value, 0); }
+            set { kineticBrakingFrictionCoefficient = MathHelper.Max(value, 0); }
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace BEPUphysics.Vehicle
         public float RollingFrictionCoefficient
         {
             get { return rollingFrictionCoefficient; }
-            set { rollingFrictionCoefficient = Math.Max(value, 0); }
+            set { rollingFrictionCoefficient = MathHelper.Max(value, 0); }
         }
 
         /// <summary>
@@ -154,7 +154,7 @@ namespace BEPUphysics.Vehicle
         public float StaticBrakingFrictionCoefficient
         {
             get { return staticBrakingFrictionCoefficient; }
-            set { staticBrakingFrictionCoefficient = Math.Max(value, 0); }
+            set { staticBrakingFrictionCoefficient = MathHelper.Max(value, 0); }
         }
 
         /// <summary>

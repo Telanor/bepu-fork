@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using SharpDX;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.DataStructures
-{
+{    
     ///<summary>
     /// Acceleration structure of triangles surrounded by axis aligned bounding boxes, supporting various speedy queries.
     ///</summary>
@@ -26,7 +21,7 @@ namespace BEPUphysics.DataStructures
             {
                 if (root != null)
                     return root.BoundingBox;
-                else
+                else 
                     return new BoundingBox();
             }
         }
@@ -121,7 +116,7 @@ namespace BEPUphysics.DataStructures
                 else
                 {
                     //The caller is responsible for the merge.
-                    BoundingBoxEx.Merge(ref node.BoundingBox, ref root.BoundingBox, out root.BoundingBox);
+                    BoundingBox.CreateMerged(ref node.BoundingBox, ref root.BoundingBox, out root.BoundingBox);
                     Node treeNode = root;
                     while (!treeNode.TryToInsert(node, out treeNode)) ;//TryToInsert returns the next node, if any, and updates node bounding box.
                 }
@@ -156,7 +151,9 @@ namespace BEPUphysics.DataStructures
         {
             if (root != null)
             {
-                if (root.BoundingBox.Intersects(ref boundingSphere))
+                bool intersects;
+                root.BoundingBox.Intersects(ref boundingSphere, out intersects);
+                if (intersects)
                     root.GetOverlaps(ref boundingSphere, outputOverlappedElements);
             }
             return outputOverlappedElements.Count > 0;
@@ -261,9 +258,12 @@ namespace BEPUphysics.DataStructures
 
             internal override void GetOverlaps(ref BoundingSphere boundingSphere, IList<int> outputOverlappedElements)
             {
-                if (ChildA.BoundingBox.Intersects(ref boundingSphere))
+                bool intersects;
+                ChildA.BoundingBox.Intersects(ref boundingSphere, out intersects);
+                if (intersects)
                     ChildA.GetOverlaps(ref boundingSphere, outputOverlappedElements);
-                if (ChildB.BoundingBox.Intersects(ref boundingSphere))
+                ChildB.BoundingBox.Intersects(ref boundingSphere, out intersects);
+                if (intersects)
                     ChildB.GetOverlaps(ref boundingSphere, outputOverlappedElements);
             }
 
@@ -299,7 +299,7 @@ namespace BEPUphysics.DataStructures
                 //{
                 //    //Just put us with the leaf.  Keeps the tree shallower.
                 //    BoundingBox merged;
-                //    BoundingBoxEx.Merge(ref childA.BoundingBox, ref node.BoundingBox, out merged);
+                //    BoundingBox.CreateMerged(ref childA.BoundingBox, ref node.BoundingBox, out merged);
                 //    childA = new InternalNode() { BoundingBox = merged, childA = this.childA, childB = node };
                 //    treeNode = null;
                 //    return true;
@@ -308,7 +308,7 @@ namespace BEPUphysics.DataStructures
                 //{
                 //    //Just put us with the leaf.  Keeps the tree shallower.
                 //    BoundingBox merged;
-                //    BoundingBoxEx.Merge(ref childB.BoundingBox, ref node.BoundingBox, out merged);
+                //    BoundingBox.CreateMerged(ref childB.BoundingBox, ref node.BoundingBox, out merged);
                 //    childB = new InternalNode() { BoundingBox = merged, childA = node, childB = this.childB };
                 //    treeNode = null;
                 //    return true;
@@ -320,20 +320,20 @@ namespace BEPUphysics.DataStructures
 
                 //Use the path which produces the smallest 'volume.'
                 BoundingBox mergedA, mergedB;
-                BoundingBoxEx.Merge(ref ChildA.BoundingBox, ref node.BoundingBox, out mergedA);
-                BoundingBoxEx.Merge(ref ChildB.BoundingBox, ref node.BoundingBox, out mergedB);
+                BoundingBox.CreateMerged(ref ChildA.BoundingBox, ref node.BoundingBox, out mergedA);
+                BoundingBox.CreateMerged(ref ChildB.BoundingBox, ref node.BoundingBox, out mergedB);
 
                 Vector3 offset;
                 float originalAVolume, originalBVolume;
-                Vector3.Subtract(ref ChildA.BoundingBox.Maximum, ref ChildA.BoundingBox.Minimum, out offset);
+                Vector3.Subtract(ref ChildA.BoundingBox.Max, ref ChildA.BoundingBox.Min, out offset);
                 originalAVolume = offset.X * offset.Y * offset.Z;
-                Vector3.Subtract(ref ChildB.BoundingBox.Maximum, ref ChildB.BoundingBox.Minimum, out offset);
+                Vector3.Subtract(ref ChildB.BoundingBox.Max, ref ChildB.BoundingBox.Min, out offset);
                 originalBVolume = offset.X * offset.Y * offset.Z;
 
                 float mergedAVolume, mergedBVolume;
-                Vector3.Subtract(ref mergedA.Maximum, ref mergedA.Minimum, out offset);
+                Vector3.Subtract(ref mergedA.Max, ref mergedA.Min, out offset);
                 mergedAVolume = offset.X * offset.Y * offset.Z;
-                Vector3.Subtract(ref mergedB.Maximum, ref mergedB.Minimum, out offset);
+                Vector3.Subtract(ref mergedB.Max, ref mergedB.Min, out offset);
                 mergedBVolume = offset.X * offset.Y * offset.Z;
 
                 //Could use factor increase or absolute difference
@@ -392,7 +392,7 @@ namespace BEPUphysics.DataStructures
             {
                 ChildA.Refit(data);
                 ChildB.Refit(data);
-                BoundingBoxEx.Merge(ref ChildA.BoundingBox, ref ChildB.BoundingBox, out BoundingBox);
+                BoundingBox.CreateMerged(ref ChildA.BoundingBox, ref ChildB.BoundingBox, out BoundingBox);
             }
         }
 
@@ -414,12 +414,12 @@ namespace BEPUphysics.DataStructures
                 LeafIndex = leafIndex;
                 data.GetBoundingBox(leafIndex, out BoundingBox);
                 //Having an ever-so-slight margin allows the hierarchy use a volume metric even for degenerate shapes (consider a flat tessellated plane).
-                BoundingBox.Maximum.X += LeafMargin;
-                BoundingBox.Maximum.Y += LeafMargin;
-                BoundingBox.Maximum.Z += LeafMargin;
-                BoundingBox.Minimum.X -= LeafMargin;
-                BoundingBox.Minimum.Y -= LeafMargin;
-                BoundingBox.Minimum.Z -= LeafMargin;
+                BoundingBox.Max.X += LeafMargin;
+                BoundingBox.Max.Y += LeafMargin;
+                BoundingBox.Max.Z += LeafMargin;
+                BoundingBox.Min.X -= LeafMargin;
+                BoundingBox.Min.Y -= LeafMargin;
+                BoundingBox.Min.Z -= LeafMargin;
             }
 
             internal override void GetOverlaps(ref BoundingBox boundingBox, IList<int> outputOverlappedElements)
@@ -446,7 +446,7 @@ namespace BEPUphysics.DataStructures
             internal override bool TryToInsert(LeafNode node, out Node treeNode)
             {
                 var newTreeNode = new InternalNode();
-                BoundingBoxEx.Merge(ref BoundingBox, ref node.BoundingBox, out newTreeNode.BoundingBox);
+                BoundingBox.CreateMerged(ref BoundingBox, ref node.BoundingBox, out newTreeNode.BoundingBox);
                 newTreeNode.ChildA = this;
                 newTreeNode.ChildB = node;
                 treeNode = newTreeNode;
@@ -468,12 +468,12 @@ namespace BEPUphysics.DataStructures
             {
                 data.GetBoundingBox(LeafIndex, out BoundingBox);
                 //Having an ever-so-slight margin allows the hierarchy use a volume metric even for degenerate shapes (consider a flat tessellated plane).
-                BoundingBox.Maximum.X += LeafMargin;
-                BoundingBox.Maximum.Y += LeafMargin;
-                BoundingBox.Maximum.Z += LeafMargin;
-                BoundingBox.Minimum.X -= LeafMargin;
-                BoundingBox.Minimum.Y -= LeafMargin;
-                BoundingBox.Minimum.Z -= LeafMargin;
+                BoundingBox.Max.X += LeafMargin;
+                BoundingBox.Max.Y += LeafMargin;
+                BoundingBox.Max.Z += LeafMargin;
+                BoundingBox.Min.X -= LeafMargin;
+                BoundingBox.Min.Y -= LeafMargin;
+                BoundingBox.Min.Z -= LeafMargin;
             }
         }
 

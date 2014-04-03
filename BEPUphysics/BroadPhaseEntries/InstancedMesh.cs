@@ -1,16 +1,13 @@
 ﻿using System;
-using BEPUphysics.Collidables.Events;
+using BEPUphysics.BroadPhaseEntries.Events;
 using BEPUphysics.CollisionShapes;
-using SharpDX;
-using BEPUphysics.Materials;
-using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.ResourceManagement;
+using BEPUutilities;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
 using BEPUphysics.OtherSpaceStages;
+using RigidTransform = BEPUutilities.RigidTransform;
 
-namespace BEPUphysics.Collidables
+namespace BEPUphysics.BroadPhaseEntries
 {
     ///<summary>
     /// Collidable mesh which can be created from a reusable InstancedMeshShape.
@@ -130,7 +127,7 @@ namespace BEPUphysics.Collidables
             {
                 if (value.Owner != null && //Can't use a manager which is owned by a different entity.
                     value != events) //Stay quiet if for some reason the same event manager is being set.
-                    throw new Exception("Event manager is already owned by a mesh; event managers cannot be shared.");
+                    throw new ArgumentException("Event manager is already owned by a mesh; event managers cannot be shared.");
                 if (events != null)
                     events.Owner = null;
                 events = value;
@@ -178,7 +175,7 @@ namespace BEPUphysics.Collidables
             Ray localRay;
             AffineTransform inverse;
             AffineTransform.Invert(ref worldTransform, out inverse);
-            Matrix3X3.Transform(ref ray.Direction, ref inverse.LinearTransform, out localRay.Direction);
+            Matrix3x3.Transform(ref ray.Direction, ref inverse.LinearTransform, out localRay.Direction);
             AffineTransform.Transform(ref ray.Position, ref inverse, out localRay.Position);
 
             if (Shape.TriangleMesh.RayCast(localRay, maximumLength, sidedness, out rayHit))
@@ -186,7 +183,7 @@ namespace BEPUphysics.Collidables
                 //Transform the hit into world space.
                 Vector3.Multiply(ref ray.Direction, rayHit.T, out rayHit.Location);
                 Vector3.Add(ref rayHit.Location, ref ray.Position, out rayHit.Location);
-                Matrix3X3.TransformTranspose(ref rayHit.Normal, ref inverse.LinearTransform, out rayHit.Normal);
+                Matrix3x3.TransformTranspose(ref rayHit.Normal, ref inverse.LinearTransform, out rayHit.Normal);
                 return true;
             }
             rayHit = new RayHit();
@@ -206,8 +203,8 @@ namespace BEPUphysics.Collidables
             hit = new RayHit();
             BoundingBox boundingBox;
             castShape.GetSweptLocalBoundingBox(ref startingTransform, ref worldTransform, ref sweep, out boundingBox);
-            var tri = BEPUphysics.ResourceManagement.Resources.GetTriangle();
-            var hitElements = BEPUphysics.ResourceManagement.Resources.GetIntList();
+            var tri = PhysicsThreadResources.GetTriangle();
+            var hitElements = CommonResources.GetIntList();
             if (this.Shape.TriangleMesh.Tree.GetOverlaps(boundingBox, hitElements))
             {
                 hit.T = float.MaxValue;
@@ -224,14 +221,14 @@ namespace BEPUphysics.Collidables
                     Vector3.Subtract(ref tri.vA, ref center, out tri.vA);
                     Vector3.Subtract(ref tri.vB, ref center, out tri.vB);
                     Vector3.Subtract(ref tri.vC, ref center, out tri.vC);
-                    tri.maximumRadius = tri.vA.LengthSquared();
+                    tri.MaximumRadius = tri.vA.LengthSquared();
                     float radius = tri.vB.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
                     radius = tri.vC.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
-                    tri.maximumRadius = (float)Math.Sqrt(tri.maximumRadius);
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
+                    tri.MaximumRadius = (float)Math.Sqrt(tri.MaximumRadius);
                     tri.collisionMargin = 0;
                     var triangleTransform = new RigidTransform { Orientation = Quaternion.Identity, Position = center };
                     RayHit tempHit;
@@ -240,13 +237,13 @@ namespace BEPUphysics.Collidables
                         hit = tempHit;
                     }
                 }
-                tri.maximumRadius = 0;
-                BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-                BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+                tri.MaximumRadius = 0;
+                PhysicsThreadResources.GiveBack(tri);
+                CommonResources.GiveBack(hitElements);
                 return hit.T != float.MaxValue;
             }
-            BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-            BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+            PhysicsThreadResources.GiveBack(tri);
+            CommonResources.GiveBack(hitElements);
             return false;
         }
 

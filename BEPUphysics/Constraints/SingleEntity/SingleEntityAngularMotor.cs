@@ -1,8 +1,8 @@
 ﻿using System;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints.SingleEntity
 {
@@ -22,7 +22,7 @@ namespace BEPUphysics.Constraints.SingleEntity
         private Vector3 axis;
 
         private Vector3 biasVelocity;
-        private Matrix3X3 effectiveMassMatrix;
+        private Matrix3x3 effectiveMassMatrix;
 
         private float maxForceDt;
         private float maxForceDtSquared;
@@ -115,7 +115,7 @@ namespace BEPUphysics.Constraints.SingleEntity
             lambda.Y = -aVel.Y + biasVelocity.Y - usedSoftness * accumulatedImpulse.Y;
             lambda.Z = -aVel.Z + biasVelocity.Z - usedSoftness * accumulatedImpulse.Z;
 
-            Matrix3X3.Transform(ref lambda, ref effectiveMassMatrix, out lambda);
+            Matrix3x3.Transform(ref lambda, ref effectiveMassMatrix, out lambda);
 
             Vector3 previousAccumulatedImpulse = accumulatedImpulse;
             accumulatedImpulse.X += lambda.X;
@@ -153,29 +153,30 @@ namespace BEPUphysics.Constraints.SingleEntity
             basis.rotationMatrix = entity.orientationMatrix;
             basis.ComputeWorldSpaceAxes();
 
+            float updateRate = 1 / dt;
             if (settings.mode == MotorMode.Servomechanism) //Only need to do the bulk of this work if it's a servo.
             {
                 Quaternion currentRelativeOrientation;
-                Matrix worldTransform = Matrix3X3.ToMatrix4X4(basis.WorldTransform);
-                Quaternion.RotationMatrix(ref worldTransform, out currentRelativeOrientation);
+                var worldTransform = basis.WorldTransform;
+                Quaternion.CreateFromRotationMatrix(ref worldTransform, out currentRelativeOrientation);
 
 
                 //Compute the relative orientation R' between R and the target relative orientation.
                 Quaternion errorOrientation;
                 Quaternion.Conjugate(ref currentRelativeOrientation, out errorOrientation);
-                QuaternionEx.Multiply(ref settings.servo.goal, ref errorOrientation, out errorOrientation);
+                Quaternion.Multiply(ref settings.servo.goal, ref errorOrientation, out errorOrientation);
 
 
                 float errorReduction;
-                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out usedSoftness);
+                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, updateRate, out errorReduction, out usedSoftness);
 
                 //Turn this into an axis-angle representation.
-                Toolbox.GetAxisAngleFromQuaternion(ref errorOrientation, out axis, out angle);
+                Quaternion.GetAxisAngleFromQuaternion(ref errorOrientation, out axis, out angle);
 
                 //Scale the axis by the desired velocity if the angle is sufficiently large (epsilon).
                 if (angle > Toolbox.BigEpsilon)
                 {
-                    float velocity = Math.Min(settings.servo.baseCorrectiveSpeed, angle / dt) + angle * errorReduction;
+                    float velocity = MathHelper.Min(settings.servo.baseCorrectiveSpeed, angle * updateRate) + angle * errorReduction;
 
                     biasVelocity.X = axis.X * velocity;
                     biasVelocity.Y = axis.Y * velocity;
@@ -200,10 +201,10 @@ namespace BEPUphysics.Constraints.SingleEntity
             }
             else
             {
-                usedSoftness = settings.velocityMotor.softness / dt;
+                usedSoftness = settings.velocityMotor.softness * updateRate;
                 angle = 0; //Zero out the error;
-                Matrix3X3 transform = basis.WorldTransform;
-                Matrix3X3.Transform(ref settings.velocityMotor.goalVelocity, ref transform, out biasVelocity);
+                Matrix3x3 transform = basis.WorldTransform;
+                Matrix3x3.Transform(ref settings.velocityMotor.goalVelocity, ref transform, out biasVelocity);
             }
 
             //Compute effective mass
@@ -211,7 +212,7 @@ namespace BEPUphysics.Constraints.SingleEntity
             effectiveMassMatrix.M11 += usedSoftness;
             effectiveMassMatrix.M22 += usedSoftness;
             effectiveMassMatrix.M33 += usedSoftness;
-            Matrix3X3.Invert(ref effectiveMassMatrix, out effectiveMassMatrix);
+            Matrix3x3.Invert(ref effectiveMassMatrix, out effectiveMassMatrix);
 
             //Update the maximum force
             ComputeMaxForces(settings.maximumForce, dt);

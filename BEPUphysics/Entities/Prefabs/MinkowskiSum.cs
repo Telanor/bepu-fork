@@ -1,8 +1,9 @@
 using System.Collections.Generic;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.EntityStateManagement;
-using SharpDX;
+ 
 using BEPUphysics.CollisionShapes.ConvexShapes;
+using BEPUutilities;
 
 namespace BEPUphysics.Entities.Prefabs
 {

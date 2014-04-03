@@ -4,13 +4,9 @@ using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
 using BEPUphysics.Constraints;
 using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.SolverSystems;
-using BEPUphysics.Threading;
 using BEPUphysics.CollisionRuleManagement;
-using System.Collections.ObjectModel;
-using BEPUphysics.DataStructures;
-using System.Diagnostics;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUutilities.DataStructures;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.NarrowPhaseSystems
 {
@@ -135,11 +131,11 @@ namespace BEPUphysics.NarrowPhaseSystems
         ///</summary>
         ///<param name="timeStepSettings">Time step settings used by the narrow phase.</param>
         /// <param name="overlaps">Overlaps list used by the narrow phase to create pairs.</param>
-        /// <param name="threadManager">Thread manager used by the narrow phase.</param>
-        public NarrowPhase(TimeStepSettings timeStepSettings, RawList<BroadPhaseOverlap> overlaps, IThreadManager threadManager)
+        /// <param name="parallelLooper">Parallel loop provider used by the narrow phase.</param>
+        public NarrowPhase(TimeStepSettings timeStepSettings, RawList<BroadPhaseOverlap> overlaps, IParallelLooper parallelLooper)
             : this(timeStepSettings, overlaps)
         {
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
 
@@ -182,21 +178,74 @@ namespace BEPUphysics.NarrowPhaseSystems
             }
         }
 
+#if PROFILE
+        /// <summary>
+        /// Gets the time used in updating the pair handler states.
+        /// </summary>
+        public double PairUpdateTime
+        {
+            get
+            {
+                return (endPairs - startPairs) / (double)Stopwatch.Frequency;
+            }
+        }
+        /// <summary>
+        /// Gets the time used in scanning for out of date pairs.
+        /// </summary>
+        public double StaleOverlapRemovalTime
+        {
+            get
+            {
+                return (endStale - endPairs) / (double)Stopwatch.Frequency;
+            }
+        }
+        /// <summary>
+        /// Gets the time used in flushing new pairs into the simulation.
+        /// </summary>
+        public double FlushNewPairsTime
+        {
+            get
+            {
+                return (endFlushNew - endStale) / (double)Stopwatch.Frequency;
+            }
+        }
 
+
+        private long startPairs;
+        private long endPairs;
+        private long endStale;
+        private long endFlushNew;
+
+#endif
 
         protected override void UpdateMultithreaded()
         {
-            ThreadManager.ForLoop(0, broadPhaseOverlaps.Count, updateBroadPhaseOverlapDelegate);
 
-            //The new narrow phase objects should be flushed before we get to the stale overlaps, or else the NeedsUpdate property might get into an invalid state.
+#if PROFILE
+            startPairs = Stopwatch.GetTimestamp();
+#endif
+
+            ParallelLooper.ForLoop(0, broadPhaseOverlaps.Count, updateBroadPhaseOverlapDelegate);
+
+#if PROFILE
+            endPairs = Stopwatch.GetTimestamp();
+#endif
+
+            //Remove stale objects BEFORE adding new objects. This ensures that simulation islands which will be activated 
+            //by new narrow phase pairs will not be momentarily considered stale.
+            //(The RemoveStale only considers islands that are active to be potentially stale.)
+            //If that happened, all the pairs would be remove and immediately recreated. Very wasteful!
+            RemoveStaleOverlaps();
+#if PROFILE
+            endStale = Stopwatch.GetTimestamp();
+#endif
+            //This sets NeedsUpdate to true for all new objects, ensuring that they are considered for staleness next time.
             AddNewNarrowPhaseObjects();
 
-            //Flush away every change accumulated since the last flush.
-            FlushGeneratedSolverUpdateables();
+#if PROFILE
+            endFlushNew = Stopwatch.GetTimestamp();
+#endif
 
-            //By the time we get here, there's no more pending items in the queue, so the overlaps
-            //can be removed directly by the stale loop.
-            RemoveStaleOverlaps();
 
 
         }
@@ -204,21 +253,36 @@ namespace BEPUphysics.NarrowPhaseSystems
 
         protected override void UpdateSingleThreaded()
         {
+#if PROFILE
+            startPairs = Stopwatch.GetTimestamp();
+#endif
+
             int count = broadPhaseOverlaps.Count;
             for (int i = 0; i < count; i++)
             {
                 UpdateBroadPhaseOverlap(i);
             }
 
-            //The new narrow phase objects should be flushed before we get to the stale overlaps, or else the NeedsUpdate property might get into an invalid state.
+#if PROFILE
+            endPairs = Stopwatch.GetTimestamp();
+#endif
+            //Remove stale objects BEFORE adding new objects. This ensures that simulation islands which will be activated 
+            //by new narrow phase pairs will not be momentarily considered stale.
+            //(The RemoveStale only considers islands that are active to be potentially stale.)
+            //If that happened, all the pairs would be remove and immediately recreated. Very wasteful!
+            RemoveStaleOverlaps();
+
+#if PROFILE
+            endStale = Stopwatch.GetTimestamp();
+#endif
+
+            //This sets NeedsUpdate to true for all new objects, ensuring that they are considered for staleness next time.
             AddNewNarrowPhaseObjects();
 
-            //Flush away every change accumulated since the last flush.
-            FlushGeneratedSolverUpdateables();
+#if PROFILE
+            endFlushNew = Stopwatch.GetTimestamp();
+#endif
 
-            //By the time we get here, there's no more pending items in the queue, so the overlaps
-            //can be removed directly by the stale loop.
-            RemoveStaleOverlaps();
 
 
         }
@@ -226,11 +290,9 @@ namespace BEPUphysics.NarrowPhaseSystems
 
         void RemoveStaleOverlaps()
         {
-            //We don't need to do any synchronization or queueing here; just remove everything directly.
-            ApplySolverUpdateableChangesDirectly = true;
 
             //Remove stale objects.
-            for (int i = narrowPhasePairs.count - 1; i >= 0; i--)
+            for (int i = narrowPhasePairs.Count - 1; i >= 0; i--)
             {
                 var pair = narrowPhasePairs.Elements[i];
 
@@ -260,8 +322,6 @@ namespace BEPUphysics.NarrowPhaseSystems
                     narrowPhasePairs.FastRemoveAt(i);
                     overlapMapping.Remove(pair.BroadPhaseOverlap);
                     //The clean up will issue an order to get rid of the solver updateable if it is active.
-                    //To avoid a situation where the solver updateable outlives the pair but is available for re-use
-                    //because of the factory giveback here, the updateable is removed directly (ApplySolverUpdateableChangesDirectly = true).
                     pair.CleanUp();
                     pair.Factory.GiveBack(pair);
 
@@ -275,7 +335,6 @@ namespace BEPUphysics.NarrowPhaseSystems
 
             }
 
-            ApplySolverUpdateableChangesDirectly = false;
 
 
         }
@@ -288,6 +347,11 @@ namespace BEPUphysics.NarrowPhaseSystems
             while (newNarrowPhasePairs.TryUnsafeDequeueFirst(out narrowPhaseObject))
             {
                 narrowPhasePairs.Add(narrowPhaseObject);
+                //Because this occurs AFTER a stale update, and because a new narrow phase object will have NeedsUpdate = false,
+                //set it to true here.
+                //This ensures that the pair will be removed by the stale remover in the next frame should it be necessary to do so.
+                //(If this wasn't set, it would only be removed 2 frames from now.)
+                narrowPhaseObject.NeedsUpdate = true;
                 OnCreatePair(narrowPhaseObject);
             }
         }
@@ -322,13 +386,6 @@ namespace BEPUphysics.NarrowPhaseSystems
         ///</summary>
         public event Action<NarrowPhasePair> RemovingPair;
 
-        ConcurrentDeque<SolverUpdateableChange> solverUpdateableChanges = new ConcurrentDeque<SolverUpdateableChange>();
-
-        /// <summary>
-        /// If true, solver updateables added and removed from narrow phase pairs will be added directly to the solver
-        /// without any synchronization or queueing.
-        /// </summary>
-        bool ApplySolverUpdateableChangesDirectly { get; set; }
 
         ///<summary>
         /// Enqueues a solver updateable created by some pair for flushing into the solver later.
@@ -336,61 +393,20 @@ namespace BEPUphysics.NarrowPhaseSystems
         ///<param name="addedItem">Updateable to add.</param>
         public void NotifyUpdateableAdded(SolverUpdateable addedItem)
         {
-            if (ApplySolverUpdateableChangesDirectly)
-            {
-                Solver.Add(addedItem);
-            }
-            else
-            {
-                solverUpdateableChanges.Enqueue(new SolverUpdateableChange(true, addedItem));
-            }
+            Solver.Add(addedItem);
         }
+
         ///<summary>
         /// Enqueues a solver updateable removed by some pair for flushing into the solver later.
         ///</summary>
         ///<param name="removedItem">Solver updateable to remove.</param>
         public void NotifyUpdateableRemoved(SolverUpdateable removedItem)
         {
-            if (ApplySolverUpdateableChangesDirectly)
-            {
-                Solver.Remove(removedItem);
-            }
-            else
-            {
-                solverUpdateableChanges.Enqueue(new SolverUpdateableChange(false, removedItem));
-            }
+            Solver.Remove(removedItem);
         }
 
 
-        /// <summary>
-        /// Flushes the new solver updateables into the solver.
-        /// They are 'flux' updateables, so this uses the solver's flux add method.
-        /// </summary>
-        public void FlushGeneratedSolverUpdateables()
-        {
-            SolverUpdateableChange change;
-            while (solverUpdateableChanges.TryUnsafeDequeueFirst(out change))
-            {
-                if (change.ShouldAdd)
-                {
-                    //It is technically possible for a constraint to be added twice, if certain systems interfere.
-                    //The character controller is one such system.
-                    //We should check the new constraint's solver status before adding it here.
-                    if (change.Item.solver == null)
-                    {
-                        Solver.Add(change.Item);
-                    }
-                }
-                else
-                {
-                    if (change.Item.solver != null)
-                    {
-                        Solver.Remove(change.Item);
-                    }
-                }
-            }
 
-        }
 
 
 

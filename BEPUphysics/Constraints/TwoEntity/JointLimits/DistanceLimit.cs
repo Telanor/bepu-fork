@@ -1,7 +1,7 @@
 using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.JointLimits
 {
@@ -78,7 +78,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 localAnchorA = value;
-                Matrix3X3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out anchorA);
+                Matrix3x3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out anchorA);
                 anchorA += connectionA.position;
             }
         }
@@ -92,7 +92,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 localAnchorB = value;
-                Matrix3X3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out anchorB);
+                Matrix3x3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out anchorB);
                 anchorB += connectionB.position;
             }
         }
@@ -132,7 +132,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 anchorA = value;
-                localAnchorA = Vector3.Transform(anchorA - connectionA.position, Quaternion.Conjugate(connectionA.orientation));
+                localAnchorA = Quaternion.Transform(anchorA - connectionA.position, Quaternion.Conjugate(connectionA.orientation));
             }
         }
 
@@ -145,7 +145,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             set
             {
                 anchorB = value;
-                localAnchorB = Vector3.Transform(anchorB - connectionB.position, Quaternion.Conjugate(connectionB.orientation));
+                localAnchorB = Quaternion.Transform(anchorB - connectionB.position, Quaternion.Conjugate(connectionB.orientation));
             }
         }
 
@@ -161,12 +161,12 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
                 if (isLimitActive)
                 {
                     float lambda, dot;
-                    Vector3Ex.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
-                    Vector3Ex.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
+                    Vector3.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
+                    Vector3.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
                     lambda += dot;
-                    Vector3Ex.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
+                    Vector3.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
                     lambda += dot;
-                    Vector3Ex.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
+                    Vector3.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
                     lambda += dot;
                     return lambda;
                 }
@@ -250,12 +250,12 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
         {
             //Compute the current relative velocity.
             float lambda, dot;
-            Vector3Ex.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
-            Vector3Ex.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
+            Vector3.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
+            Vector3.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
             lambda += dot;
-            Vector3Ex.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
+            Vector3.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
             lambda += dot;
-            Vector3Ex.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
+            Vector3.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
             lambda += dot;
 
             //Add in the constraint space bias velocity
@@ -266,7 +266,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
 
             //Clamp accumulated impulse (can't go negative)
             float previousAccumulatedImpulse = accumulatedImpulse;
-            accumulatedImpulse = Math.Max(accumulatedImpulse + lambda, 0);
+            accumulatedImpulse = MathHelper.Max(accumulatedImpulse + lambda, 0);
             lambda = accumulatedImpulse - previousAccumulatedImpulse;
 
             //Apply the impulse
@@ -296,8 +296,8 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
         public override void Update(float dt)
         {
             //Transform the anchors and offsets into world space.
-            Matrix3X3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out offsetA);
-            Matrix3X3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out offsetB);
+            Matrix3x3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out offsetA);
+            Matrix3x3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out offsetB);
             Vector3.Add(ref connectionA.position, ref offsetA, out anchorA);
             Vector3.Add(ref connectionB.position, ref offsetB, out anchorB);
 
@@ -365,29 +365,29 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             if (connectionA.isDynamic && connectionB.isDynamic)
             {
                 Vector3 aAngular;
-                Matrix3X3.Transform(ref jAngularA, ref connectionA.localInertiaTensorInverse, out aAngular);
+                Matrix3x3.Transform(ref jAngularA, ref connectionA.localInertiaTensorInverse, out aAngular);
                 Vector3.Cross(ref aAngular, ref offsetA, out aAngular);
                 Vector3 bAngular;
-                Matrix3X3.Transform(ref jAngularB, ref connectionB.localInertiaTensorInverse, out bAngular);
+                Matrix3x3.Transform(ref jAngularB, ref connectionB.localInertiaTensorInverse, out bAngular);
                 Vector3.Cross(ref bAngular, ref offsetB, out bAngular);
                 Vector3.Add(ref aAngular, ref bAngular, out aAngular);
-                Vector3Ex.Dot(ref aAngular, ref jLinearB, out velocityToImpulse);
+                Vector3.Dot(ref aAngular, ref jLinearB, out velocityToImpulse);
                 velocityToImpulse += connectionA.inverseMass + connectionB.inverseMass;
             }
             else if (connectionA.isDynamic)
             {
                 Vector3 aAngular;
-                Matrix3X3.Transform(ref jAngularA, ref connectionA.localInertiaTensorInverse, out aAngular);
+                Matrix3x3.Transform(ref jAngularA, ref connectionA.localInertiaTensorInverse, out aAngular);
                 Vector3.Cross(ref aAngular, ref offsetA, out aAngular);
-                Vector3Ex.Dot(ref aAngular, ref jLinearB, out velocityToImpulse);
+                Vector3.Dot(ref aAngular, ref jLinearB, out velocityToImpulse);
                 velocityToImpulse += connectionA.inverseMass;
             }
             else if (connectionB.isDynamic)
             {
                 Vector3 bAngular;
-                Matrix3X3.Transform(ref jAngularB, ref connectionB.localInertiaTensorInverse, out bAngular);
+                Matrix3x3.Transform(ref jAngularB, ref connectionB.localInertiaTensorInverse, out bAngular);
                 Vector3.Cross(ref bAngular, ref offsetB, out bAngular);
-                Vector3Ex.Dot(ref bAngular, ref jLinearB, out velocityToImpulse);
+                Vector3.Dot(ref bAngular, ref jLinearB, out velocityToImpulse);
                 velocityToImpulse += connectionB.inverseMass;
             }
             else
@@ -399,7 +399,7 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             }
 
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
 
             velocityToImpulse = 1 / (softness + velocityToImpulse);
             //Finish computing jacobian; it's down here as an optimization (since it didn't need to be negated in mass matrix)
@@ -417,18 +417,17 @@ namespace BEPUphysics.Constraints.TwoEntity.JointLimits
             {
                 //Compute currently relative velocity for bounciness.
                 float relativeVelocity, dot;
-                Vector3Ex.Dot(ref jLinearA, ref connectionA.linearVelocity, out relativeVelocity);
-                Vector3Ex.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
+                Vector3.Dot(ref jLinearA, ref connectionA.linearVelocity, out relativeVelocity);
+                Vector3.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
                 relativeVelocity += dot;
-                Vector3Ex.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
+                Vector3.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
                 relativeVelocity += dot;
-                Vector3Ex.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
+                Vector3.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
                 relativeVelocity += dot;
-                if (-relativeVelocity > bounceVelocityThreshold)
-                    biasVelocity = Math.Max(biasVelocity, -relativeVelocity * bounciness);
+                biasVelocity = Math.Max(biasVelocity, ComputeBounceVelocity(-relativeVelocity));
             }
 
-            
+
         }
 
         /// <summary>

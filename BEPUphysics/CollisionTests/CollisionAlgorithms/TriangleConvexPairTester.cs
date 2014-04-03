@@ -1,11 +1,10 @@
 ﻿using System;
 using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using SharpDX;
+
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using BEPUphysics.Settings;
-using BEPUphysics.DataStructures;
-using System.Diagnostics;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 {
@@ -64,7 +63,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //Convex position dot normal is ALWAYS zero.  The thing to look at is the plane's 'd'.
             //If the distance along the normal is positive, then the convex is 'behind' that normal.
             float dotA;
-            Vector3Ex.Dot(ref triangle.vA, ref reverseNormal, out dotA);
+            Vector3.Dot(ref triangle.vA, ref reverseNormal, out dotA);
 
             contactList = new TinyStructList<ContactData>();
             switch (triangle.sidedness)
@@ -119,7 +118,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
 
             float dotE;
-            Vector3Ex.Dot(ref extremePoint, ref reverseNormal, out dotE);
+            Vector3.Dot(ref extremePoint, ref reverseNormal, out dotE);
             float t = (dotA - dotE) / reverseNormal.LengthSquared();
 
 
@@ -275,7 +274,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     Vector3.Subtract(ref triangle.vC, ref triangle.vA, out ac);
                     Vector3.Cross(ref ab, ref ac, out triangleNormal);
                     float dot;
-                    Vector3Ex.Dot(ref triangleNormal, ref displacement, out dot);
+                    Vector3.Dot(ref triangleNormal, ref displacement, out dot);
                     if (triangle.sidedness == TriangleSidedness.Clockwise && dot > 0)
                         return false;
                     if (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0)
@@ -347,7 +346,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
                     ////The first direction to check is one of the triangle's edge normals.  Choose the one that is most aligned with the offset from A to B.
                     ////Project the direction onto the triangle plane.
-                    //Vector3Ex.Dot(ref triangleNormal, ref center, out dot);
+                    //Vector3.Dot(ref triangleNormal, ref center, out dot);
                     //Vector3 trianglePlaneDirection;
                     //Vector3.Multiply(ref triangleNormal, dot, out trianglePlaneDirection);
                     //Vector3.Subtract(ref trianglePlaneDirection, ref center, out trianglePlaneDirection);
@@ -365,9 +364,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     //Vector3 p;
 
                     //float dotA, dotB, dotC;
-                    //Vector3Ex.Dot(ref triangle.vA, ref OxD, out dotA);
-                    //Vector3Ex.Dot(ref triangle.vB, ref OxD, out dotB);
-                    //Vector3Ex.Dot(ref triangle.vC, ref OxD, out dotC);
+                    //Vector3.Dot(ref triangle.vA, ref OxD, out dotA);
+                    //Vector3.Dot(ref triangle.vB, ref OxD, out dotB);
+                    //Vector3.Dot(ref triangle.vC, ref OxD, out dotC);
 
                     //if (dotA >= 0 && dotB <= 0)
                     //{
@@ -409,13 +408,13 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     //    Vector3.Divide(ref trianglePlaneDirection, (float)Math.Sqrt(dot), out trianglePlaneDirection);
                     //    MPRTesting.LocalSurfaceCast(convex, triangle, ref Toolbox.RigidIdentity, ref trianglePlaneDirection, out contact.PenetrationDepth, out contact.Normal);
                     //    //Check to see if the normal is facing in the proper direction, considering that this may not be a two-sided triangle.
-                    //    Vector3Ex.Dot(ref triangleNormal, ref contact.Normal, out dot);
+                    //    Vector3.Dot(ref triangleNormal, ref contact.Normal, out dot);
                     //    if ((triangle.sidedness == TriangleSidedness.Clockwise && dot > 0) || (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0))
                     //    {
                     //        //Normal was facing the wrong way.
                     //        //Instead of ignoring it entirely, correct the direction to as close as it can get by removing any component parallel to the triangle normal.
                     //        Vector3 previousNormal = contact.Normal;
-                    //        Vector3Ex.Dot(ref contact.Normal, ref triangleNormal, out dot);
+                    //        Vector3.Dot(ref contact.Normal, ref triangleNormal, out dot);
 
                     //        Vector3.Multiply(ref contact.Normal, dot, out p);
                     //        Vector3.Subtract(ref contact.Normal, ref p, out contact.Normal);
@@ -424,7 +423,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     //        {
                     //            //Renormalize the corrected normal.
                     //            Vector3.Divide(ref contact.Normal, (float)Math.Sqrt(length), out contact.Normal);
-                    //            Vector3Ex.Dot(ref contact.Normal, ref previousNormal, out dot);
+                    //            Vector3.Dot(ref contact.Normal, ref previousNormal, out dot);
                     //            contact.PenetrationDepth *= dot;
                     //        }
                     //        else
@@ -457,19 +456,19 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     Vector3 ABnormal, BCnormal, CAnormal;
 
                     //Project the center onto the edge to find the direction from the center to the edge AB.
-                    Vector3Ex.Dot(ref AO, ref AB, out dot);
+                    Vector3.Dot(ref AO, ref AB, out dot);
                     Vector3.Multiply(ref AB, dot / AB.LengthSquared(), out ABnormal);
                     Vector3.Subtract(ref AO, ref ABnormal, out ABnormal);
                     ABnormal.Normalize();
 
                     //Project the center onto the edge to find the direction from the center to the edge BC.
-                    Vector3Ex.Dot(ref BO, ref BC, out dot);
+                    Vector3.Dot(ref BO, ref BC, out dot);
                     Vector3.Multiply(ref BC, dot / BC.LengthSquared(), out BCnormal);
                     Vector3.Subtract(ref BO, ref BCnormal, out BCnormal);
                     BCnormal.Normalize();
 
                     //Project the center onto the edge to find the direction from the center to the edge BC.
-                    Vector3Ex.Dot(ref CO, ref CA, out dot);
+                    Vector3.Dot(ref CO, ref CA, out dot);
                     Vector3.Multiply(ref CA, dot / CA.LengthSquared(), out CAnormal);
                     Vector3.Subtract(ref CO, ref CAnormal, out CAnormal);
                     CAnormal.Normalize();
@@ -477,13 +476,13 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
                     MPRToolbox.LocalSurfaceCast(convex, triangle, ref Toolbox.RigidIdentity, ref ABnormal, out contact.PenetrationDepth, out contact.Normal);
                     //Check to see if the normal is facing in the proper direction, considering that this may not be a two-sided triangle.
-                    Vector3Ex.Dot(ref triangleNormal, ref contact.Normal, out dot);
+                    Vector3.Dot(ref triangleNormal, ref contact.Normal, out dot);
                     if ((triangle.sidedness == TriangleSidedness.Clockwise && dot > 0) || (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0))
                     {
                         //Normal was facing the wrong way.
                         //Instead of ignoring it entirely, correct the direction to as close as it can get by removing any component parallel to the triangle normal.
                         Vector3 previousNormal = contact.Normal;
-                        Vector3Ex.Dot(ref contact.Normal, ref triangleNormal, out dot);
+                        Vector3.Dot(ref contact.Normal, ref triangleNormal, out dot);
 
                         Vector3 p;
                         Vector3.Multiply(ref contact.Normal, dot, out p);
@@ -493,7 +492,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                         {
                             //Renormalize the corrected normal.
                             Vector3.Divide(ref contact.Normal, (float)Math.Sqrt(length), out contact.Normal);
-                            Vector3Ex.Dot(ref contact.Normal, ref previousNormal, out dot);
+                            Vector3.Dot(ref contact.Normal, ref previousNormal, out dot);
                             contact.PenetrationDepth *= dot;
                         }
                         else
@@ -510,13 +509,13 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
                     MPRToolbox.LocalSurfaceCast(convex, triangle, ref Toolbox.RigidIdentity, ref BCnormal, out candidateDepth, out candidateNormal);
                     //Check to see if the normal is facing in the proper direction, considering that this may not be a two-sided triangle.
-                    Vector3Ex.Dot(ref triangleNormal, ref candidateNormal, out dot);
+                    Vector3.Dot(ref triangleNormal, ref candidateNormal, out dot);
                     if ((triangle.sidedness == TriangleSidedness.Clockwise && dot > 0) || (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0))
                     {
                         //Normal was facing the wrong way.
                         //Instead of ignoring it entirely, correct the direction to as close as it can get by removing any component parallel to the triangle normal.
                         Vector3 previousNormal = candidateNormal;
-                        Vector3Ex.Dot(ref candidateNormal, ref triangleNormal, out dot);
+                        Vector3.Dot(ref candidateNormal, ref triangleNormal, out dot);
 
                         Vector3 p;
                         Vector3.Multiply(ref candidateNormal, dot, out p);
@@ -526,7 +525,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                         {
                             //Renormalize the corrected normal.
                             Vector3.Divide(ref candidateNormal, (float)Math.Sqrt(length), out candidateNormal);
-                            Vector3Ex.Dot(ref candidateNormal, ref previousNormal, out dot);
+                            Vector3.Dot(ref candidateNormal, ref previousNormal, out dot);
                             candidateDepth *= dot;
                         }
                         else
@@ -545,13 +544,13 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
                     MPRToolbox.LocalSurfaceCast(convex, triangle, ref Toolbox.RigidIdentity, ref CAnormal, out candidateDepth, out candidateNormal);
                     //Check to see if the normal is facing in the proper direction, considering that this may not be a two-sided triangle.
-                    Vector3Ex.Dot(ref triangleNormal, ref candidateNormal, out dot);
+                    Vector3.Dot(ref triangleNormal, ref candidateNormal, out dot);
                     if ((triangle.sidedness == TriangleSidedness.Clockwise && dot > 0) || (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0))
                     {
                         //Normal was facing the wrong way.
                         //Instead of ignoring it entirely, correct the direction to as close as it can get by removing any component parallel to the triangle normal.
                         Vector3 previousNormal = candidateNormal;
-                        Vector3Ex.Dot(ref candidateNormal, ref triangleNormal, out dot);
+                        Vector3.Dot(ref candidateNormal, ref triangleNormal, out dot);
 
                         Vector3 p;
                         Vector3.Multiply(ref candidateNormal, dot, out p);
@@ -561,7 +560,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                         {
                             //Renormalize the corrected normal.
                             Vector3.Divide(ref candidateNormal, (float)Math.Sqrt(length), out candidateNormal);
-                            Vector3Ex.Dot(ref candidateNormal, ref previousNormal, out dot);
+                            Vector3.Dot(ref candidateNormal, ref previousNormal, out dot);
                             candidateDepth *= dot;
                         }
                         else
@@ -606,7 +605,6 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     }
 
 
-                        Vector3Ex.Dot(ref triangleNormal, ref contact.Normal, out dot);
 
 
                 }
@@ -618,7 +616,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 //It's possible for the normal to still face the 'wrong' direction according to one sided triangles.
                 if (triangle.sidedness != TriangleSidedness.DoubleSided)
                 {
-                    Vector3Ex.Dot(ref triangleNormal, ref contact.Normal, out dot);
+                    Vector3.Dot(ref triangleNormal, ref contact.Normal, out dot);
                     if (dot < 0)
                     {
                         //Skip the add process.
@@ -627,7 +625,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
 
 
-               contact.Id = -1;
+                contact.Id = -1;
 
                 if (contact.PenetrationDepth < convex.collisionMargin + triangle.collisionMargin)
                 {
@@ -642,7 +640,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             {
                 contactList.Add(ref contact);
             }
-            if (contactList.count > 0)
+            if (contactList.Count > 0)
                 return true;
 
             state = CollisionState.ExternalSeparated;
@@ -686,7 +684,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3 closestPoint;
             Toolbox.GetClosestPointOnTriangleToPoint(ref triangle.vA, ref triangle.vB, ref triangle.vC, ref Toolbox.ZeroVector, out closestPoint);
             float length = closestPoint.LengthSquared();
-            float minimumRadius = convex.minimumRadius * (MotionSettings.CoreShapeScaling + .01f);
+            float minimumRadius = convex.MinimumRadius * (MotionSettings.CoreShapeScaling + .01f);
             if (length < minimumRadius * minimumRadius)
             {
                 Vector3 triangleNormal, ab, ac;
@@ -694,7 +692,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 Vector3.Subtract(ref triangle.vC, ref triangle.vA, out ac);
                 Vector3.Cross(ref ab, ref ac, out triangleNormal);
                 float dot;
-                Vector3Ex.Dot(ref closestPoint, ref triangleNormal, out dot);
+                Vector3.Dot(ref closestPoint, ref triangleNormal, out dot);
                 if ((triangle.sidedness == TriangleSidedness.Clockwise && dot > 0) || (triangle.sidedness == TriangleSidedness.Counterclockwise && dot < 0))
                 {
                     //Normal was facing the wrong way.
@@ -731,7 +729,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
 
                 //Compute the actual depth of the contact.
-                MPRToolbox.LocalSurfaceCast(convex, triangle, ref Toolbox.RigidIdentity, ref contact.Normal, out contact.PenetrationDepth, out triangleNormal); //Trash the 'corrected' normal.  We want to use the spherical normal.
+                //This is conservative; the minimum radius is guaranteed to be no larger than the shape itself.
+                //But that's ok- this is strictly a deep contact protection scheme. Other contacts will make the objects separate.
+                contact.PenetrationDepth = convex.MinimumRadius - length; 
                 contact.Id = -1;
                 return true;
             }
@@ -757,8 +757,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             //Check to see if it's outside A.
             float APdotAB, APdotAC;
-            Vector3Ex.Dot(ref ap, ref ab, out APdotAB);
-            Vector3Ex.Dot(ref ap, ref ac, out APdotAC);
+            Vector3.Dot(ref ap, ref ab, out APdotAB);
+            Vector3.Dot(ref ap, ref ac, out APdotAC);
             if (APdotAC <= 0f && APdotAB <= 0)
             {
                 //It is A!
@@ -769,8 +769,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float BPdotAB, BPdotAC;
             Vector3 bp;
             Vector3.Subtract(ref p, ref triangle.vB, out bp);
-            Vector3Ex.Dot(ref ab, ref bp, out BPdotAB);
-            Vector3Ex.Dot(ref ac, ref bp, out BPdotAC);
+            Vector3.Dot(ref ab, ref bp, out BPdotAB);
+            Vector3.Dot(ref ac, ref bp, out BPdotAC);
             if (BPdotAB >= 0f && BPdotAC <= BPdotAB)
             {
                 //It is B!
@@ -788,8 +788,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float CPdotAB, CPdotAC;
             Vector3 cp;
             Vector3.Subtract(ref p, ref triangle.vC, out cp);
-            Vector3Ex.Dot(ref ab, ref cp, out CPdotAB);
-            Vector3Ex.Dot(ref ac, ref cp, out CPdotAC);
+            Vector3.Dot(ref ab, ref cp, out CPdotAB);
+            Vector3.Dot(ref ac, ref cp, out CPdotAC);
             if (CPdotAC >= 0f && CPdotAB <= CPdotAC)
             {
                 //It is C!
@@ -861,9 +861,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //MPR tends to produce 'approximate' normals, though.
             //Use a fairly forgiving epsilon.
             float dotA, dotB, dotC;
-            Vector3Ex.Dot(ref triangle.vA, ref contact.Normal, out dotA);
-            Vector3Ex.Dot(ref triangle.vB, ref contact.Normal, out dotB);
-            Vector3Ex.Dot(ref triangle.vC, ref contact.Normal, out dotC);
+            Vector3.Dot(ref triangle.vA, ref contact.Normal, out dotA);
+            Vector3.Dot(ref triangle.vB, ref contact.Normal, out dotB);
+            Vector3.Dot(ref triangle.vC, ref contact.Normal, out dotC);
 
             //Since normal points from convex to triangle always, reverse dot signs.
             dotA = -dotA;
@@ -890,7 +890,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vB, ref triangle.vA, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.AB;
                         else
@@ -908,7 +908,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vC, ref triangle.vA, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.AC;
                         else
@@ -930,7 +930,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vC, ref triangle.vB, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.BC;
                         else
@@ -948,7 +948,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vA, ref triangle.vB, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.AB;
                         else
@@ -970,7 +970,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vA, ref triangle.vC, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.AC;
                         else
@@ -988,7 +988,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     else
                     {
                         Vector3.Subtract(ref triangle.vB, ref triangle.vC, out edgeDirection);
-                        Vector3Ex.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
+                        Vector3.Dot(ref edgeDirection, ref contact.Normal, out edgeDot);
                         if (edgeDot * edgeDot < edgeDirection.LengthSquared() * edgeEpsilon)
                             return VoronoiRegion.BC;
                         else

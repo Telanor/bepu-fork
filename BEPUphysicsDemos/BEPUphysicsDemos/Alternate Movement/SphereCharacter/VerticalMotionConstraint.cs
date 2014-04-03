@@ -1,23 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.Constraints;
-using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.MathExtensions;
-using BEPUphysics;
-using System.Diagnostics;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.Settings;
-using SharpDX;
 
 namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
 {
     /// <summary>
     /// Keeps a character glued to the ground, if possible.
     /// </summary>
-    public class VerticalMotionConstraint : EntitySolverUpdateable
+    public class VerticalMotionConstraint : SolverUpdateable
     {
         SphereCharacterController character;
 
@@ -58,7 +52,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             set
             {
                 if (maximumGlueForce < 0)
-                    throw new Exception("Value must be nonnegative.");
+                    throw new ArgumentException("Value must be nonnegative.");
                 maximumGlueForce = value;
             }
         }
@@ -79,7 +73,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             set
             {
                 if (value < 0)
-                    throw new Exception("Value must be nonnegative.");
+                    throw new ArgumentException("Value must be nonnegative.");
                 supportForceFactor = value;
             }
         }
@@ -168,7 +162,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
             //Technically, there exists a better estimate of the necessary speed, but choosing the maximum position correction speed is a nice catch-all.
             //If you change that correction speed, watch out!!! It could significantly change the way the character behaves when trying to glue to surfaces.
             if (supportData.Depth > 0)
-                permittedVelocity = CollisionResponseSettings.MaximumPenetrationCorrectionSpeed;
+                permittedVelocity = CollisionResponseSettings.MaximumPenetrationRecoverySpeed;
             else
                 permittedVelocity = 0;
 
@@ -185,11 +179,11 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
                 {
                     //Only dynamic entities can actually contribute anything to the effective mass.
                     //Kinematic entities have infinite mass and inertia, so this would all zero out.
-                    Matrix3X3 inertiaInverse = supportEntity.InertiaTensorInverse;
+                    Matrix3x3 inertiaInverse = supportEntity.InertiaTensorInverse;
                     Vector3 angularComponentB;
-                    Matrix3X3.Transform(ref angularJacobianB, ref inertiaInverse, out angularComponentB);
+                    Matrix3x3.Transform(ref angularJacobianB, ref inertiaInverse, out angularComponentB);
                     float effectiveMassContribution;
-                    Vector3Ex.Dot(ref angularComponentB, ref angularJacobianB, out effectiveMassContribution);
+                    Vector3.Dot(ref angularComponentB, ref angularJacobianB, out effectiveMassContribution);
 
                     effectiveMass += supportForceFactor * (effectiveMassContribution + supportEntity.InverseMass);
                 }
@@ -282,7 +276,7 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
                 float relativeVelocity;
 
                 Vector3 bodyVelocity = character.Body.LinearVelocity;
-                Vector3Ex.Dot(ref linearJacobianA, ref bodyVelocity, out relativeVelocity);
+                Vector3.Dot(ref linearJacobianA, ref bodyVelocity, out relativeVelocity);
 
                 if (supportEntity != null)
                 {
@@ -291,9 +285,9 @@ namespace BEPUphysicsDemos.AlternateMovement.SphereCharacter
 
 
                     float supportVelocity;
-                    Vector3Ex.Dot(ref linearJacobianB, ref supportLinearVelocity, out supportVelocity);
+                    Vector3.Dot(ref linearJacobianB, ref supportLinearVelocity, out supportVelocity);
                     relativeVelocity += supportVelocity;
-                    Vector3Ex.Dot(ref angularJacobianB, ref supportAngularVelocity, out supportVelocity);
+                    Vector3.Dot(ref angularJacobianB, ref supportAngularVelocity, out supportVelocity);
                     relativeVelocity += supportVelocity;
 
                 }

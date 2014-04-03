@@ -2,8 +2,7 @@
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -83,7 +82,7 @@ namespace BEPUphysicsDemos.Demos
             lowerLimb = new Box(upperLimb.Position + new Vector3(0, -1.7f, 0), .5f, 1.3f, .5f, 8);
             Space.Add(lowerLimb);
 
-            //Connect the body to the upper arm.
+            //Connect the body to the upper leg.
             Space.Add(new BallSocketJoint(body, upperLimb, upperLimb.Position + new Vector3(0, .9f, 0)));
             //Angular motors can be used to simulate friction when their goal velocity is 0.
             angularMotor = new AngularMotor(body, upperLimb);
@@ -91,7 +90,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(angularMotor);
 
 
-            //Connect the upper arm to the lower arm.
+            //Connect the upper leg to the lower leg.
             Space.Add(new BallSocketJoint(upperLimb, lowerLimb, upperLimb.Position + new Vector3(0, -.9f, 0)));
             angularMotor = new AngularMotor(upperLimb, lowerLimb);
             angularMotor.Settings.MaximumForce = 250;
@@ -104,7 +103,7 @@ namespace BEPUphysicsDemos.Demos
             lowerLimb = new Box(upperLimb.Position + new Vector3(0, -1.7f, 0), .5f, 1.3f, .5f, 8);
             Space.Add(lowerLimb);
 
-            //Connect the body to the upper arm.
+            //Connect the body to the upper leg.
             Space.Add(new BallSocketJoint(body, upperLimb, upperLimb.Position + new Vector3(0, .9f, 0)));
             //Angular motors can be used to simulate friction when their goal velocity is 0.
             angularMotor = new AngularMotor(body, upperLimb);
@@ -112,7 +111,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(angularMotor);
 
 
-            //Connect the upper arm to the lower arm.
+            //Connect the upper leg to the lower leg.
             Space.Add(new BallSocketJoint(upperLimb, lowerLimb, upperLimb.Position + new Vector3(0, -.9f, 0)));
             angularMotor = new AngularMotor(upperLimb, lowerLimb);
             angularMotor.Settings.MaximumForce = 250;
@@ -121,7 +120,7 @@ namespace BEPUphysicsDemos.Demos
             //Add some ground.
             Space.Add(new Box(new Vector3(0, -3.5f, 0), 40f, 1, 40f));
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 25);
+            game.Camera.Position = new Vector3(0, 5, 25);
         }
 
         /// <summary>

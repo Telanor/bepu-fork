@@ -3,7 +3,8 @@ using BEPUphysics.Constraints.TwoEntity.JointLimits;
 using BEPUphysics.Constraints.TwoEntity.Joints;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints.SolverGroups
 {
@@ -63,10 +64,10 @@ namespace BEPUphysics.Constraints.SolverGroups
             if (baseAxis.LengthSquared() < Toolbox.BigEpsilon)
             {
                 //However, if the free axis is totally aligned (like in an axis constraint), pick another reasonable direction.
-                baseAxis = Vector3.Cross(freeAxis, Vector3.UnitY);
+                baseAxis = Vector3.Cross(freeAxis, Vector3.Up);
                 if (baseAxis.LengthSquared() < Toolbox.BigEpsilon)
                 {
-                    baseAxis = Vector3.Cross(freeAxis, Vector3.UnitX);
+                    baseAxis = Vector3.Cross(freeAxis, Vector3.Right);
                 }
             }
             Limit.Basis.SetWorldAxes(freeAxis, baseAxis, connectionA.orientationMatrix);
@@ -77,10 +78,10 @@ namespace BEPUphysics.Constraints.SolverGroups
             if (baseAxis.LengthSquared() < Toolbox.BigEpsilon)
             {
                 //However, if the free axis is totally aligned (like in an axis constraint), pick another reasonable direction.
-                baseAxis = Vector3.Cross(freeAxis, Vector3.UnitY);
+                baseAxis = Vector3.Cross(freeAxis, Vector3.Up);
                 if (baseAxis.LengthSquared() < Toolbox.BigEpsilon)
                 {
-                    baseAxis = Vector3.Cross(freeAxis, Vector3.UnitX);
+                    baseAxis = Vector3.Cross(freeAxis, Vector3.Right);
                 }
             }
             Limit.TestAxis = baseAxis;

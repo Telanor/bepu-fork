@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.DataStructures;
-using SharpDX;
-using BEPUphysics.Threading;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
 {
@@ -22,9 +19,9 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         /// <summary>
         /// Constructs a new sort and sweep broad phase.
         /// </summary>
-        /// <param name="threadManager">Thread manager to use in the broad phase.</param>
-        public SortAndSweep1D(IThreadManager threadManager)
-            : base(threadManager)
+        /// <param name="parallelLooper">Parallel loop provider to use in the broad phase.</param>
+        public SortAndSweep1D(IParallelLooper parallelLooper)
+            : base(parallelLooper)
         {
             sweepSegment = Sweep;
             backbuffer = new RawList<BroadPhaseEntry>();
@@ -51,19 +48,19 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             base.Add(entry);
             //Entities do not set up their own bounding box before getting stuck in here.  If they're all zeroed out, the tree will be horrible.
             Vector3 offset;
-            Vector3.Subtract(ref entry.boundingBox.Maximum, ref entry.boundingBox.Minimum, out offset);
+            Vector3.Subtract(ref entry.boundingBox.Max, ref entry.boundingBox.Min, out offset);
             if (offset.X * offset.Y * offset.Z == 0)
                 entry.UpdateBoundingBox();
             //binary search for the approximately correct location.  This helps prevent large first-frame sort times.
             int minIndex = 0; //inclusive
-            int maxIndex = entries.count; //exclusive
+            int maxIndex = entries.Count; //exclusive
             int index = 0;
             while (maxIndex - minIndex > 0)
             {
                 index = (maxIndex + minIndex) / 2;
-                if (entries.Elements[index].boundingBox.Minimum.X > entry.boundingBox.Minimum.X)
+                if (entries.Elements[index].boundingBox.Min.X > entry.boundingBox.Min.X)
                     maxIndex = index;
-                else if (entries.Elements[index].boundingBox.Minimum.X < entry.boundingBox.Minimum.X)
+                else if (entries.Elements[index].boundingBox.Min.X < entry.boundingBox.Min.X)
                     minIndex = ++index;
                 else
                     break; //Found an equal value!
@@ -85,19 +82,19 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         Action<int> sweepSegment;
         protected override void UpdateMultithreaded()
         {
-            if (backbuffer.count != entries.count)
+            if (backbuffer.Count != entries.Count)
             {
                 backbuffer.Capacity = entries.Capacity;
-                backbuffer.count = entries.count;
+                backbuffer.Count = entries.Count;
             }
             Overlaps.Clear();
             //Sort along x axis using insertion sort; the list will be nearly sorted, so very few swaps are necessary.
-            for (int i = 1; i < entries.count; i++)
+            for (int i = 1; i < entries.Count; i++)
             {
                 var entry = entries.Elements[i];
                 for (int j = i - 1; j >= 0; j--)
                 {
-                    if (entry.boundingBox.Minimum.X < entries.Elements[j].boundingBox.Minimum.X)
+                    if (entry.boundingBox.Min.X < entries.Elements[j].boundingBox.Min.X)
                     {
                         entries.Elements[j + 1] = entries.Elements[j];
                         entries.Elements[j] = entry;
@@ -137,19 +134,19 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             //backbuffer = entries;
             //entries = temp;
 
-            ThreadManager.ForLoop(0, sweepSegmentCount, sweepSegment);
+            ParallelLooper.ForLoop(0, sweepSegmentCount, sweepSegment);
         }
 
         protected override void UpdateSingleThreaded()
         {
             Overlaps.Clear();
             //Sort along x axis using insertion sort; the list will be nearly sorted, so very few swaps are necessary.
-            for (int i = 1; i < entries.count; i++)
+            for (int i = 1; i < entries.Count; i++)
             {
                 var entry = entries.Elements[i];
                 for (int j = i - 1; j >= 0; j--)
                 {
-                    if (entry.boundingBox.Minimum.X < entries.Elements[j].boundingBox.Minimum.X)
+                    if (entry.boundingBox.Min.X < entries.Elements[j].boundingBox.Min.X)
                     {
                         entries.Elements[j + 1] = entries.Elements[j];
                         entries.Elements[j] = entry;
@@ -160,13 +157,13 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
 
             }
             //Sweep the list looking for overlaps.
-            for (int i = 0; i < entries.count; i++)
+            for (int i = 0; i < entries.Count; i++)
             {
                 BoundingBox a = entries.Elements[i].boundingBox;
-                for (int j = i + 1; j < entries.count && a.Maximum.X >= entries.Elements[j].boundingBox.Minimum.X; j++)
+                for (int j = i + 1; j < entries.Count && a.Max.X >= entries.Elements[j].boundingBox.Min.X; j++)
                 {
-                    if (!(a.Minimum.Y > entries.Elements[j].boundingBox.Maximum.Y || a.Maximum.Y < entries.Elements[j].boundingBox.Minimum.Y ||
-                          a.Minimum.Z > entries.Elements[j].boundingBox.Maximum.Z || a.Maximum.Z < entries.Elements[j].boundingBox.Minimum.Z))
+                    if (!(a.Min.Y > entries.Elements[j].boundingBox.Max.Y || a.Max.Y < entries.Elements[j].boundingBox.Min.Y ||
+                          a.Min.Z > entries.Elements[j].boundingBox.Max.Z || a.Max.Z < entries.Elements[j].boundingBox.Min.Z))
                     {
                         TryToAddOverlap(entries.Elements[i], entries.Elements[j]);
                     }
@@ -180,19 +177,19 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         int sweepSegmentCount = 32;
         void Sweep(int segment)
         {
-            int intervalLength = entries.count / sweepSegmentCount;
+            int intervalLength = entries.Count / sweepSegmentCount;
             int end;
             if (segment == sweepSegmentCount - 1)
-                end = entries.count;
+                end = entries.Count;
             else
                 end = intervalLength * (segment + 1);
             for (int i = intervalLength * segment; i < end; i++)
             {
                 BoundingBox a = entries.Elements[i].boundingBox;
-                for (int j = i + 1; j < entries.count && a.Maximum.X >= entries.Elements[j].boundingBox.Minimum.X; j++)
+                for (int j = i + 1; j < entries.Count && a.Max.X >= entries.Elements[j].boundingBox.Min.X; j++)
                 {
-                    if (!(a.Minimum.Y > entries.Elements[j].boundingBox.Maximum.Y || a.Maximum.Y < entries.Elements[j].boundingBox.Minimum.Y ||
-                          a.Minimum.Z > entries.Elements[j].boundingBox.Maximum.Z || a.Maximum.Z < entries.Elements[j].boundingBox.Minimum.Z))
+                    if (!(a.Min.Y > entries.Elements[j].boundingBox.Max.Y || a.Max.Y < entries.Elements[j].boundingBox.Min.Y ||
+                          a.Min.Z > entries.Elements[j].boundingBox.Max.Z || a.Max.Z < entries.Elements[j].boundingBox.Min.Z))
                     {
                         TryToAddOverlap(entries.Elements[i], entries.Elements[j]);
                     }
@@ -203,11 +200,11 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         int sortSegmentCount = 4;
         void SortSection(int section)
         {
-            int intervalLength = entries.count / sortSegmentCount;
+            int intervalLength = entries.Count / sortSegmentCount;
             int start = section * intervalLength;
             int end;
             if (section == sortSegmentCount - 1)
-                end = entries.count;
+                end = entries.Count;
             else
                 end = intervalLength * (section + 1);
 
@@ -216,7 +213,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
                 var entry = entries.Elements[i];
                 for (int j = i - 1; j >= 0; j--)
                 {
-                    if (entry.boundingBox.Minimum.X < entries.Elements[j].boundingBox.Minimum.X)
+                    if (entry.boundingBox.Min.X < entries.Elements[j].boundingBox.Min.X)
                     {
                         entries.Elements[j + 1] = entries.Elements[j];
                         entries.Elements[j] = entry;
@@ -231,7 +228,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         RawList<BroadPhaseEntry> backbuffer;
         void MergeSections(int a, int b)
         {
-            int intervalLength = entries.count / sortSegmentCount;
+            int intervalLength = entries.Count / sortSegmentCount;
             //'a' is known to be less than b, which means it cannot be the last section.
             int aStart = intervalLength * a;
             int aEnd = intervalLength * (a + 1);
@@ -240,8 +237,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
             int length;
             if (b == sortSegmentCount - 1)
             {
-                bEnd = entries.count;
-                length = intervalLength + entries.count - bStart;
+                bEnd = entries.Count;
+                length = intervalLength + entries.Count - bStart;
             }
             else
             {
@@ -263,7 +260,7 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
                 if (aIndex < aEnd && bIndex < bEnd)
                 {
                     //Compare the element at a to the one at b.
-                    if (entries.Elements[aIndex].boundingBox.Minimum.X < entries.Elements[bIndex].boundingBox.Minimum.X)
+                    if (entries.Elements[aIndex].boundingBox.Min.X < entries.Elements[bIndex].boundingBox.Min.X)
                     {
                         //a was the minimum element.  Put it into the buffer and increment the considered a index.
                         backbuffer.Elements[bufferIndex] = entries.Elements[aIndex++];

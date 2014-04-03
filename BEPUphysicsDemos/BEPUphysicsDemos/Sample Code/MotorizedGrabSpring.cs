@@ -3,8 +3,7 @@ using BEPUphysics.Constraints.SingleEntity;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.SampleCode
 {
@@ -125,8 +124,8 @@ namespace BEPUphysicsDemos.SampleCode
         {
             //You can configure the stiffness and damping of the corrective springs like so.
             //For this example, the motors will be just be the nearly rigid default.
-            linearMotor.Settings.Servo.SpringSettings.StiffnessConstant = 60000 * e.Mass;
-            linearMotor.Settings.Servo.SpringSettings.DampingConstant = 9000 * e.Mass;
+            linearMotor.Settings.Servo.SpringSettings.Stiffness = 60000 * e.Mass;
+            linearMotor.Settings.Servo.SpringSettings.Damping = 9000 * e.Mass;
 
             angularMotor.Settings.VelocityMotor.Softness = .1f / e.Mass;
             //An unlimited motor will gladly push the entity through other objects.
@@ -134,7 +133,7 @@ namespace BEPUphysicsDemos.SampleCode
             linearMotor.Settings.MaximumForce = 1000 * e.Mass;
 
             Entity = e;
-            LocalOffset = Vector3.Transform(grabLocation - e.Position, Quaternion.Conjugate(e.Orientation));
+            LocalOffset = Quaternion.Transform(grabLocation - e.Position, Quaternion.Conjugate(e.Orientation));
             angularMotor.Settings.Servo.Goal = e.Orientation;
             GoalPosition = grabLocation;
 
@@ -159,16 +158,16 @@ namespace BEPUphysicsDemos.SampleCode
             //Since the grabbed position is usually examined graphically, 
             //it's good to use the interpolated positions in case the 
             //engine is using internal time stepping and interpolation.
-            GrabbedPosition = Matrix3X3.Transform(LocalOffset, Entity.BufferedStates.InterpolatedStates.OrientationMatrix) + Entity.BufferedStates.InterpolatedStates.Position;
+            GrabbedPosition = Matrix3x3.Transform(LocalOffset, Entity.BufferedStates.InterpolatedStates.OrientationMatrix) + Entity.BufferedStates.InterpolatedStates.Position;
         }
 
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             newSpace.Add(linearMotor);
             newSpace.Add(angularMotor);
         }
 
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             oldSpace.Remove(linearMotor);
             oldSpace.Remove(angularMotor);

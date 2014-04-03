@@ -1,5 +1,5 @@
 ﻿using System;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.Constraints.SolverGroups;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
@@ -10,8 +10,7 @@ using BEPUphysics.Materials;
 using BEPUphysics.CollisionShapes;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using System.Collections.Generic;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -57,7 +56,7 @@ namespace BEPUphysicsDemos.Demos
 
             //The arm base can rotate around the Y axis.
             //Rotation is controlled by user input.
-            groundToBaseJoint = new RevoluteJoint(ground, armBase, Vector3.Zero, Vector3.UnitY);
+            groundToBaseJoint = new RevoluteJoint(ground, armBase, Vector3.Zero, Vector3.Up);
             groundToBaseJoint.Motor.IsActive = true;
             groundToBaseJoint.Motor.Settings.Mode = MotorMode.Servomechanism;
             groundToBaseJoint.Motor.Settings.MaximumForce = 3500;
@@ -66,7 +65,7 @@ namespace BEPUphysicsDemos.Demos
             Entity lowerArm = new Box(armBase.Position + new Vector3(0, 2, 0), 1, 3, .5f, 10);
             Space.Add(lowerArm);
 
-            shoulder = new RevoluteJoint(armBase, lowerArm, armBase.Position, -Vector3.UnitZ);
+            shoulder = new RevoluteJoint(armBase, lowerArm, armBase.Position, Vector3.Forward);
             shoulder.Motor.IsActive = true;
             shoulder.Motor.Settings.Mode = MotorMode.Servomechanism;
             shoulder.Motor.Settings.MaximumForce = 2500;
@@ -82,7 +81,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(upperArm);
 
             //Swivel hinges allow motion around two axes.  Imagine a tablet PC's monitor hinge.
-            elbow = new SwivelHingeJoint(lowerArm, upperArm, lowerArm.Position + new Vector3(0, 1.5f, 0), -Vector3.UnitZ);
+            elbow = new SwivelHingeJoint(lowerArm, upperArm, lowerArm.Position + new Vector3(0, 1.5f, 0), Vector3.Forward);
             elbow.TwistMotor.IsActive = true;
             elbow.TwistMotor.Settings.Mode = MotorMode.Servomechanism;
             elbow.TwistMotor.Settings.MaximumForce = 1000;
@@ -111,13 +110,13 @@ namespace BEPUphysicsDemos.Demos
             var claw = new CompoundBody(bodies, 6);
             Space.Add(claw);
 
-            clawHingeA = new RevoluteJoint(upperArm, claw, upperArm.Position + new Vector3(0, 1.5f, 0), -Vector3.UnitZ);
+            clawHingeA = new RevoluteJoint(upperArm, claw, upperArm.Position + new Vector3(0, 1.5f, 0), Vector3.Forward);
             clawHingeA.Motor.IsActive = true;
             clawHingeA.Motor.Settings.Mode = MotorMode.Servomechanism;
             clawHingeA.Motor.Settings.Servo.Goal = -MathHelper.PiOver2;
             //Weaken the claw to prevent it from crushing the boxes.
-            clawHingeA.Motor.Settings.Servo.SpringSettings.DampingConstant /= 100;
-            clawHingeA.Motor.Settings.Servo.SpringSettings.StiffnessConstant /= 100;
+            clawHingeA.Motor.Settings.Servo.SpringSettings.Damping /= 100;
+            clawHingeA.Motor.Settings.Servo.SpringSettings.Stiffness /= 100;
 
             clawHingeA.Limit.IsActive = true;
             clawHingeA.Limit.MinimumAngle = -MathHelper.PiOver2;
@@ -136,13 +135,13 @@ namespace BEPUphysicsDemos.Demos
             claw = new CompoundBody(bodies, 6);
             Space.Add(claw);
 
-            clawHingeB = new RevoluteJoint(upperArm, claw, upperArm.Position + new Vector3(0, 1.5f, 0), -Vector3.UnitZ);
+            clawHingeB = new RevoluteJoint(upperArm, claw, upperArm.Position + new Vector3(0, 1.5f, 0), Vector3.Forward);
             clawHingeB.Motor.IsActive = true;
             clawHingeB.Motor.Settings.Mode = MotorMode.Servomechanism;
             clawHingeB.Motor.Settings.Servo.Goal = MathHelper.PiOver2;
             //Weaken the claw to prevent it from crushing the boxes.
-            clawHingeB.Motor.Settings.Servo.SpringSettings.DampingConstant /= 100;
-            clawHingeB.Motor.Settings.Servo.SpringSettings.StiffnessConstant /= 100;
+            clawHingeB.Motor.Settings.Servo.SpringSettings.Damping /= 100;
+            clawHingeB.Motor.Settings.Servo.SpringSettings.Stiffness /= 100;
 
             clawHingeB.Limit.IsActive = true;
             clawHingeB.Limit.MinimumAngle = MathHelper.Pi / 6;
@@ -167,7 +166,7 @@ namespace BEPUphysicsDemos.Demos
                 Space.Add(new Box(new Vector3((float)Math.Cos(k) * 5.5f, 2, (float)Math.Sin(k) * 5.5f), 1, 1, 1, 10));
             }
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 5, 13);
+            game.Camera.Position = new Vector3(0, 5, 13);
         }
 
 
@@ -212,14 +211,14 @@ namespace BEPUphysicsDemos.Demos
                 groundToBaseJoint.Motor.Settings.Servo.Goal += 1 * dt;
 
             if (Game.KeyboardInput.IsKeyDown(Keys.Q))
-                shoulder.Motor.Settings.Servo.Goal = Math.Min(shoulder.Motor.Settings.Servo.Goal + .5f * dt, shoulder.Limit.MaximumAngle);
+                shoulder.Motor.Settings.Servo.Goal = MathHelper.Min(shoulder.Motor.Settings.Servo.Goal + .5f * dt, shoulder.Limit.MaximumAngle);
             if (Game.KeyboardInput.IsKeyDown(Keys.W))
-                shoulder.Motor.Settings.Servo.Goal = Math.Max(shoulder.Motor.Settings.Servo.Goal - .5f * dt, shoulder.Limit.MinimumAngle);
+                shoulder.Motor.Settings.Servo.Goal = MathHelper.Max(shoulder.Motor.Settings.Servo.Goal - .5f * dt, shoulder.Limit.MinimumAngle);
 
             if (Game.KeyboardInput.IsKeyDown(Keys.R))
-                elbow.HingeMotor.Settings.Servo.Goal = Math.Min(elbow.HingeMotor.Settings.Servo.Goal + 1 * dt, elbow.HingeLimit.MaximumAngle);
+                elbow.HingeMotor.Settings.Servo.Goal = MathHelper.Min(elbow.HingeMotor.Settings.Servo.Goal + 1 * dt, elbow.HingeLimit.MaximumAngle);
             if (Game.KeyboardInput.IsKeyDown(Keys.T))
-                elbow.HingeMotor.Settings.Servo.Goal = Math.Max(elbow.HingeMotor.Settings.Servo.Goal - 1 * dt, elbow.HingeLimit.MinimumAngle);
+                elbow.HingeMotor.Settings.Servo.Goal = MathHelper.Max(elbow.HingeMotor.Settings.Servo.Goal - 1 * dt, elbow.HingeLimit.MinimumAngle);
 
             if (Game.KeyboardInput.IsKeyDown(Keys.O))
                 elbow.TwistMotor.Settings.Servo.Goal += 1f * dt;
@@ -228,13 +227,13 @@ namespace BEPUphysicsDemos.Demos
 
             if (Game.KeyboardInput.IsKeyDown(Keys.OemOpenBrackets))
             {
-                clawHingeA.Motor.Settings.Servo.Goal = Math.Max(clawHingeA.Motor.Settings.Servo.Goal - 1.5f * dt, clawHingeA.Limit.MinimumAngle);
-                clawHingeB.Motor.Settings.Servo.Goal = Math.Min(clawHingeB.Motor.Settings.Servo.Goal + 1.5f * dt, clawHingeB.Limit.MaximumAngle);
+                clawHingeA.Motor.Settings.Servo.Goal = MathHelper.Max(clawHingeA.Motor.Settings.Servo.Goal - 1.5f * dt, clawHingeA.Limit.MinimumAngle);
+                clawHingeB.Motor.Settings.Servo.Goal = MathHelper.Min(clawHingeB.Motor.Settings.Servo.Goal + 1.5f * dt, clawHingeB.Limit.MaximumAngle);
             }
             if (Game.KeyboardInput.IsKeyDown(Keys.OemCloseBrackets))
             {
-                clawHingeA.Motor.Settings.Servo.Goal = Math.Min(clawHingeA.Motor.Settings.Servo.Goal + 1.5f * dt, clawHingeA.Limit.MaximumAngle);
-                clawHingeB.Motor.Settings.Servo.Goal = Math.Max(clawHingeB.Motor.Settings.Servo.Goal - 1.5f * dt, clawHingeB.Limit.MinimumAngle);
+                clawHingeA.Motor.Settings.Servo.Goal = MathHelper.Min(clawHingeA.Motor.Settings.Servo.Goal + 1.5f * dt, clawHingeA.Limit.MaximumAngle);
+                clawHingeB.Motor.Settings.Servo.Goal = MathHelper.Max(clawHingeB.Motor.Settings.Servo.Goal - 1.5f * dt, clawHingeB.Limit.MinimumAngle);
             }
 
 #endif

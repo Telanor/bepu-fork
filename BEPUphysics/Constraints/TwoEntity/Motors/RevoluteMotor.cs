@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+ 
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.Motors
 {
@@ -52,7 +52,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
 
         /// <summary>
         /// Gets the basis attached to entity A.
-        /// The primary axis represents the limited axis of rotation.  The 'measurement plane' which the test axis is tested against is based on this primary axis.
+        /// The primary axis represents the motorized axis of rotation.  The 'measurement plane' which the test axis is tested against is based on this primary axis.
         /// The x axis defines the 'base' direction on the measurement plane corresponding to 0 degrees of relative rotation.
         /// </summary>
         public JointBasis2D Basis
@@ -70,7 +70,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 localTestAxis = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localTestAxis, ref connectionB.orientationMatrix, out worldTestAxis);
+                Matrix3x3.Transform(ref localTestAxis, ref connectionB.orientationMatrix, out worldTestAxis);
             }
         }
 
@@ -92,7 +92,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 worldTestAxis = Vector3.Normalize(value);
-                Matrix3X3.TransformTranspose(ref worldTestAxis, ref connectionB.orientationMatrix, out localTestAxis);
+                Matrix3x3.TransformTranspose(ref worldTestAxis, ref connectionB.orientationMatrix, out localTestAxis);
             }
         }
 
@@ -106,8 +106,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             get
             {
                 float velocityA, velocityB;
-                Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-                Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+                Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+                Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
                 return velocityA + velocityB;
             }
         }
@@ -213,16 +213,16 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             //Transform the axes into world space.
             basis.rotationMatrix = connectionA.orientationMatrix;
             basis.ComputeWorldSpaceAxes();
-            Matrix3X3.Transform(ref localTestAxis, ref connectionB.orientationMatrix, out worldTestAxis);
+            Matrix3x3.Transform(ref localTestAxis, ref connectionB.orientationMatrix, out worldTestAxis);
 
-
+            float updateRate = 1 / dt;
             if (settings.mode == MotorMode.Servomechanism)
             {
                 float y, x;
                 Vector3 yAxis;
                 Vector3.Cross(ref basis.primaryAxis, ref basis.xAxis, out yAxis);
-                Vector3Ex.Dot(ref worldTestAxis, ref yAxis, out y);
-                Vector3Ex.Dot(ref worldTestAxis, ref basis.xAxis, out x);
+                Vector3.Dot(ref worldTestAxis, ref yAxis, out y);
+                Vector3.Dot(ref worldTestAxis, ref basis.xAxis, out x);
                 var angle = (float)Math.Atan2(y, x);
 
                 //****** VELOCITY BIAS ******//
@@ -230,17 +230,17 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
                 error = GetDistanceFromGoal(angle);
 
 
-                float absErrorOverDt = Math.Abs(error / dt);
+                float absErrorOverDt = Math.Abs(error * updateRate);
                 float errorReduction;
-                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out usedSoftness);
-                biasVelocity = Math.Sign(error) * Math.Min(settings.servo.baseCorrectiveSpeed, absErrorOverDt) + error * errorReduction;
+                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, updateRate, out errorReduction, out usedSoftness);
+                biasVelocity = Math.Sign(error) * MathHelper.Min(settings.servo.baseCorrectiveSpeed, absErrorOverDt) + error * errorReduction;
 
                 biasVelocity = MathHelper.Clamp(biasVelocity, -settings.servo.maxCorrectiveVelocity, settings.servo.maxCorrectiveVelocity);
             }
             else
             {
                 biasVelocity = settings.velocityMotor.goalVelocity;
-                usedSoftness = settings.velocityMotor.softness / dt;
+                usedSoftness = settings.velocityMotor.softness * updateRate;
                 error = 0;
             }
 
@@ -258,8 +258,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             Vector3 transformedAxis;
             if (connectionA.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianA, out entryA);
+                Matrix3x3.Transform(ref jacobianA, ref connectionA.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianA, out entryA);
             }
             else
                 entryA = 0;
@@ -268,8 +268,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             float entryB;
             if (connectionB.isDynamic)
             {
-                Matrix3X3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
-                Vector3Ex.Dot(ref transformedAxis, ref jacobianB, out entryB);
+                Matrix3x3.Transform(ref jacobianB, ref connectionB.inertiaTensorInverse, out transformedAxis);
+                Vector3.Dot(ref transformedAxis, ref jacobianB, out entryB);
             }
             else
                 entryB = 0;
@@ -315,8 +315,8 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
         {
             float velocityA, velocityB;
             //Find the velocity contribution from each connection
-            Vector3Ex.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
-            Vector3Ex.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
+            Vector3.Dot(ref connectionA.angularVelocity, ref jacobianA, out velocityA);
+            Vector3.Dot(ref connectionB.angularVelocity, ref jacobianB, out velocityB);
             //Add in the constraint space bias velocity
             float lambda = -(velocityA + velocityB) - biasVelocity - usedSoftness * accumulatedImpulse;
 

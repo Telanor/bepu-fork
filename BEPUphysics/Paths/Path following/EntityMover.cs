@@ -3,8 +3,8 @@ using BEPUphysics.Constraints.SingleEntity;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Paths.PathFollowing
 {
@@ -110,7 +110,7 @@ namespace BEPUphysics.Paths.PathFollowing
         /// <summary>
         /// Adds the motors to the space.  Called automatically.
         /// </summary>
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             newSpace.Add(LinearMotor);
         }
@@ -118,7 +118,7 @@ namespace BEPUphysics.Paths.PathFollowing
         /// <summary>
         /// Removes the motors from the space.  Called automatically.
         /// </summary>
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             oldSpace.Remove(LinearMotor);
         }
@@ -141,7 +141,8 @@ namespace BEPUphysics.Paths.PathFollowing
             else
             {
                 LinearMotor.IsActive = false;
-                Vector3 worldMovedPoint = Vector3Ex.Transform(LocalOffset, entity.WorldTransform);
+                Vector3 worldMovedPoint = Matrix3x3.Transform(LocalOffset, entity.orientationMatrix);
+                Vector3.Add(ref worldMovedPoint, ref entity.position, out worldMovedPoint);
                 Entity.LinearVelocity = GetLinearVelocity(worldMovedPoint, TargetPosition, dt);
             }
         }

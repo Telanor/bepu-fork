@@ -1,19 +1,15 @@
-﻿using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.DataStructures;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Collidables;
+﻿using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.Entities;
-using BEPUphysics.Constraints.TwoEntity.Joints;
 using BEPUphysics.Constraints.SolverGroups;
 using BEPUphysics.Paths;
 using BEPUphysics.Paths.PathFollowing;
 using BEPUphysics.Constraints.TwoEntity.Motors;
-using BEPUphysics.Constraints;
 using BEPUphysics.CollisionShapes;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework.Graphics;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -30,8 +26,8 @@ namespace BEPUphysicsDemos.Demos
             : base(game)
         {
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(-10, 7, 5);
-            game.Camera.Yaw = MathHelper.Pi;
+            game.Camera.Position = new Vector3(-10, 7, 5);
+            game.Camera.ViewDirection = new Vector3(0, 0, 1);
             //Since this is the character playground, turn on the character by default.
             character.Activate();
             //Having the character body visible would be a bit distracting.
@@ -46,7 +42,7 @@ namespace BEPUphysicsDemos.Demos
             //This is a little convenience method used to extract vertices and indices from a model.
             //It doesn't do anything special; any approach that gets valid vertices and indices will work.
             ModelDataExtractor.GetVerticesAndIndicesFromModel(playgroundModel, out staticTriangleVertices, out staticTriangleIndices);
-            var staticMesh = new StaticMesh(staticTriangleVertices, staticTriangleIndices, new AffineTransform(new Vector3(.01f, .01f, .01f), Quaternion.Identity, new Vector3(0, 0, 0)));
+            var staticMesh = new StaticMesh(staticTriangleVertices, staticTriangleIndices, new AffineTransform(new Vector3(0.01f, 0.01f, 0.01f), Quaternion.Identity, new Vector3(0, 0, 0)));
             staticMesh.Sidedness = TriangleSidedness.Counterclockwise;
 
             Space.Add(staticMesh);
@@ -57,7 +53,7 @@ namespace BEPUphysicsDemos.Demos
             //Add a spinning blade for the character to ram itself into.
             var fanBase = new Cylinder(new Vector3(-13, .5f, 50), 1.1f, 1);
             var fanBlade = new Box(fanBase.Position + new Vector3(0, .8f, 0), 5, .1f, 1f, 5);
-            var fanJoint = new RevoluteJoint(fanBase, fanBlade, (fanBase.Position + fanBlade.Position) * .5f, Vector3.UnitY);
+            var fanJoint = new RevoluteJoint(fanBase, fanBlade, (fanBase.Position + fanBlade.Position) * .5f, Vector3.Up);
             fanJoint.Motor.IsActive = true;
             fanJoint.Motor.Settings.VelocityMotor.GoalVelocity = 30;
             fanJoint.Motor.Settings.MaximumForce = 300;
@@ -79,14 +75,14 @@ namespace BEPUphysicsDemos.Demos
                 link.LinearDamping = .1f;
                 link.AngularDamping = .1f;
                 Space.Add(link);
-                Space.Add(new RevoluteJoint(previousLink, link, position - offset * .5f, Vector3.UnitX));
+                Space.Add(new RevoluteJoint(previousLink, link, position - offset * .5f, Vector3.Right));
 
                 previousLink = link;
             }
             var endPlatform = new Box(position - new Vector3(0, 0, -3.8f), 4, .5f, 6);
             Space.Add(endPlatform);
 
-            Space.Add(new RevoluteJoint(previousLink, endPlatform, position + offset * .5f, Vector3.UnitX));
+            Space.Add(new RevoluteJoint(previousLink, endPlatform, position + offset * .5f, Vector3.Right));
 
 
             //Add in a floating platform controlled by a curve to serve as an elevator.
@@ -137,8 +133,8 @@ namespace BEPUphysicsDemos.Demos
             platformRotationCurve.PostLoop = CurveEndpointBehavior.Mirror;
             platformRotationCurve.ControlPoints.Add(0, Quaternion.Identity);
             platformRotationCurve.ControlPoints.Add(15, Quaternion.Identity);
-            platformRotationCurve.ControlPoints.Add(22, Quaternion.RotationAxis(Vector3.UnitY, MathHelper.PiOver2));
-            platformRotationCurve.ControlPoints.Add(25, Quaternion.RotationAxis(Vector3.UnitY, MathHelper.PiOver2));
+            platformRotationCurve.ControlPoints.Add(22, Quaternion.CreateFromAxisAngle(Vector3.Up, MathHelper.PiOver2));
+            platformRotationCurve.ControlPoints.Add(25, Quaternion.CreateFromAxisAngle(Vector3.Up, MathHelper.PiOver2));
 
             platformMover = new EntityMover(movingEntity);
             platformRotator = new EntityRotator(movingEntity);
@@ -153,12 +149,12 @@ namespace BEPUphysicsDemos.Demos
 
             Box divingBoardBase = new Box(new Vector3(-9, 10, 39.3f), 5, 1, 3);
             Box divingBoard = new Box(divingBoardBase.Position + new Vector3(-2, 0, 3.5f), 1, .3f, 3, 5);
-            var divingBoardJoint = new RevoluteJoint(divingBoardBase, divingBoard, divingBoard.Position + new Vector3(0, 0, -1.5f), Vector3.UnitX);
+            var divingBoardJoint = new RevoluteJoint(divingBoardBase, divingBoard, divingBoard.Position + new Vector3(0, 0, -1.5f), Vector3.Right);
             divingBoardJoint.Motor.IsActive = true;
             divingBoardJoint.Motor.Settings.Mode = MotorMode.Servomechanism;
             divingBoardJoint.Motor.Settings.Servo.Goal = 0;
-            divingBoardJoint.Motor.Settings.Servo.SpringSettings.StiffnessConstant = 5000;
-            divingBoardJoint.Motor.Settings.Servo.SpringSettings.DampingConstant = 0;
+            divingBoardJoint.Motor.Settings.Servo.SpringSettings.Stiffness = 5000;
+            divingBoardJoint.Motor.Settings.Servo.SpringSettings.Damping = 0;
 
             Space.Add(divingBoardBase);
             Space.Add(divingBoard);
@@ -168,12 +164,12 @@ namespace BEPUphysicsDemos.Demos
             //Add a second diving board for comparison.
 
             Box divingBoard2 = new Box(divingBoardBase.Position + new Vector3(2, 0, 5f), 1, .3f, 6, 5);
-            var divingBoardJoint2 = new RevoluteJoint(divingBoardBase, divingBoard2, divingBoard2.Position + new Vector3(0, 0, -3), Vector3.UnitX);
+            var divingBoardJoint2 = new RevoluteJoint(divingBoardBase, divingBoard2, divingBoard2.Position + new Vector3(0, 0, -3), Vector3.Right);
             divingBoardJoint2.Motor.IsActive = true;
             divingBoardJoint2.Motor.Settings.Mode = MotorMode.Servomechanism;
             divingBoardJoint2.Motor.Settings.Servo.Goal = 0;
-            divingBoardJoint2.Motor.Settings.Servo.SpringSettings.StiffnessConstant = 10000;
-            divingBoardJoint2.Motor.Settings.Servo.SpringSettings.DampingConstant = 0;
+            divingBoardJoint2.Motor.Settings.Servo.SpringSettings.Stiffness = 10000;
+            divingBoardJoint2.Motor.Settings.Servo.SpringSettings.Damping = 0;
 
             Space.Add(divingBoard2);
             Space.Add(divingBoardJoint2);
@@ -181,7 +177,7 @@ namespace BEPUphysicsDemos.Demos
             //Add a seesaw for people to jump on.
             Box seesawBase = new Box(new Vector3(-7, .45f, 52), 1, .9f, .3f);
             Box seesawPlank = new Box(seesawBase.Position + new Vector3(0, .65f, 0), 1.2f, .2f, 6, 3);
-            RevoluteJoint seesawJoint = new RevoluteJoint(seesawBase, seesawPlank, seesawPlank.Position, Vector3.UnitX);
+            RevoluteJoint seesawJoint = new RevoluteJoint(seesawBase, seesawPlank, seesawPlank.Position, Vector3.Right);
             Space.Add(seesawJoint);
             Space.Add(seesawBase);
             Space.Add(seesawPlank);
@@ -213,7 +209,7 @@ namespace BEPUphysicsDemos.Demos
             //Make it a compound so some boxes can be added to let the player know it's actually spinning.
             CompoundBody log = new CompoundBody(new List<CompoundShapeEntry>()
             {
-                new CompoundShapeEntry(new CylinderShape(4, 1.8f), Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2), 20),
+                new CompoundShapeEntry(new CylinderShape(4, 1.8f), Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2), 20),
                 new CompoundShapeEntry(new BoxShape(.5f, .5f, 3.7f),  new Vector3(1.75f, 0,0), 0),
                 new CompoundShapeEntry(new BoxShape(.5f, 3.7f, .5f), new Vector3(1.75f, 0,0), 0),
                 new CompoundShapeEntry(new BoxShape(.5f, .5f, 3.7f),  new Vector3(-1.75f, 0,0), 0),
@@ -223,8 +219,8 @@ namespace BEPUphysicsDemos.Demos
             log.AngularDamping = 0;
 
 
-            RevoluteJoint logJointA = new RevoluteJoint(divingBoardBase, log, log.Position + new Vector3(2.5f, 0, 0), Vector3.UnitX);
-            RevoluteJoint logJointB = new RevoluteJoint(endPlatform, log, log.Position + new Vector3(-2.5f, 0, 0), Vector3.UnitX);
+            RevoluteJoint logJointA = new RevoluteJoint(divingBoardBase, log, log.Position + new Vector3(2.5f, 0, 0), Vector3.Right);
+            RevoluteJoint logJointB = new RevoluteJoint(endPlatform, log, log.Position + new Vector3(-2.5f, 0, 0), Vector3.Right);
             Space.Add(logJointA);
             Space.Add(logJointB);
 
@@ -239,8 +235,8 @@ namespace BEPUphysicsDemos.Demos
                 Box a = new Box(new Vector3(i * 1.5f + 3.5f, 10, 24), 1.5f, 1, 4);
                 Box b = new Box(new Vector3(i * 1.5f + 3.5f, 10, 24), 1.5f, 1, 4);
                 float angle = -i * MathHelper.PiOver2 / numPads;
-                b.Orientation = Quaternion.RotationAxis(Vector3.UnitX, angle);
-                b.Position += offset * .5f + Vector3.Transform(offset * .5f, b.Orientation);
+                b.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Right, angle);
+                b.Position += offset * .5f + Quaternion.Transform(offset * .5f, b.Orientation);
 
                 Space.Add(a);
                 Space.Add(b);

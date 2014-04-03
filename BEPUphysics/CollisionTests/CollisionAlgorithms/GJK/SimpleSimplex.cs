@@ -1,6 +1,5 @@
-﻿using SharpDX;
-using System;
-using BEPUphysics.MathExtensions;
+﻿using BEPUutilities;
+
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 {
@@ -76,7 +75,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             Vector3 segmentDisplacement;
             Vector3.Subtract(ref B, ref A, out segmentDisplacement);
             float dotA;
-            Vector3Ex.Dot(ref segmentDisplacement, ref A, out dotA);
+            Vector3.Dot(ref segmentDisplacement, ref A, out dotA);
 
             //Inside segment.
             float V = -dotA / segmentDisplacement.LengthSquared();
@@ -124,8 +123,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             //Check to see if it's outside C.
             //TODO: Note that in a boolean-style GJK, it shouldn't be possible to be outside C.
             float d5, d6;
-            Vector3Ex.Dot(ref ab, ref C, out d5);
-            Vector3Ex.Dot(ref ac, ref C, out d6);
+            Vector3.Dot(ref ab, ref C, out d5);
+            Vector3.Dot(ref ac, ref C, out d6);
             d5 = -d5;
             d6 = -d6;
             if (d6 >= 0f && d5 <= d6)
@@ -139,8 +138,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 
             //Check if it's outside AC.            
             float d1, d2;
-            Vector3Ex.Dot(ref ab, ref A, out d1);
-            Vector3Ex.Dot(ref ac, ref A, out d2);
+            Vector3.Dot(ref ab, ref A, out d1);
+            Vector3.Dot(ref ac, ref A, out d2);
             d1 = -d1;
             d2 = -d2;
             float vb = d5 * d2 - d1 * d6;
@@ -157,8 +156,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 
             //Check if it's outside BC.
             float d3, d4;
-            Vector3Ex.Dot(ref ab, ref B, out d3);
-            Vector3Ex.Dot(ref ac, ref B, out d4);
+            Vector3.Dot(ref ab, ref B, out d3);
+            Vector3.Dot(ref ac, ref B, out d4);
             d3 = -d3;
             d4 = -d4;
             float va = d3 * d6 - d5 * d4;
@@ -271,8 +270,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
             float AdotN, ADdotN;
             Vector3 AD;
             Vector3.Subtract(ref otherPoint, ref A, out AD);
-            Vector3Ex.Dot(ref A, ref normal, out AdotN);
-            Vector3Ex.Dot(ref AD, ref normal, out ADdotN);
+            Vector3.Dot(ref A, ref normal, out AdotN);
+            Vector3.Dot(ref AD, ref normal, out ADdotN);
 
             //If (-A * N) * (AD * N) < 0, D and O are on opposite sides of the triangle.
             if (AdotN * ADdotN > 0)
@@ -290,8 +289,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                 //Check to see if it's outside C.
                 //TODO: Note that in a boolean-style GJK, it shouldn't be possible to be outside C.
                 float CdotAB, CdotAC;
-                Vector3Ex.Dot(ref ab, ref C, out CdotAB);
-                Vector3Ex.Dot(ref ac, ref C, out CdotAC);
+                Vector3.Dot(ref ab, ref C, out CdotAB);
+                Vector3.Dot(ref ac, ref C, out CdotAC);
                 CdotAB = -CdotAB;
                 CdotAC = -CdotAC;
                 if (CdotAC >= 0f && CdotAB <= CdotAC)
@@ -305,8 +304,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 
                 //Check if it's outside AC.            
                 float AdotAB, AdotAC;
-                Vector3Ex.Dot(ref ab, ref A, out AdotAB);
-                Vector3Ex.Dot(ref ac, ref A, out AdotAC);
+                Vector3.Dot(ref ab, ref A, out AdotAB);
+                Vector3.Dot(ref ac, ref A, out AdotAC);
                 AdotAB = -AdotAB;
                 AdotAC = -AdotAC;
                 float vb = CdotAB * AdotAC - AdotAB * CdotAC;
@@ -324,8 +323,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
 
                 //Check if it's outside BC.
                 float BdotAB, BdotAC;
-                Vector3Ex.Dot(ref ab, ref B, out BdotAB);
-                Vector3Ex.Dot(ref ac, ref B, out BdotAC);
+                Vector3.Dot(ref ab, ref B, out BdotAB);
+                Vector3.Dot(ref ac, ref B, out BdotAC);
                 BdotAB = -BdotAB;
                 BdotAC = -BdotAC;
                 float va = BdotAB * CdotAC - CdotAB * BdotAC;
@@ -408,11 +407,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms.GJK
                 case SimplexState.Point:
                     return A.LengthSquared();
                 case SimplexState.Segment:
-                    return Math.Max(A.LengthSquared(), B.LengthSquared());
+                    return MathHelper.Max(A.LengthSquared(), B.LengthSquared());
                 case SimplexState.Triangle:
-                    return Math.Max(A.LengthSquared(), Math.Max(B.LengthSquared(), C.LengthSquared()));
+                    return MathHelper.Max(A.LengthSquared(), MathHelper.Max(B.LengthSquared(), C.LengthSquared()));
                 case SimplexState.Tetrahedron:
-                    return Math.Max(A.LengthSquared(), Math.Max(B.LengthSquared(), Math.Max(C.LengthSquared(), D.LengthSquared())));
+                    return MathHelper.Max(A.LengthSquared(), MathHelper.Max(B.LengthSquared(), MathHelper.Max(C.LengthSquared(), D.LengthSquared())));
             }
             return 1;
         }

@@ -1,10 +1,7 @@
 using System;
-using BEPUphysics.BroadPhaseSystems;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems.ForceFields;
-using BEPUphysics;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.SampleCode
 {

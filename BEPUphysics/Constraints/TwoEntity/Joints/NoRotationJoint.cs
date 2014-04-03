@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using BEPUphysics.MathExtensions;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints.TwoEntity.Joints
 {
@@ -12,7 +12,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
     {
         private Vector3 accumulatedImpulse;
         private Vector3 biasVelocity;
-        private Matrix3X3 effectiveMassMatrix;
+        private Matrix3x3 effectiveMassMatrix;
         private Quaternion initialQuaternionConjugateA;
         private Quaternion initialQuaternionConjugateB;
         private Vector3 error;
@@ -153,7 +153,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         /// Gets the mass matrix of the constraint.
         /// </summary>
         /// <param name="outputMassMatrix">Constraint's mass matrix.</param>
-        public void GetMassMatrix(out Matrix3X3 outputMassMatrix)
+        public void GetMassMatrix(out Matrix3x3 outputMassMatrix)
         {
             outputMassMatrix = effectiveMassMatrix;
         }
@@ -173,7 +173,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
             Vector3 lambda;
             Vector3.Add(ref velocityDifference, ref biasVelocity, out lambda);
             Vector3.Subtract(ref lambda, ref softnessVector, out lambda);
-            Matrix3X3.Transform(ref lambda, ref effectiveMassMatrix, out lambda);
+            Matrix3x3.Transform(ref lambda, ref effectiveMassMatrix, out lambda);
 
             Vector3.Add(ref lambda, ref accumulatedImpulse, out accumulatedImpulse);
             if (connectionA.isDynamic)
@@ -197,24 +197,24 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
         public override void Update(float dt)
         {
             Quaternion quaternionA;
-            QuaternionEx.Multiply(ref connectionA.orientation, ref initialQuaternionConjugateA, out quaternionA);
+            Quaternion.Multiply(ref connectionA.orientation, ref initialQuaternionConjugateA, out quaternionA);
             Quaternion quaternionB;
-            QuaternionEx.Multiply(ref connectionB.orientation, ref initialQuaternionConjugateB, out quaternionB);
+            Quaternion.Multiply(ref connectionB.orientation, ref initialQuaternionConjugateB, out quaternionB);
             Quaternion.Conjugate(ref quaternionB, out quaternionB);
             Quaternion intermediate;
-            QuaternionEx.Multiply(ref quaternionA, ref quaternionB, out intermediate);
+            Quaternion.Multiply(ref quaternionA, ref quaternionB, out intermediate);
 
 
             float angle;
             Vector3 axis;
-            Toolbox.GetAxisAngleFromQuaternion(ref intermediate, out axis, out angle);
+            Quaternion.GetAxisAngleFromQuaternion(ref intermediate, out axis, out angle);
 
             error.X = axis.X * angle;
             error.Y = axis.Y * angle;
             error.Z = axis.Z * angle;
 
             float errorReduction;
-            springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out softness);
+            springSettings.ComputeErrorReductionAndSoftness(dt, 1 / dt, out errorReduction, out softness);
             errorReduction = -errorReduction;
             biasVelocity.X = errorReduction * error.X;
             biasVelocity.Y = errorReduction * error.Y;
@@ -230,11 +230,11 @@ namespace BEPUphysics.Constraints.TwoEntity.Joints
                 biasVelocity.Z *= multiplier;
             }
 
-            Matrix3X3.Add(ref connectionA.inertiaTensorInverse, ref connectionB.inertiaTensorInverse, out effectiveMassMatrix);
+            Matrix3x3.Add(ref connectionA.inertiaTensorInverse, ref connectionB.inertiaTensorInverse, out effectiveMassMatrix);
             effectiveMassMatrix.M11 += softness;
             effectiveMassMatrix.M22 += softness;
             effectiveMassMatrix.M33 += softness;
-            Matrix3X3.Invert(ref effectiveMassMatrix, out effectiveMassMatrix);
+            Matrix3x3.Invert(ref effectiveMassMatrix, out effectiveMassMatrix);
 
 
            

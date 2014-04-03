@@ -3,7 +3,8 @@ using BEPUphysics.Constraints.TwoEntity.JointLimits;
 using BEPUphysics.Constraints.TwoEntity.Joints;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.Constraints.SolverGroups
 {

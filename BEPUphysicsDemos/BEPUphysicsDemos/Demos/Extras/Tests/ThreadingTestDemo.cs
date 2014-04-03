@@ -1,33 +1,8 @@
-﻿using BEPUphysics.Collidables;
-using BEPUphysics.Entities;
-using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.PositionUpdating;
-using Microsoft.Xna.Framework.Input;
+﻿using BEPUphysics.Entities.Prefabs;
 using System.Diagnostics;
-using System.Collections.Generic;
 using System;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.DataStructures;
-using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.CollisionShapes;
-using BEPUphysics.Settings;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.BroadPhaseSystems;
+using BEPUutilities;
 using BEPUphysics.Constraints;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using BEPUphysics.Constraints.SolverGroups;
-using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.CollisionTests;
-using BEPUphysics;
-using BEPUphysics.EntityStateManagement;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.Materials;
-using System.Threading;
-using BEPUphysics.Threading;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -67,7 +42,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             {
                 Space.Remove(Space.Entities[i]);
             }
-            SolverSettings.DefaultMinimumIterations = 100;
+            SolverSettings.DefaultMinimumIterationCount = 100;
 
             int width = 15;
             int height = 15;

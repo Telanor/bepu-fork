@@ -1,14 +1,12 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Collidables;
+﻿using BEPUutilities;
+using Microsoft.Xna.Framework.Graphics;
+using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Entities.Prefabs;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
     /// <summary>
-    /// A nice driveble landscape.
+    /// A nice driveable landscape.
     /// </summary>
     public class StaticMeshDemo : StandardDemo
     {
@@ -27,12 +25,12 @@ namespace BEPUphysicsDemos.Demos
             //This is a little convenience method used to extract vertices and indices from a model.
             //It doesn't do anything special; any approach that gets valid vertices and indices will work.
             ModelDataExtractor.GetVerticesAndIndicesFromModel(playgroundModel, out staticTriangleVertices, out staticTriangleIndices);
-            var staticMesh = new StaticMesh(staticTriangleVertices, staticTriangleIndices, new AffineTransform(Matrix3X3.CreateFromAxisAngle(Vector3.UnitY, MathHelper.Pi), new Vector3(0, -10, 0)));
+            var staticMesh = new StaticMesh(staticTriangleVertices, staticTriangleIndices, new AffineTransform(Matrix3x3.CreateFromAxisAngle(Vector3.Up, MathHelper.Pi), new Vector3(0, -10, 0)));
             staticMesh.Sidedness = TriangleSidedness.Counterclockwise;
 
             Space.Add(staticMesh);
             game.ModelDrawer.Add(staticMesh);
-           
+
 
             //Dump some boxes on top of it for fun.
             int numColumns = 8;
@@ -54,7 +52,7 @@ namespace BEPUphysicsDemos.Demos
 
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 10, 40);
+            game.Camera.Position = new Vector3(0, 10, 40);
 
 
         }

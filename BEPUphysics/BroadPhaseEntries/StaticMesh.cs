@@ -1,18 +1,14 @@
 ﻿using System;
-using BEPUphysics.Collidables.Events;
+using BEPUphysics.BroadPhaseEntries.Events;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.MathExtensions;
-using SharpDX;
 using BEPUphysics.DataStructures;
-using BEPUphysics.Materials;
-using BEPUphysics.CollisionRuleManagement;
+using BEPUutilities;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.ResourceManagement;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
 using BEPUphysics.OtherSpaceStages;
 
-namespace BEPUphysics.Collidables
+namespace BEPUphysics.BroadPhaseEntries
 {
     ///<summary>
     /// Unmoving, collidable triangle mesh.
@@ -139,7 +135,7 @@ namespace BEPUphysics.Collidables
             {
                 if (value.Owner != null && //Can't use a manager which is owned by a different entity.
                     value != events) //Stay quiet if for some reason the same event manager is being set.
-                    throw new Exception("Event manager is already owned by a mesh; event managers cannot be shared.");
+                    throw new ArgumentException("Event manager is already owned by a mesh; event managers cannot be shared.");
                 if (events != null)
                     events.Owner = null;
                 events = value;
@@ -197,9 +193,9 @@ namespace BEPUphysics.Collidables
         {
             hit = new RayHit();
             BoundingBox boundingBox;
-            Toolbox.GetExpandedBoundingBox(ref castShape, ref startingTransform, ref sweep, out boundingBox);
-            var tri = BEPUphysics.ResourceManagement.Resources.GetTriangle();
-            var hitElements = BEPUphysics.ResourceManagement.Resources.GetIntList();
+            castShape.GetSweptBoundingBox(ref startingTransform, ref sweep, out boundingBox);
+            var tri = PhysicsThreadResources.GetTriangle();
+            var hitElements = CommonResources.GetIntList();
             if (Mesh.Tree.GetOverlaps(boundingBox, hitElements))
             {
                 hit.T = float.MaxValue;
@@ -213,14 +209,14 @@ namespace BEPUphysics.Collidables
                     Vector3.Subtract(ref tri.vA, ref center, out tri.vA);
                     Vector3.Subtract(ref tri.vB, ref center, out tri.vB);
                     Vector3.Subtract(ref tri.vC, ref center, out tri.vC);
-                    tri.maximumRadius = tri.vA.LengthSquared();
+                    tri.MaximumRadius = tri.vA.LengthSquared();
                     float radius = tri.vB.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
                     radius = tri.vC.LengthSquared(); 
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
-                    tri.maximumRadius = (float)Math.Sqrt(tri.maximumRadius);
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
+                    tri.MaximumRadius = (float)Math.Sqrt(tri.MaximumRadius);
                     tri.collisionMargin = 0;
                     var triangleTransform = new RigidTransform {Orientation = Quaternion.Identity, Position = center};
                     RayHit tempHit;
@@ -229,13 +225,13 @@ namespace BEPUphysics.Collidables
                         hit = tempHit;
                     }
                 }
-                tri.maximumRadius = 0;
-                BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-                BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+                tri.MaximumRadius = 0;
+                PhysicsThreadResources.GiveBack(tri);
+                CommonResources.GiveBack(hitElements);
                 return hit.T != float.MaxValue;
             }
-            BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-            BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+            PhysicsThreadResources.GiveBack(tri);
+            CommonResources.GiveBack(hitElements);
             return false;
         }
 

@@ -1,9 +1,10 @@
 using BEPUphysics;
 using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
+using BEPUphysicsDemos.AlternateMovement.SphereCharacter;
 using BEPUphysicsDemos.SampleCode;
 using BEPUphysicsDrawer.Lines;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,9 +15,8 @@ using System.Diagnostics;
 using BEPUphysics.Settings;
 using BEPUphysicsDemos.AlternateMovement.Character;
 using BEPUphysicsDemos.AlternateMovement;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using ConversionHelper;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos
 {
@@ -27,6 +27,7 @@ namespace BEPUphysicsDemos.Demos
     /// </summary>
     public abstract class StandardDemo : Demo
     {
+        protected FreeCameraControlScheme freeCameraControlScheme;
         protected CharacterControllerInput character;
         protected float grabDistance;
         protected MotorizedGrabSpring grabber;
@@ -40,14 +41,16 @@ namespace BEPUphysicsDemos.Demos
         public StandardDemo(DemosGame game)
             : base(game)
         {
+            freeCameraControlScheme = new FreeCameraControlScheme(10, game.Camera, game);
+
             //Creates the player character (C).
-            character = new CharacterControllerInput(Space, game.Camera);
+            character = new CharacterControllerInput(Space, game.Camera, game);
 
             //Creates the drivable vehicle (V).
             var wheelModel = game.Content.Load<Model>("carWheel");
             var wheelTexture = game.Content.Load<Texture2D>("wheel");
             whitePixel = game.Content.Load<Texture2D>("whitePixel");
-            vehicle = new VehicleInput(new Vector3(10000, 0, 0), Space, game.Camera, game.ModelDrawer, wheelModel, wheelTexture);
+            vehicle = new VehicleInput(new Vector3(10000, 0, 0), Space, game.Camera, game, game.ModelDrawer, wheelModel, wheelTexture);
             Space.ForceUpdater.Gravity = new Vector3(0, -9.81f, 0f); //If left unset, the default value is (0,0,0).
 
             //Create the tossable ball.
@@ -59,6 +62,7 @@ namespace BEPUphysicsDemos.Demos
             grabberGraphic.IsDrawing = false;
             Space.Add(grabber);
             Space.Add(kapow);
+
 
             //IMPORTANT PERFORMANCE NOTE:
             //  BEPUphysics uses an iterative system to solve constraints.  You can tell it to do more or less iterations.
@@ -102,11 +106,11 @@ namespace BEPUphysicsDemos.Demos
 #endif
                 {
                     if (character.IsActive) //Keep the ball out of the character's body if its being used.
-                        kapow.Position = MathConverter.Convert(Game.Camera.Position + Game.Camera.WorldMatrix.Forward * 3);
+                        kapow.Position = Game.Camera.Position + Game.Camera.WorldMatrix.Forward * 3;
                     else
-                        kapow.Position = MathConverter.Convert(Game.Camera.Position + Game.Camera.WorldMatrix.Forward);
+                        kapow.Position = Game.Camera.Position + Game.Camera.WorldMatrix.Forward;
                     kapow.AngularVelocity = Vector3.Zero;
-                    kapow.LinearVelocity =MathConverter.Convert( Game.Camera.WorldMatrix.Forward * 30);
+                    kapow.LinearVelocity = Game.Camera.WorldMatrix.Forward * 30;
                 }
 
             #endregion
@@ -123,7 +127,7 @@ namespace BEPUphysicsDemos.Demos
             {
                 //Find the earliest ray hit
                 RayCastResult raycastResult;
-                if (Space.RayCast(new Ray(MathConverter.Convert(Game.Camera.Position), MathConverter.Convert(Game.Camera.WorldMatrix.Forward)), 1000, rayCastFilter, out raycastResult))
+                if (Space.RayCast(new Ray(Game.Camera.Position, Game.Camera.WorldMatrix.Forward), 1000, rayCastFilter, out raycastResult))
                 {
                     var entityCollision = raycastResult.HitObject as EntityCollidable;
                     //If there's a valid ray hit, then grab the connected object!
@@ -142,7 +146,7 @@ namespace BEPUphysicsDemos.Demos
             else if (Game.MouseInput.RightButton == ButtonState.Pressed && grabber.IsUpdating)
 #endif
             {
-                grabber.GoalPosition = MathConverter.Convert(Game.Camera.Position + Game.Camera.WorldMatrix.Forward * grabDistance);
+                grabber.GoalPosition = Game.Camera.Position + Game.Camera.WorldMatrix.Forward * grabDistance;
             }
 #if !WINDOWS
             if (!Game.GamePadInput.IsButtonDown(Buttons.RightShoulder) && grabber.IsUpdating)
@@ -210,7 +214,7 @@ namespace BEPUphysicsDemos.Demos
                 if (!vehicle.IsActive)
                 {
                     character.Deactivate();
-                    vehicle.Activate();
+                    vehicle.Activate(Game.Camera.Position);
                 }
                 else
                     vehicle.Deactivate();
@@ -219,10 +223,13 @@ namespace BEPUphysicsDemos.Demos
 
             #endregion
 
-            base.Update(dt); //Base.update updates the space, which needs to be done before the character or vehicle are updated.
+            base.Update(dt); //Base.update updates the space, which needs to be done before the camera is updated.
 
             character.Update(dt, Game.PreviousKeyboardInput, Game.KeyboardInput, Game.PreviousGamePadInput, Game.GamePadInput);
             vehicle.Update(dt, Game.KeyboardInput, Game.GamePadInput);
+            //If neither are active, just use the default camera movement style.
+            if (!character.IsActive && !vehicle.IsActive)
+                freeCameraControlScheme.Update(dt);
         }
 
         public override void CleanUp()

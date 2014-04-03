@@ -1,19 +1,12 @@
-﻿using System.Collections.Generic;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Collidables.Events;
+﻿using BEPUphysics.BroadPhaseEntries.Events;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.MathExtensions;
-using SharpDX;
-using BEPUphysics.ResourceManagement;
-using BEPUphysics.DataStructures;
-using BEPUphysics.Materials;
-using System.Collections.ObjectModel;
-using BEPUphysics.CollisionRuleManagement;
+using BEPUutilities;
+using BEPUutilities.ResourceManagement;
 using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.CollisionTests.CollisionAlgorithms;
 using System;
 
-namespace BEPUphysics.Collidables.MobileCollidables
+namespace BEPUphysics.BroadPhaseEntries.MobileCollidables
 {
     ///<summary>
     /// Collidable used by compound shapes.
@@ -85,11 +78,11 @@ namespace BEPUphysics.Collidables.MobileCollidables
         {
             //Put the ray into local space.
             Ray localRay;
-            Matrix3X3 orientation;
-            Matrix3X3.CreateFromQuaternion(ref worldTransform.Orientation, out orientation);
-            Matrix3X3.TransformTranspose(ref ray.Direction, ref orientation, out localRay.Direction);
+            Matrix3x3 orientation;
+            Matrix3x3.CreateFromQuaternion(ref worldTransform.Orientation, out orientation);
+            Matrix3x3.TransformTranspose(ref ray.Direction, ref orientation, out localRay.Direction);
             Vector3.Subtract(ref ray.Position, ref worldTransform.Position, out localRay.Position);
-            Matrix3X3.TransformTranspose(ref localRay.Position, ref orientation, out localRay.Position);
+            Matrix3x3.TransformTranspose(ref localRay.Position, ref orientation, out localRay.Position);
 
 
             if (Shape.solidity == MobileMeshSolidity.Solid)
@@ -112,7 +105,7 @@ namespace BEPUphysics.Collidables.MobileCollidables
                         //Transform the hit into world space.
                         Vector3.Multiply(ref ray.Direction, rayHit.T, out rayHit.Location);
                         Vector3.Add(ref rayHit.Location, ref ray.Position, out rayHit.Location);
-                        Matrix3X3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
+                        Matrix3x3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
                     }
                     else
                     {
@@ -143,7 +136,7 @@ namespace BEPUphysics.Collidables.MobileCollidables
                     //Transform the hit into world space.
                     Vector3.Multiply(ref ray.Direction, rayHit.T, out rayHit.Location);
                     Vector3.Add(ref rayHit.Location, ref ray.Position, out rayHit.Location);
-                    Matrix3X3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
+                    Matrix3x3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
                     return true;
                 }
             }
@@ -163,18 +156,18 @@ namespace BEPUphysics.Collidables.MobileCollidables
         {
             //Put the ray into local space.
             Ray localRay;
-            Matrix3X3 orientation;
-            Matrix3X3.CreateFromQuaternion(ref worldTransform.Orientation, out orientation);
-            Matrix3X3.TransformTranspose(ref ray.Direction, ref orientation, out localRay.Direction);
+            Matrix3x3 orientation;
+            Matrix3x3.CreateFromQuaternion(ref worldTransform.Orientation, out orientation);
+            Matrix3x3.TransformTranspose(ref ray.Direction, ref orientation, out localRay.Direction);
             Vector3.Subtract(ref ray.Position, ref worldTransform.Position, out localRay.Position);
-            Matrix3X3.TransformTranspose(ref localRay.Position, ref orientation, out localRay.Position);
+            Matrix3x3.TransformTranspose(ref localRay.Position, ref orientation, out localRay.Position);
 
             if (Shape.TriangleMesh.RayCast(localRay, maximumLength, sidedness, out rayHit))
             {
                 //Transform the hit into world space.
                 Vector3.Multiply(ref ray.Direction, rayHit.T, out rayHit.Location);
                 Vector3.Add(ref rayHit.Location, ref ray.Position, out rayHit.Location);
-                Matrix3X3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
+                Matrix3x3.Transform(ref rayHit.Normal, ref orientation, out rayHit.Normal);
                 return true;
             }
             rayHit = new RayHit();
@@ -205,10 +198,10 @@ namespace BEPUphysics.Collidables.MobileCollidables
             hit = new RayHit();
             BoundingBox boundingBox;
             var transform = new AffineTransform {Translation = worldTransform.Position};
-            Matrix3X3.CreateFromQuaternion(ref worldTransform.Orientation, out transform.LinearTransform);
+            Matrix3x3.CreateFromQuaternion(ref worldTransform.Orientation, out transform.LinearTransform);
             castShape.GetSweptLocalBoundingBox(ref startingTransform, ref transform, ref sweep, out boundingBox);
-            var tri = BEPUphysics.ResourceManagement.Resources.GetTriangle();
-            var hitElements = BEPUphysics.ResourceManagement.Resources.GetIntList();
+            var tri = PhysicsThreadResources.GetTriangle();
+            var hitElements = CommonResources.GetIntList();
             if (this.Shape.TriangleMesh.Tree.GetOverlaps(boundingBox, hitElements))
             {
                 hit.T = float.MaxValue;
@@ -225,14 +218,14 @@ namespace BEPUphysics.Collidables.MobileCollidables
                     Vector3.Subtract(ref tri.vA, ref center, out tri.vA);
                     Vector3.Subtract(ref tri.vB, ref center, out tri.vB);
                     Vector3.Subtract(ref tri.vC, ref center, out tri.vC);
-                    tri.maximumRadius = tri.vA.LengthSquared();
+                    tri.MaximumRadius = tri.vA.LengthSquared();
                     float radius = tri.vB.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
                     radius = tri.vC.LengthSquared();
-                    if (tri.maximumRadius < radius)
-                        tri.maximumRadius = radius;
-                    tri.maximumRadius = (float)Math.Sqrt(tri.maximumRadius);
+                    if (tri.MaximumRadius < radius)
+                        tri.MaximumRadius = radius;
+                    tri.MaximumRadius = (float)Math.Sqrt(tri.MaximumRadius);
                     tri.collisionMargin = 0;
                     var triangleTransform = new RigidTransform {Orientation = Quaternion.Identity, Position = center};
                     RayHit tempHit;
@@ -241,13 +234,13 @@ namespace BEPUphysics.Collidables.MobileCollidables
                         hit = tempHit;
                     }
                 }
-                tri.maximumRadius = 0;
-                BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-                BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+                tri.MaximumRadius = 0;
+                PhysicsThreadResources.GiveBack(tri);
+                CommonResources.GiveBack(hitElements);
                 return hit.T != float.MaxValue;
             }
-            BEPUphysics.ResourceManagement.Resources.GiveBack(tri);
-            BEPUphysics.ResourceManagement.Resources.GiveBack(hitElements);
+            PhysicsThreadResources.GiveBack(tri);
+            CommonResources.GiveBack(hitElements);
             return false;
         }
     }

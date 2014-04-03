@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using BEPUphysics.DataStructures;
-using BEPUphysics.MathExtensions;
+using BEPUutilities.DataStructures;
+using BEPUutilities;
+ 
 using BEPUphysics.CollisionShapes.ConvexShapes;
-using System.Diagnostics;
-using BEPUphysics.Settings;
-using SharpDX;
 
 namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 {
@@ -45,18 +43,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         #endregion
     }
 
-
-#if WINDOWS
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-#else
-#if XBOX360
-    [StructLayout(LayoutKind.Sequential)]
-#endif
-#endif
     /// <summary>
     /// Basic storage structure for contact data.
     /// Designed for performance critical code and pointer access.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct BoxContactDataCache
     {
         public BoxContactData D1;
@@ -69,15 +60,6 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         public BoxContactData D7;
         public BoxContactData D8;
 
-        //internal BoxContactData d9;
-        //internal BoxContactData d10;
-        //internal BoxContactData d11;
-        //internal BoxContactData d12;
-
-        //internal BoxContactData d13;
-        //internal BoxContactData d14;
-        //internal BoxContactData d15;
-        //internal BoxContactData d16;
 
         /// <summary>
         /// Number of elements in the cache.
@@ -125,12 +107,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float bZ = b.HalfLength;
 
             //Relative rotation from A to B.
-            Matrix3X3 bR;
+            Matrix3x3 bR;
 
-            Matrix3X3 aO;
-            Matrix3X3.CreateFromQuaternion(ref transformA.Orientation, out aO);
-            Matrix3X3 bO;
-            Matrix3X3.CreateFromQuaternion(ref transformB.Orientation, out bO);
+            Matrix3x3 aO;
+            Matrix3x3.CreateFromQuaternion(ref transformA.Orientation, out aO);
+            Matrix3x3 bO;
+            Matrix3x3.CreateFromQuaternion(ref transformB.Orientation, out bO);
 
             //Relative translation rotated into A's configuration space.
             Vector3 t;
@@ -139,7 +121,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             bR.M11 = aO.M11 * bO.M11 + aO.M12 * bO.M12 + aO.M13 * bO.M13;
             bR.M12 = aO.M11 * bO.M21 + aO.M12 * bO.M22 + aO.M13 * bO.M23;
             bR.M13 = aO.M11 * bO.M31 + aO.M12 * bO.M32 + aO.M13 * bO.M33;
-            Matrix3X3 absBR;
+            Matrix3x3 absBR;
             //Epsilons are added to deal with near-parallel edges.
             absBR.M11 = Math.Abs(bR.M11) + Toolbox.Epsilon;
             absBR.M12 = Math.Abs(bR.M12) + Toolbox.Epsilon;
@@ -275,12 +257,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float bZ = b.HalfLength;
 
             //Relative rotation from A to B.
-            Matrix3X3 bR;
+            Matrix3x3 bR;
 
-            Matrix3X3 aO;
-            Matrix3X3.CreateFromQuaternion(ref transformA.Orientation, out aO);
-            Matrix3X3 bO;
-            Matrix3X3.CreateFromQuaternion(ref transformB.Orientation, out bO);
+            Matrix3x3 aO;
+            Matrix3x3.CreateFromQuaternion(ref transformA.Orientation, out aO);
+            Matrix3x3 bO;
+            Matrix3x3.CreateFromQuaternion(ref transformB.Orientation, out bO);
 
             //Relative translation rotated into A's configuration space.
             Vector3 t;
@@ -291,7 +273,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             bR.M11 = aO.M11 * bO.M11 + aO.M12 * bO.M12 + aO.M13 * bO.M13;
             bR.M12 = aO.M11 * bO.M21 + aO.M12 * bO.M22 + aO.M13 * bO.M23;
             bR.M13 = aO.M11 * bO.M31 + aO.M12 * bO.M32 + aO.M13 * bO.M33;
-            Matrix3X3 absBR;
+            Matrix3x3 absBR;
             //Epsilons are added to deal with near-parallel edges.
             absBR.M11 = Math.Abs(bR.M11) + Toolbox.Epsilon;
             absBR.M12 = Math.Abs(bR.M12) + Toolbox.Epsilon;
@@ -647,12 +629,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float bZ = b.HalfLength;
 
             //Relative rotation from A to B.
-            Matrix3X3 bR;
+            Matrix3x3 bR;
 
-            Matrix3X3 aO;
-            Matrix3X3.CreateFromQuaternion(ref transformA.Orientation, out aO);
-            Matrix3X3 bO;
-            Matrix3X3.CreateFromQuaternion(ref transformB.Orientation, out bO);
+            Matrix3x3 aO;
+            Matrix3x3.CreateFromQuaternion(ref transformA.Orientation, out aO);
+            Matrix3x3 bO;
+            Matrix3x3.CreateFromQuaternion(ref transformB.Orientation, out bO);
 
             //Relative translation rotated into A's configuration space.
             Vector3 t;
@@ -667,7 +649,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             bR.M11 = aO.M11 * bO.M11 + aO.M12 * bO.M12 + aO.M13 * bO.M13;
             bR.M12 = aO.M11 * bO.M21 + aO.M12 * bO.M22 + aO.M13 * bO.M23;
             bR.M13 = aO.M11 * bO.M31 + aO.M12 * bO.M32 + aO.M13 * bO.M33;
-            Matrix3X3 absBR;
+            Matrix3x3 absBR;
             //Epsilons are added to deal with near-parallel edges.
             absBR.M11 = Math.Abs(bR.M11) + Toolbox.Epsilon;
             absBR.M12 = Math.Abs(bR.M12) + Toolbox.Epsilon;
@@ -1472,12 +1454,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             contactData = new TinyStructList<BoxContactData>();
 #endif
             //Relative rotation from A to B.
-            Matrix3X3 bR;
+            Matrix3x3 bR;
 
-            Matrix3X3 aO;
-            Matrix3X3.CreateFromQuaternion(ref transformA.Orientation, out aO);
-            Matrix3X3 bO;
-            Matrix3X3.CreateFromQuaternion(ref transformB.Orientation, out bO);
+            Matrix3x3 aO;
+            Matrix3x3.CreateFromQuaternion(ref transformA.Orientation, out aO);
+            Matrix3x3 bO;
+            Matrix3x3.CreateFromQuaternion(ref transformB.Orientation, out bO);
 
             //Relative translation rotated into A's configuration space.
             Vector3 t;
@@ -1493,7 +1475,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             bR.M11 = aO.M11 * bO.M11 + aO.M12 * bO.M12 + aO.M13 * bO.M13;
             bR.M12 = aO.M11 * bO.M21 + aO.M12 * bO.M22 + aO.M13 * bO.M23;
             bR.M13 = aO.M11 * bO.M31 + aO.M12 * bO.M32 + aO.M13 * bO.M33;
-            Matrix3X3 absBR;
+            Matrix3x3 absBR;
             //Epsilons are added to deal with near-parallel edges.
             absBR.M11 = Math.Abs(bR.M11) + Toolbox.Epsilon;
             absBR.M12 = Math.Abs(bR.M12) + Toolbox.Epsilon;
@@ -2324,9 +2306,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         }
 
 #if ALLOWUNSAFE
-        internal static void GetEdgeEdgeContact(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3X3 orientationA, ref Vector3 positionB, ref Matrix3X3 orientationB, float depth, ref Vector3 mtd, out BoxContactDataCache contactData)
+        internal static void GetEdgeEdgeContact(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3x3 orientationA, ref Vector3 positionB, ref Matrix3x3 orientationB, float depth, ref Vector3 mtd, out BoxContactDataCache contactData)
 #else
-        internal static void GetEdgeEdgeContact(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3X3 orientationA, ref Vector3 positionB, ref Matrix3X3 orientationB, float depth, ref Vector3 mtd, out TinyStructList<BoxContactData> contactData)
+        internal static void GetEdgeEdgeContact(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3x3 orientationA, ref Vector3 positionB, ref Matrix3x3 orientationB, float depth, ref Vector3 mtd, out TinyStructList<BoxContactData> contactData)
 #endif
         {
             //Edge-edge contacts conceptually can only create one contact in perfectly rigid collisions.
@@ -2367,8 +2349,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3 mtdA, mtdB;
             Vector3 negatedMtd;
             Vector3.Negate(ref mtd, out negatedMtd);
-            Matrix3X3.TransformTranspose(ref negatedMtd, ref orientationA, out mtdA);
-            Matrix3X3.TransformTranspose(ref mtd, ref orientationB, out mtdB);
+            Matrix3x3.TransformTranspose(ref negatedMtd, ref orientationA, out mtdA);
+            Matrix3x3.TransformTranspose(ref mtd, ref orientationB, out mtdB);
 
 
 #if !WINDOWS
@@ -2517,15 +2499,15 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             #endregion
 
 
-            Matrix3X3.Transform(ref edgeAStart1, ref orientationA, out edgeAStart1);
-            Matrix3X3.Transform(ref edgeAEnd1, ref orientationA, out edgeAEnd1);
-            Matrix3X3.Transform(ref edgeBStart1, ref orientationB, out edgeBStart1);
-            Matrix3X3.Transform(ref edgeBEnd1, ref orientationB, out edgeBEnd1);
+            Matrix3x3.Transform(ref edgeAStart1, ref orientationA, out edgeAStart1);
+            Matrix3x3.Transform(ref edgeAEnd1, ref orientationA, out edgeAEnd1);
+            Matrix3x3.Transform(ref edgeBStart1, ref orientationB, out edgeBStart1);
+            Matrix3x3.Transform(ref edgeBEnd1, ref orientationB, out edgeBEnd1);
 
-            Matrix3X3.Transform(ref edgeAStart2, ref orientationA, out edgeAStart2);
-            Matrix3X3.Transform(ref edgeAEnd2, ref orientationA, out edgeAEnd2);
-            Matrix3X3.Transform(ref edgeBStart2, ref orientationB, out edgeBStart2);
-            Matrix3X3.Transform(ref edgeBEnd2, ref orientationB, out edgeBEnd2);
+            Matrix3x3.Transform(ref edgeAStart2, ref orientationA, out edgeAStart2);
+            Matrix3x3.Transform(ref edgeAEnd2, ref orientationA, out edgeAEnd2);
+            Matrix3x3.Transform(ref edgeBStart2, ref orientationB, out edgeBStart2);
+            Matrix3x3.Transform(ref edgeBEnd2, ref orientationB, out edgeBEnd2);
 
             Vector3.Add(ref edgeAStart1, ref positionA, out edgeAStart1);
             Vector3.Add(ref edgeAEnd1, ref positionA, out edgeAEnd1);
@@ -2554,7 +2536,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             if (GetClosestPointsBetweenSegments(ref edgeAStart1, ref edgeAEnd1, ref edgeBStart1, ref edgeBEnd1, out onA, out onB))
             {
                 Vector3.Subtract(ref onA, ref onB, out offset);
-                Vector3Ex.Dot(ref offset, ref mtd, out dot);
+                Vector3.Dot(ref offset, ref mtd, out dot);
                 if (dot < 0) //Distance must be negative.
                 {
                     BoxContactData data;
@@ -2573,7 +2555,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             if (GetClosestPointsBetweenSegments(ref edgeAStart1, ref edgeAEnd1, ref edgeBStart2, ref edgeBEnd2, out onA, out onB))
             {
                 Vector3.Subtract(ref onA, ref onB, out offset);
-                Vector3Ex.Dot(ref offset, ref mtd, out dot);
+                Vector3.Dot(ref offset, ref mtd, out dot);
                 if (dot < 0) //Distance must be negative.
                 {
                     BoxContactData data;
@@ -2592,7 +2574,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             if (GetClosestPointsBetweenSegments(ref edgeAStart2, ref edgeAEnd2, ref edgeBStart1, ref edgeBEnd1, out onA, out onB))
             {
                 Vector3.Subtract(ref onA, ref onB, out offset);
-                Vector3Ex.Dot(ref offset, ref mtd, out dot);
+                Vector3.Dot(ref offset, ref mtd, out dot);
                 if (dot < 0) //Distance must be negative.
                 {
                     BoxContactData data;
@@ -2611,7 +2593,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             if (GetClosestPointsBetweenSegments(ref edgeAStart2, ref edgeAEnd2, ref edgeBStart2, ref edgeBEnd2, out onA, out onB))
             {
                 Vector3.Subtract(ref onA, ref onB, out offset);
-                Vector3Ex.Dot(ref offset, ref mtd, out dot);
+                Vector3.Dot(ref offset, ref mtd, out dot);
                 if (dot < 0) //Distance must be negative.
                 {
                     BoxContactData data;
@@ -2800,7 +2782,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                     edgeEndId = 7; //111
                     break;
                 default:
-                    throw new Exception("Invalid index or axis.");
+                    throw new ArgumentException("Invalid index or axis.");
             }
         }
 
@@ -2853,7 +2835,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float a = d1.LengthSquared();
             float e = d2.LengthSquared();
             float f;
-            Vector3Ex.Dot(ref d2, ref r, out f);
+            Vector3.Dot(ref d2, ref r, out f);
 
             float s, t;
 
@@ -3391,9 +3373,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        }
 
 #if ALLOWUNSAFE
-        internal static void GetFaceContacts(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3X3 orientationA, ref Vector3 positionB, ref Matrix3X3 orientationB, bool aIsFaceOwner, ref Vector3 mtd, out BoxContactDataCache contactData)
+        internal static void GetFaceContacts(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3x3 orientationA, ref Vector3 positionB, ref Matrix3x3 orientationB, bool aIsFaceOwner, ref Vector3 mtd, out BoxContactDataCache contactData)
 #else
-        internal static void GetFaceContacts(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3X3 orientationA, ref Vector3 positionB, ref Matrix3X3 orientationB, bool aIsFaceOwner, ref Vector3 mtd, out TinyStructList<BoxContactData> contactData)
+        internal static void GetFaceContacts(BoxShape a, BoxShape b, ref Vector3 positionA, ref Matrix3x3 orientationA, ref Vector3 positionB, ref Matrix3x3 orientationB, bool aIsFaceOwner, ref Vector3 mtd, out TinyStructList<BoxContactData> contactData)
 #endif
         {
             float aHalfWidth = a.halfWidth;
@@ -3446,7 +3428,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             for (int i = 0; i < count; i++)
             {
                 float distance;
-                Vector3Ex.DistanceSquared(ref data[deepestIndex].Position, ref data[i].Position, out distance);
+                Vector3.DistanceSquared(ref data[deepestIndex].Position, ref data[i].Position, out distance);
                 if (distance > furthestDistance)
                 {
                     furthestDistance = distance;
@@ -3466,12 +3448,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             int minYindex = 0;
             int maxYindex = 0;
 
-            Vector3Ex.Dot(ref data[0].Position, ref yAxis, out minY);
+            Vector3.Dot(ref data[0].Position, ref yAxis, out minY);
             maxY = minY;
             for (int i = 1; i < count; i++)
             {
                 float dot;
-                Vector3Ex.Dot(ref yAxis, ref data[i].Position, out dot);
+                Vector3.Dot(ref yAxis, ref data[i].Position, out dot);
                 if (dot < minY)
                 {
                     minY = dot;
@@ -3524,7 +3506,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //{
             //    if (i != maxIndexA && i != maxIndexB)
             //    {
-            //        Vector3Ex.Dot(ref data[i].Position, ref otherDirection, out temp);
+            //        Vector3.Dot(ref data[i].Position, ref otherDirection, out temp);
             //        if (temp > maximumDistance)
             //        {
             //            maximumDistance = temp;
@@ -3565,12 +3547,12 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             BoxContactData furthestData;
             input.Get(0, out furthestData);
             float furthestDistance;
-            Vector3Ex.DistanceSquared(ref deepestData.Position, ref furthestData.Position, out furthestDistance);
+            Vector3.DistanceSquared(ref deepestData.Position, ref furthestData.Position, out furthestDistance);
             for (int i = 1; i < count; i++)
             {
                 input.Get(i, out data);
                 float distance;
-                Vector3Ex.DistanceSquared(ref deepestData.Position, ref data.Position, out distance);
+                Vector3.DistanceSquared(ref deepestData.Position, ref data.Position, out distance);
                 if (distance > furthestDistance)
                 {
                     furthestDistance = distance;
@@ -3591,13 +3573,13 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             input.Get(0, out minData);
             maxData = minData;
 
-            Vector3Ex.Dot(ref minData.Position, ref yAxis, out minY);
+            Vector3.Dot(ref minData.Position, ref yAxis, out minY);
             maxY = minY;
             for (int i = 1; i < count; i++)
             {
                 input.Get(i, out data);
                 float dot;
-                Vector3Ex.Dot(ref yAxis, ref data.Position, out dot);
+                Vector3.Dot(ref yAxis, ref data.Position, out dot);
                 if (dot < minY)
                 {
                     minY = dot;
@@ -3652,7 +3634,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //    if (i != maxIndexA && i != maxIndexB)
             //    {
             //        input.Get(i, out itemA);
-            //        Vector3Ex.Dot(ref itemA.Position, ref otherDirection, out temp);
+            //        Vector3.Dot(ref itemA.Position, ref otherDirection, out temp);
             //        if (temp > maximumDistance)
             //        {
             //            maximumDistance = temp;
@@ -3675,135 +3657,6 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //output.Add(ref itemA);
             //input.Get(maximumIndex, out itemA);
             //output.Add(ref itemA);
-        }
-#endif
-#if EXCLUDED
-        private static unsafe void clipFacesSH(ref BoxFace clipFace, ref BoxFace face, ref Vector3 mtd, out BoxContactDataCache outputData)
-        {
-            BoxContactDataCache contactDataCache = new BoxContactDataCache();
-            BoxContactData* data = &contactDataCache.d1;
-
-            //Set up the initial face list.
-            data[0].position = face.v1;
-            data[0].id = face.id1;
-            data[1].position = face.v2;
-            data[1].id = face.id2;
-            data[2].position = face.v3;
-            data[2].id = face.id3;
-            data[3].position = face.v4;
-            data[3].id = face.id4;
-            contactDataCache.count = 4;
-
-            BoxContactDataCache temporaryCache;
-            BoxContactData* temp = &temporaryCache.d1;
-            FaceEdge clippingEdge;
-            Vector3 intersection;
-            for (int i = 0; i < 4; i++)
-            {//For each clipping edge (edges of face a)
-
-                clipFace.GetEdge(i, ref mtd, out clippingEdge);
-
-                temporaryCache = contactDataCache;
-
-                contactDataCache.count = 0;
-
-                Vector3 start = temp[temporaryCache.count - 1].position;
-                int startId = temp[temporaryCache.count - 1].id;
-
-
-                for (int j = 0; j < temporaryCache.count; j++)
-                {//For each point in the input list
-                    Vector3 end = temp[j].position;
-                    int endId = temp[j].id;
-                    if (clippingEdge.isPointInside(ref end))
-                    {
-                        if (!clippingEdge.isPointInside(ref start))
-                        {
-                            ComputeIntersection(ref start, ref end, ref mtd, ref clippingEdge, out intersection);
-                            if (contactDataCache.count < 8)
-                            {
-                                data[contactDataCache.count].position = intersection;
-                                data[contactDataCache.count].id = GetContactId(startId, endId, ref clippingEdge);
-                                contactDataCache.count++;
-                            }
-                            else
-                            {
-                                data[contactDataCache.count - 1].position = intersection;
-                                data[contactDataCache.count - 1].id = GetContactId(startId, endId, ref clippingEdge);
-                            }
-                        }
-                        if (contactDataCache.count < 8)
-                        {
-                            data[contactDataCache.count].position = end;
-                            data[contactDataCache.count].id = endId;
-                            contactDataCache.count++;
-                        }
-                        else
-                        {
-                            data[contactDataCache.count - 1].position = end;
-                            data[contactDataCache.count - 1].id = endId;
-                        }
-                    }
-                    else if (clippingEdge.isPointInside(ref start))
-                    {
-                        ComputeIntersection(ref start, ref end, ref mtd, ref clippingEdge, out intersection);
-                        if (contactDataCache.count < 8)
-                        {
-                            data[contactDataCache.count].position = intersection;
-                            data[contactDataCache.count].id = GetContactId(startId, endId, ref clippingEdge);
-                            contactDataCache.count++;
-                        }
-                        else
-                        {
-                            data[contactDataCache.count - 1].position = intersection;
-                            data[contactDataCache.count - 1].id = GetContactId(startId, endId, ref clippingEdge);
-                        }
-                    }
-                    start = end;
-                    startId = endId;
-                }
-            }
-            temporaryCache = contactDataCache;
-            contactDataCache.count = 0;
-
-            float depth;
-            float a, b;
-            Vector3Ex.Dot(ref clipFace.v1, ref mtd, out a);
-            for (int i = 0; i < temporaryCache.count; i++)
-            {
-                Vector3Ex.Dot(ref temp[i].position, ref mtd, out b);
-                depth = b - a;
-                if (depth <= 0)
-                {
-                    data[contactDataCache.count].position = temp[i].position;
-                    data[contactDataCache.count].id = temp[i].id;
-                    contactDataCache.count++;
-                }
-            }
-
-            outputData = contactDataCache;
-
-            /*
-             * 
-  List outputList = subjectPolygon;
-  for (Edge clipEdge in clipPolygon) do
-     List inputList = outputList;
-     outputList.clear();
-     Point S = inputList.last;
-     for (Point E in inputList) do
-        if (E inside clipEdge) then
-           if (S not inside clipEdge) then
-              outputList.add(ComputeIntersection(S,E,clipEdge));
-           end if
-           outputList.add(E);
-        else if (S inside clipEdge) then
-           outputList.add(ComputeIntersection(S,E,clipEdge));
-        end if
-        S = E;
-     done
-  done
-             */
-
         }
 #endif
 
@@ -3849,8 +3702,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3.Add(ref clipFace.V1, ref clipFace.V3, out clipCenter);
             //Defer division until after dot product (2 multiplies instead of 3)
             float clipCenterX, clipCenterY;
-            Vector3Ex.Dot(ref clipCenter, ref clipX, out clipCenterX);
-            Vector3Ex.Dot(ref clipCenter, ref clipY, out clipCenterY);
+            Vector3.Dot(ref clipCenter, ref clipX, out clipCenterX);
+            Vector3.Dot(ref clipCenter, ref clipY, out clipCenterY);
             clipCenterX *= .5f;
             clipCenterY *= .5f;
 
@@ -3858,8 +3711,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3.Add(ref face.V1, ref face.V3, out faceCenter);
             //Defer division until after dot product (2 multiplies instead of 3)
             float faceCenterX, faceCenterY;
-            Vector3Ex.Dot(ref faceCenter, ref faceX, out faceCenterX);
-            Vector3Ex.Dot(ref faceCenter, ref faceY, out faceCenterY);
+            Vector3.Dot(ref faceCenter, ref faceX, out faceCenterX);
+            Vector3.Dot(ref faceCenter, ref faceY, out faceCenterY);
             faceCenterX *= .5f;
             faceCenterY *= .5f;
 
@@ -3891,67 +3744,67 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //The four edges can be thought of as minX, maxX, minY and maxY.
 
             //Face v1
-            Vector3Ex.Dot(ref clipX, ref face.V1, out dotX);
+            Vector3.Dot(ref clipX, ref face.V1, out dotX);
             bool v1MaxXInside = dotX < clipCenterMaxX;
             bool v1MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V1, out dotY);
+            Vector3.Dot(ref clipY, ref face.V1, out dotY);
             bool v1MaxYInside = dotY < clipCenterMaxY;
             bool v1MinYInside = dotY > clipCenterMinY;
 
             //Face v2
-            Vector3Ex.Dot(ref clipX, ref face.V2, out dotX);
+            Vector3.Dot(ref clipX, ref face.V2, out dotX);
             bool v2MaxXInside = dotX < clipCenterMaxX;
             bool v2MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V2, out dotY);
+            Vector3.Dot(ref clipY, ref face.V2, out dotY);
             bool v2MaxYInside = dotY < clipCenterMaxY;
             bool v2MinYInside = dotY > clipCenterMinY;
 
             //Face v3
-            Vector3Ex.Dot(ref clipX, ref face.V3, out dotX);
+            Vector3.Dot(ref clipX, ref face.V3, out dotX);
             bool v3MaxXInside = dotX < clipCenterMaxX;
             bool v3MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V3, out dotY);
+            Vector3.Dot(ref clipY, ref face.V3, out dotY);
             bool v3MaxYInside = dotY < clipCenterMaxY;
             bool v3MinYInside = dotY > clipCenterMinY;
 
             //Face v4
-            Vector3Ex.Dot(ref clipX, ref face.V4, out dotX);
+            Vector3.Dot(ref clipX, ref face.V4, out dotX);
             bool v4MaxXInside = dotX < clipCenterMaxX;
             bool v4MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V4, out dotY);
+            Vector3.Dot(ref clipY, ref face.V4, out dotY);
             bool v4MaxYInside = dotY < clipCenterMaxY;
             bool v4MinYInside = dotY > clipCenterMinY;
 
             //Find out where the clip face is.
             //Clip v1
-            Vector3Ex.Dot(ref faceX, ref clipFace.V1, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V1, out dotX);
             bool clipv1MaxXInside = dotX < faceCenterMaxX;
             bool clipv1MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V1, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V1, out dotY);
             bool clipv1MaxYInside = dotY < faceCenterMaxY;
             bool clipv1MinYInside = dotY > faceCenterMinY;
 
             //Clip v2
-            Vector3Ex.Dot(ref faceX, ref clipFace.V2, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V2, out dotX);
             bool clipv2MaxXInside = dotX < faceCenterMaxX;
             bool clipv2MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V2, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V2, out dotY);
             bool clipv2MaxYInside = dotY < faceCenterMaxY;
             bool clipv2MinYInside = dotY > faceCenterMinY;
 
             //Clip v3
-            Vector3Ex.Dot(ref faceX, ref clipFace.V3, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V3, out dotX);
             bool clipv3MaxXInside = dotX < faceCenterMaxX;
             bool clipv3MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V3, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V3, out dotY);
             bool clipv3MaxYInside = dotY < faceCenterMaxY;
             bool clipv3MinYInside = dotY > faceCenterMinY;
 
             //Clip v4
-            Vector3Ex.Dot(ref faceX, ref clipFace.V4, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V4, out dotX);
             bool clipv4MaxXInside = dotX < faceCenterMaxX;
             bool clipv4MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V4, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V4, out dotY);
             bool clipv4MaxYInside = dotY < faceCenterMaxY;
             bool clipv4MinYInside = dotY > faceCenterMinY;
 
@@ -3985,17 +3838,17 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 contactData.Count++;
             }
 
-        #endregion
+            #endregion
 
             //Compute depths.
             tempData = contactData;
             contactData.Count = 0;
             float depth;
             float clipFaceDot, faceDot;
-            Vector3Ex.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
+            Vector3.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
             for (int i = 0; i < tempData.Count; i++)
             {
-                Vector3Ex.Dot(ref temp[i].Position, ref mtd, out faceDot);
+                Vector3.Dot(ref temp[i].Position, ref mtd, out faceDot);
                 depth = faceDot - clipFaceDot;
                 if (depth <= 0)
                 {
@@ -4017,11 +3870,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             Vector3 v;
             float a, b;
-            Vector3Ex.Dot(ref face.V1, ref face.Normal, out b);
+            Vector3.Dot(ref face.V1, ref face.Normal, out b);
             //CLIP FACE
             if (clipv1MinXInside && clipv1MaxXInside && clipv1MinYInside && clipv1MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V1, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V1, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V1, ref v, out v);
                 data[contactData.Count].Position = v;
@@ -4031,7 +3884,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv2MinXInside && clipv2MaxXInside && clipv2MinYInside && clipv2MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V2, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V2, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V2, ref v, out v);
                 data[contactData.Count].Position = v;
@@ -4041,7 +3894,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv3MinXInside && clipv3MaxXInside && clipv3MinYInside && clipv3MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V3, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V3, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V3, ref v, out v);
                 data[contactData.Count].Position = v;
@@ -4051,7 +3904,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv4MinXInside && clipv4MaxXInside && clipv4MinYInside && clipv4MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V4, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V4, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V4, ref v, out v);
                 data[contactData.Count].Position = v;
@@ -4059,7 +3912,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 contactData.Count++;
             }
 
-        #endregion
+            #endregion
 
             //Compute depths.
             tempData = contactData;
@@ -4067,7 +3920,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             for (int i = previousCount; i < tempData.Count; i++)
             {
-                Vector3Ex.Dot(ref temp[i].Position, ref mtd, out faceDot);
+                Vector3.Dot(ref temp[i].Position, ref mtd, out faceDot);
                 depth = faceDot - clipFaceDot;
                 if (depth <= 0)
                 {
@@ -4105,7 +3958,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxYInside)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4117,7 +3970,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxYInside)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4132,7 +3985,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxYInside)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4144,7 +3997,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxYInside)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4159,7 +4012,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxYInside)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4171,7 +4024,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4186,7 +4039,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4198,7 +4051,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4209,7 +4062,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
             }
 
-        #endregion
+            #endregion
 
         #region CLIP EDGE: v2 v3
 
@@ -4220,7 +4073,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v2 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4233,7 +4086,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v3 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4249,7 +4102,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v2 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4262,7 +4115,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v2-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4278,7 +4131,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v3 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4291,7 +4144,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v3-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4307,7 +4160,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v2-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4320,7 +4173,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v3-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4331,7 +4184,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
             }
 
-        #endregion
+            #endregion
 
         #region CLIP EDGE: v3 v4
 
@@ -4341,7 +4194,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4353,7 +4206,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4368,7 +4221,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4380,7 +4233,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4395,7 +4248,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4407,7 +4260,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4422,7 +4275,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4434,7 +4287,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4445,7 +4298,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
             }
 
-        #endregion
+            #endregion
 
         #region CLIP EDGE: v4 v1
 
@@ -4455,7 +4308,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4467,7 +4320,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4482,7 +4335,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4494,7 +4347,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4509,7 +4362,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4521,7 +4374,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4536,7 +4389,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4548,7 +4401,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4559,7 +4412,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 }
             }
 
-        #endregion
+            #endregion
 
             //Compute depths.
             tempData = contactData;
@@ -4567,7 +4420,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             for (int i = previousCount; i < tempData.Count; i++)
             {
-                Vector3Ex.Dot(ref temp[i].Position, ref mtd, out faceDot);
+                Vector3.Dot(ref temp[i].Position, ref mtd, out faceDot);
                 depth = faceDot - clipFaceDot;
                 if (depth <= 0)
                 {
@@ -4618,8 +4471,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3.Add(ref clipFace.V1, ref clipFace.V3, out clipCenter);
             //Defer division until after dot product (2 multiplies instead of 3)
             float clipCenterX, clipCenterY;
-            Vector3Ex.Dot(ref clipCenter, ref clipX, out clipCenterX);
-            Vector3Ex.Dot(ref clipCenter, ref clipY, out clipCenterY);
+            Vector3.Dot(ref clipCenter, ref clipX, out clipCenterX);
+            Vector3.Dot(ref clipCenter, ref clipY, out clipCenterY);
             clipCenterX *= .5f;
             clipCenterY *= .5f;
 
@@ -4627,8 +4480,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3.Add(ref face.V1, ref face.V3, out faceCenter);
             //Defer division until after dot product (2 multiplies instead of 3)
             float faceCenterX, faceCenterY;
-            Vector3Ex.Dot(ref faceCenter, ref faceX, out faceCenterX);
-            Vector3Ex.Dot(ref faceCenter, ref faceY, out faceCenterY);
+            Vector3.Dot(ref faceCenter, ref faceX, out faceCenterX);
+            Vector3.Dot(ref faceCenter, ref faceY, out faceCenterY);
             faceCenterX *= .5f;
             faceCenterY *= .5f;
 
@@ -4660,67 +4513,67 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             //The four edges can be thought of as minX, maxX, minY and maxY.
 
             //Face v1
-            Vector3Ex.Dot(ref clipX, ref face.V1, out dotX);
+            Vector3.Dot(ref clipX, ref face.V1, out dotX);
             bool v1MaxXInside = dotX < clipCenterMaxX;
             bool v1MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V1, out dotY);
+            Vector3.Dot(ref clipY, ref face.V1, out dotY);
             bool v1MaxYInside = dotY < clipCenterMaxY;
             bool v1MinYInside = dotY > clipCenterMinY;
 
             //Face v2
-            Vector3Ex.Dot(ref clipX, ref face.V2, out dotX);
+            Vector3.Dot(ref clipX, ref face.V2, out dotX);
             bool v2MaxXInside = dotX < clipCenterMaxX;
             bool v2MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V2, out dotY);
+            Vector3.Dot(ref clipY, ref face.V2, out dotY);
             bool v2MaxYInside = dotY < clipCenterMaxY;
             bool v2MinYInside = dotY > clipCenterMinY;
 
             //Face v3
-            Vector3Ex.Dot(ref clipX, ref face.V3, out dotX);
+            Vector3.Dot(ref clipX, ref face.V3, out dotX);
             bool v3MaxXInside = dotX < clipCenterMaxX;
             bool v3MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V3, out dotY);
+            Vector3.Dot(ref clipY, ref face.V3, out dotY);
             bool v3MaxYInside = dotY < clipCenterMaxY;
             bool v3MinYInside = dotY > clipCenterMinY;
 
             //Face v4
-            Vector3Ex.Dot(ref clipX, ref face.V4, out dotX);
+            Vector3.Dot(ref clipX, ref face.V4, out dotX);
             bool v4MaxXInside = dotX < clipCenterMaxX;
             bool v4MinXInside = dotX > clipCenterMinX;
-            Vector3Ex.Dot(ref clipY, ref face.V4, out dotY);
+            Vector3.Dot(ref clipY, ref face.V4, out dotY);
             bool v4MaxYInside = dotY < clipCenterMaxY;
             bool v4MinYInside = dotY > clipCenterMinY;
 
             //Find out where the clip face is.
             //Clip v1
-            Vector3Ex.Dot(ref faceX, ref clipFace.V1, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V1, out dotX);
             bool clipv1MaxXInside = dotX < faceCenterMaxX;
             bool clipv1MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V1, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V1, out dotY);
             bool clipv1MaxYInside = dotY < faceCenterMaxY;
             bool clipv1MinYInside = dotY > faceCenterMinY;
 
             //Clip v2
-            Vector3Ex.Dot(ref faceX, ref clipFace.V2, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V2, out dotX);
             bool clipv2MaxXInside = dotX < faceCenterMaxX;
             bool clipv2MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V2, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V2, out dotY);
             bool clipv2MaxYInside = dotY < faceCenterMaxY;
             bool clipv2MinYInside = dotY > faceCenterMinY;
 
             //Clip v3
-            Vector3Ex.Dot(ref faceX, ref clipFace.V3, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V3, out dotX);
             bool clipv3MaxXInside = dotX < faceCenterMaxX;
             bool clipv3MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V3, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V3, out dotY);
             bool clipv3MaxYInside = dotY < faceCenterMaxY;
             bool clipv3MinYInside = dotY > faceCenterMinY;
 
             //Clip v4
-            Vector3Ex.Dot(ref faceX, ref clipFace.V4, out dotX);
+            Vector3.Dot(ref faceX, ref clipFace.V4, out dotX);
             bool clipv4MaxXInside = dotX < faceCenterMaxX;
             bool clipv4MinXInside = dotX > faceCenterMinX;
-            Vector3Ex.Dot(ref faceY, ref clipFace.V4, out dotY);
+            Vector3.Dot(ref faceY, ref clipFace.V4, out dotY);
             bool clipv4MaxYInside = dotY < faceCenterMaxY;
             bool clipv4MinYInside = dotY > faceCenterMinY;
 
@@ -4760,11 +4613,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             TinyStructList<BoxContactData> tempData = contactData;
             contactData.Clear();
             float clipFaceDot, faceDot;
-            Vector3Ex.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
+            Vector3.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
             for (int i = 0; i < tempData.Count; i++)
             {
                 tempData.Get(i, out item);
-                Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+                Vector3.Dot(ref item.Position, ref mtd, out faceDot);
                 item.Depth = faceDot - clipFaceDot;
                 if (item.Depth <= 0)
                 {
@@ -4782,11 +4635,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             Vector3 v;
             float a, b;
-            Vector3Ex.Dot(ref face.V1, ref face.Normal, out b);
+            Vector3.Dot(ref face.V1, ref face.Normal, out b);
             //CLIP FACE
             if (clipv1MinXInside && clipv1MaxXInside && clipv1MinYInside && clipv1MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V1, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V1, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V1, ref v, out v);
                 item.Position = v;
@@ -4796,7 +4649,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv2MinXInside && clipv2MaxXInside && clipv2MinYInside && clipv2MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V2, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V2, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V2, ref v, out v);
                 item.Position = v;
@@ -4806,7 +4659,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv3MinXInside && clipv3MaxXInside && clipv3MinYInside && clipv3MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V3, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V3, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V3, ref v, out v);
                 item.Position = v;
@@ -4816,7 +4669,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             if (clipv4MinXInside && clipv4MaxXInside && clipv4MinYInside && clipv4MaxYInside)
             {
-                Vector3Ex.Dot(ref clipFace.V4, ref face.Normal, out a);
+                Vector3.Dot(ref clipFace.V4, ref face.Normal, out a);
                 Vector3.Multiply(ref face.Normal, a - b, out v);
                 Vector3.Subtract(ref clipFace.V4, ref v, out v);
                 item.Position = v;
@@ -4836,7 +4689,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             for (int i = previousCount; i < tempData.Count; i++)
             {
                 tempData.Get(i, out item);
-                Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+                Vector3.Dot(ref item.Position, ref mtd, out faceDot);
                 item.Depth = faceDot - clipFaceDot;
                 if (item.Depth <= 0)
                 {
@@ -4869,7 +4722,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxYInside)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4881,7 +4734,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxYInside)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4896,7 +4749,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxYInside)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4908,7 +4761,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxYInside)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4923,7 +4776,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxYInside)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -4935,7 +4788,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4950,7 +4803,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -4962,7 +4815,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -4984,7 +4837,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v2 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -4997,7 +4850,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v3 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5013,7 +4866,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v2 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -5026,7 +4879,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v2-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5042,7 +4895,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v1-v3 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5055,7 +4908,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v3-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5071,7 +4924,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v2-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5084,7 +4937,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 {
                     //test v3-v4 against minXminY-minXmaxY
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5105,7 +4958,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -5117,7 +4970,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5132,7 +4985,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -5144,7 +4997,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5159,7 +5012,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5171,7 +5024,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5186,7 +5039,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5198,7 +5051,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MinYInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipX, ref v, out dot);
+                    //Vector3.Dot(ref clipX, ref v, out dot);
                     //if (dot > clipCenterMinX && dot < clipCenterMaxX)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5219,7 +5072,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -5231,7 +5084,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5246,7 +5099,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v))
                     {
@@ -5258,7 +5111,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5273,7 +5126,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v2MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v))
                     {
@@ -5285,7 +5138,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v4MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5300,7 +5153,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v1MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v))
                     {
@@ -5312,7 +5165,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 if (v3MaxXInside && contactData.Count < 8)
                 {
                     //ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-                    //Vector3Ex.Dot(ref clipY, ref v, out dot);
+                    //Vector3.Dot(ref clipY, ref v, out dot);
                     //if (dot > clipCenterMinY && dot < clipCenterMaxY)
                     if (ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v))
                     {
@@ -5334,7 +5187,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             for (int i = previousCount; i < tempData.Count; i++)
             {
                 tempData.Get(i, out item);
-                Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+                Vector3.Dot(ref item.Position, ref mtd, out faceDot);
                 item.Depth = faceDot - clipFaceDot;
                 if (item.Depth <= 0)
                 {
@@ -5378,8 +5231,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    Vector3.Add(ref clipFace.V1, ref clipFace.V3, out clipCenter);
         //    //Defer division until after dot product (2 multiplies instead of 3)
         //    float clipCenterX, clipCenterY;
-        //    Vector3Ex.Dot(ref clipCenter, ref clipX, out clipCenterX);
-        //    Vector3Ex.Dot(ref clipCenter, ref clipY, out clipCenterY);
+        //    Vector3.Dot(ref clipCenter, ref clipX, out clipCenterX);
+        //    Vector3.Dot(ref clipCenter, ref clipY, out clipCenterY);
         //    clipCenterX *= .5f;
         //    clipCenterY *= .5f;
 
@@ -5387,8 +5240,8 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    Vector3.Add(ref face.V1, ref face.V3, out faceCenter);
         //    //Defer division until after dot product (2 multiplies instead of 3)
         //    float faceCenterX, faceCenterY;
-        //    Vector3Ex.Dot(ref faceCenter, ref faceX, out faceCenterX);
-        //    Vector3Ex.Dot(ref faceCenter, ref faceY, out faceCenterY);
+        //    Vector3.Dot(ref faceCenter, ref faceX, out faceCenterX);
+        //    Vector3.Dot(ref faceCenter, ref faceY, out faceCenterY);
         //    faceCenterX *= .5f;
         //    faceCenterY *= .5f;
 
@@ -5412,67 +5265,67 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    //The four edges can be thought of as minX, maxX, minY and maxY.
 
         //    //Face v1
-        //    Vector3Ex.Dot(ref clipX, ref face.V1, out dotX);
+        //    Vector3.Dot(ref clipX, ref face.V1, out dotX);
         //    bool v1MaxXInside = dotX < clipCenterMaxX;
         //    bool v1MinXInside = dotX > clipCenterMinX;
-        //    Vector3Ex.Dot(ref clipY, ref face.V1, out dotY);
+        //    Vector3.Dot(ref clipY, ref face.V1, out dotY);
         //    bool v1MaxYInside = dotY < clipCenterMaxY;
         //    bool v1MinYInside = dotY > clipCenterMinY;
 
         //    //Face v2
-        //    Vector3Ex.Dot(ref clipX, ref face.V2, out dotX);
+        //    Vector3.Dot(ref clipX, ref face.V2, out dotX);
         //    bool v2MaxXInside = dotX < clipCenterMaxX;
         //    bool v2MinXInside = dotX > clipCenterMinX;
-        //    Vector3Ex.Dot(ref clipY, ref face.V2, out dotY);
+        //    Vector3.Dot(ref clipY, ref face.V2, out dotY);
         //    bool v2MaxYInside = dotY < clipCenterMaxY;
         //    bool v2MinYInside = dotY > clipCenterMinY;
 
         //    //Face v3
-        //    Vector3Ex.Dot(ref clipX, ref face.V3, out dotX);
+        //    Vector3.Dot(ref clipX, ref face.V3, out dotX);
         //    bool v3MaxXInside = dotX < clipCenterMaxX;
         //    bool v3MinXInside = dotX > clipCenterMinX;
-        //    Vector3Ex.Dot(ref clipY, ref face.V3, out dotY);
+        //    Vector3.Dot(ref clipY, ref face.V3, out dotY);
         //    bool v3MaxYInside = dotY < clipCenterMaxY;
         //    bool v3MinYInside = dotY > clipCenterMinY;
 
         //    //Face v4
-        //    Vector3Ex.Dot(ref clipX, ref face.V4, out dotX);
+        //    Vector3.Dot(ref clipX, ref face.V4, out dotX);
         //    bool v4MaxXInside = dotX < clipCenterMaxX;
         //    bool v4MinXInside = dotX > clipCenterMinX;
-        //    Vector3Ex.Dot(ref clipY, ref face.V4, out dotY);
+        //    Vector3.Dot(ref clipY, ref face.V4, out dotY);
         //    bool v4MaxYInside = dotY < clipCenterMaxY;
         //    bool v4MinYInside = dotY > clipCenterMinY;
 
         //    //Find out where the clip face is.
         //    //Clip v1
-        //    Vector3Ex.Dot(ref faceX, ref clipFace.V1, out dotX);
+        //    Vector3.Dot(ref faceX, ref clipFace.V1, out dotX);
         //    bool clipv1MaxXInside = dotX < faceCenterMaxX;
         //    bool clipv1MinXInside = dotX > faceCenterMinX;
-        //    Vector3Ex.Dot(ref faceY, ref clipFace.V1, out dotY);
+        //    Vector3.Dot(ref faceY, ref clipFace.V1, out dotY);
         //    bool clipv1MaxYInside = dotY < faceCenterMaxY;
         //    bool clipv1MinYInside = dotY > faceCenterMinY;
 
         //    //Clip v2
-        //    Vector3Ex.Dot(ref faceX, ref clipFace.V2, out dotX);
+        //    Vector3.Dot(ref faceX, ref clipFace.V2, out dotX);
         //    bool clipv2MaxXInside = dotX < faceCenterMaxX;
         //    bool clipv2MinXInside = dotX > faceCenterMinX;
-        //    Vector3Ex.Dot(ref faceY, ref clipFace.V2, out dotY);
+        //    Vector3.Dot(ref faceY, ref clipFace.V2, out dotY);
         //    bool clipv2MaxYInside = dotY < faceCenterMaxY;
         //    bool clipv2MinYInside = dotY > faceCenterMinY;
 
         //    //Clip v3
-        //    Vector3Ex.Dot(ref faceX, ref clipFace.V3, out dotX);
+        //    Vector3.Dot(ref faceX, ref clipFace.V3, out dotX);
         //    bool clipv3MaxXInside = dotX < faceCenterMaxX;
         //    bool clipv3MinXInside = dotX > faceCenterMinX;
-        //    Vector3Ex.Dot(ref faceY, ref clipFace.V3, out dotY);
+        //    Vector3.Dot(ref faceY, ref clipFace.V3, out dotY);
         //    bool clipv3MaxYInside = dotY < faceCenterMaxY;
         //    bool clipv3MinYInside = dotY > faceCenterMinY;
 
         //    //Clip v4
-        //    Vector3Ex.Dot(ref faceX, ref clipFace.V4, out dotX);
+        //    Vector3.Dot(ref faceX, ref clipFace.V4, out dotX);
         //    bool clipv4MaxXInside = dotX < faceCenterMaxX;
         //    bool clipv4MinXInside = dotX > faceCenterMinX;
-        //    Vector3Ex.Dot(ref faceY, ref clipFace.V4, out dotY);
+        //    Vector3.Dot(ref faceY, ref clipFace.V4, out dotY);
         //    bool clipv4MaxYInside = dotY < faceCenterMaxY;
         //    bool clipv4MinYInside = dotY > faceCenterMinY;
 
@@ -5514,11 +5367,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    TinyStructList<BoxContactData> tempData = contactData;
         //    contactData.Clear();
         //    float clipFaceDot, faceDot;
-        //    Vector3Ex.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
+        //    Vector3.Dot(ref clipFace.V1, ref mtd, out clipFaceDot);
         //    for (int i = 0; i < tempData.Count; i++)
         //    {
         //        tempData.Get(i, out item);
-        //        Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+        //        Vector3.Dot(ref item.Position, ref mtd, out faceDot);
         //        item.Depth = faceDot - clipFaceDot;
         //        if (item.Depth <= 0)
         //        {
@@ -5543,11 +5396,11 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    faceNormal.Normalize();
         //    Vector3 v;
         //    float a, b;
-        //    Vector3Ex.Dot(ref face.V1, ref faceNormal, out b);
+        //    Vector3.Dot(ref face.V1, ref faceNormal, out b);
         //    //CLIP FACE
         //    if (clipv1MinXInside && clipv1MaxXInside && clipv1MinYInside && clipv1MaxYInside)
         //    {
-        //        Vector3Ex.Dot(ref clipFace.V1, ref faceNormal, out a);
+        //        Vector3.Dot(ref clipFace.V1, ref faceNormal, out a);
         //        Vector3.Multiply(ref faceNormal, a - b, out v);
         //        Vector3.Subtract(ref clipFace.V1, ref v, out v);
         //        item.Position = v;
@@ -5557,7 +5410,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
         //    if (clipv2MinXInside && clipv2MaxXInside && clipv2MinYInside && clipv2MaxYInside)
         //    {
-        //        Vector3Ex.Dot(ref clipFace.V2, ref faceNormal, out a);
+        //        Vector3.Dot(ref clipFace.V2, ref faceNormal, out a);
         //        Vector3.Multiply(ref faceNormal, a - b, out v);
         //        Vector3.Subtract(ref clipFace.V2, ref v, out v);
         //        item.Position = v;
@@ -5567,7 +5420,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
         //    if (clipv3MinXInside && clipv3MaxXInside && clipv3MinYInside && clipv3MaxYInside)
         //    {
-        //        Vector3Ex.Dot(ref clipFace.V3, ref faceNormal, out a);
+        //        Vector3.Dot(ref clipFace.V3, ref faceNormal, out a);
         //        Vector3.Multiply(ref faceNormal, a - b, out v);
         //        Vector3.Subtract(ref clipFace.V3, ref v, out v);
         //        item.Position = v;
@@ -5577,7 +5430,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
         //    if (clipv4MinXInside && clipv4MaxXInside && clipv4MinYInside && clipv4MaxYInside)
         //    {
-        //        Vector3Ex.Dot(ref clipFace.V4, ref faceNormal, out a);
+        //        Vector3.Dot(ref clipFace.V4, ref faceNormal, out a);
         //        Vector3.Multiply(ref faceNormal, a - b, out v);
         //        Vector3.Subtract(ref clipFace.V4, ref v, out v);
         //        item.Position = v;
@@ -5597,7 +5450,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    for (int i = previousCount; i < tempData.Count; i++)
         //    {
         //        tempData.Get(i, out item);
-        //        Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+        //        Vector3.Dot(ref item.Position, ref mtd, out faceDot);
         //        item.Depth = faceDot - clipFaceDot;
         //        if (item.Depth <= 0)
         //        {
@@ -5631,7 +5484,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MaxYInside)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5642,7 +5495,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MaxYInside)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5656,7 +5509,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MaxYInside)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5667,7 +5520,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MaxYInside)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5681,7 +5534,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MaxYInside)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5692,7 +5545,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MaxYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5706,7 +5559,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MaxYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5717,7 +5570,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MaxYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5738,7 +5591,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        {
         //            //test v1-v2 against minXminY-minXmaxY
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5750,7 +5603,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        {
         //            //test v1-v3 against minXminY-minXmaxY
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5764,7 +5617,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MinXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5775,7 +5628,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MinXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5789,7 +5642,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MinXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5800,7 +5653,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MinXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5815,7 +5668,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        {
         //            //test v2-v4 against minXminY-minXmaxY
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5827,7 +5680,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        {
         //            //test v3-v4 against minXminY-minXmaxY
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5847,7 +5700,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5858,7 +5711,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5872,7 +5725,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5883,7 +5736,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5897,7 +5750,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5908,7 +5761,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5922,7 +5775,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5933,7 +5786,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MinYInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipX, ref v, out dot);
+        //            Vector3.Dot(ref clipX, ref v, out dot);
         //            if (dot > clipCenterMinX && dot < clipCenterMaxX)
         //            {
         //                item.Position = v;
@@ -5953,7 +5806,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5964,7 +5817,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5978,7 +5831,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V1, ref face.V2, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -5989,7 +5842,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -6003,7 +5856,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v2MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V2, ref face.V3, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -6014,7 +5867,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v4MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -6028,7 +5881,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v1MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V4, ref face.V1, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -6039,7 +5892,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //        if (v3MaxXInside && contactData.Count < 8)
         //        {
         //            ComputeIntersection(ref face.V3, ref face.V4, ref clipEdge, out v);
-        //            Vector3Ex.Dot(ref clipY, ref v, out dot);
+        //            Vector3.Dot(ref clipY, ref v, out dot);
         //            if (dot > clipCenterMinY && dot < clipCenterMaxY)
         //            {
         //                item.Position = v;
@@ -6060,7 +5913,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
         //    for (int i = previousCount; i < tempData.Count; i++)
         //    {
         //        tempData.Get(i, out item);
-        //        Vector3Ex.Dot(ref item.Position, ref mtd, out faceDot);
+        //        Vector3.Dot(ref item.Position, ref mtd, out faceDot);
         //        item.Depth = faceDot - clipFaceDot;
         //        if (item.Depth <= 0)
         //        {
@@ -6081,9 +5934,9 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             Vector3 edgeDirection;
             Vector3.Subtract(ref edgeA2, ref edgeA1, out edgeDirection);
             float distanceToPlane;
-            Vector3Ex.Dot(ref offset, ref clippingEdge.Perpendicular, out distanceToPlane);
+            Vector3.Dot(ref offset, ref clippingEdge.Perpendicular, out distanceToPlane);
             float edgeDirectionLength;
-            Vector3Ex.Dot(ref edgeDirection, ref clippingEdge.Perpendicular, out edgeDirectionLength);
+            Vector3.Dot(ref edgeDirection, ref clippingEdge.Perpendicular, out edgeDirectionLength);
             float t = distanceToPlane / edgeDirectionLength;
             if (t < 0 || t > 1)
             {
@@ -6096,7 +5949,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
 
             Vector3.Subtract(ref intersection, ref clippingEdge.A, out offset);
             Vector3.Subtract(ref clippingEdge.B, ref clippingEdge.A, out edgeDirection);
-            Vector3Ex.Dot(ref edgeDirection, ref offset, out t);
+            Vector3.Dot(ref edgeDirection, ref offset, out t);
             if (t < 0 || t > edgeDirection.LengthSquared())
             {
                 //It's outside of the clipping edge!
@@ -6105,7 +5958,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             return true;
         }
 
-        private static void GetNearestFace(ref Vector3 position, ref Matrix3X3 orientation, ref Vector3 mtd, float halfWidth, float halfHeight, float halfLength, out BoxFace boxFace)
+        private static void GetNearestFace(ref Vector3 position, ref Matrix3x3 orientation, ref Vector3 mtd, float halfWidth, float halfHeight, float halfLength, out BoxFace boxFace)
         {
             boxFace = new BoxFace();
 
@@ -6124,7 +5977,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             float absZ = Math.Abs(zDot);
 
             Matrix worldTransform;
-            Matrix3X3.ToMatrix4X4(ref orientation, out worldTransform);
+            Matrix3x3.ToMatrix4X4(ref orientation, out worldTransform);
             worldTransform.M41 = position.X;
             worldTransform.M42 = position.Y;
             worldTransform.M43 = position.Z;
@@ -6143,16 +5996,16 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 else
                     bit = 1;
                 candidate = new Vector3(halfWidth, halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V1 = candidate;
                 candidate = new Vector3(halfWidth, -halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V2 = candidate;
                 candidate = new Vector3(halfWidth, -halfHeight, -halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V3 = candidate;
                 candidate = new Vector3(halfWidth, halfHeight, -halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V4 = candidate;
 
                 if (xDot < 0)
@@ -6179,16 +6032,16 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 else
                     bit = 2;
                 candidate = new Vector3(halfWidth, halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V1 = candidate;
                 candidate = new Vector3(-halfWidth, halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V2 = candidate;
                 candidate = new Vector3(-halfWidth, halfHeight, -halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V3 = candidate;
                 candidate = new Vector3(halfWidth, halfHeight, -halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V4 = candidate;
 
                 if (yDot < 0)
@@ -6215,16 +6068,16 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 else
                     bit = 4;
                 candidate = new Vector3(halfWidth, halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V1 = candidate;
                 candidate = new Vector3(-halfWidth, halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V2 = candidate;
                 candidate = new Vector3(-halfWidth, -halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V3 = candidate;
                 candidate = new Vector3(halfWidth, -halfHeight, halfLength);
-                Vector3Ex.Transform(ref candidate, ref worldTransform, out candidate);
+                Matrix.Transform(ref candidate, ref worldTransform, out candidate);
                 boxFace.V4 = candidate;
 
                 if (zDot < 0)
@@ -6327,14 +6180,14 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
                 float dot;
                 Vector3 offset;
                 Vector3.Subtract(ref insidePoint, ref clippingEdge.A, out offset);
-                Vector3Ex.Dot(ref clippingEdge.Perpendicular, ref offset, out dot);
+                Vector3.Dot(ref clippingEdge.Perpendicular, ref offset, out dot);
                 if (dot > 0)
                 {
                     clippingEdge.Perpendicular.X = -clippingEdge.Perpendicular.X;
                     clippingEdge.Perpendicular.Y = -clippingEdge.Perpendicular.Y;
                     clippingEdge.Perpendicular.Z = -clippingEdge.Perpendicular.Z;
                 }
-                Vector3Ex.Dot(ref clippingEdge.A, ref clippingEdge.Perpendicular, out clippingEdge.EdgeDistance);
+                Vector3.Dot(ref clippingEdge.A, ref clippingEdge.Perpendicular, out clippingEdge.EdgeDistance);
             }
         }
 
@@ -6372,7 +6225,7 @@ namespace BEPUphysics.CollisionTests.CollisionAlgorithms
             public bool IsPointInside(ref Vector3 point)
             {
                 float distance;
-                Vector3Ex.Dot(ref point, ref Perpendicular, out distance);
+                Vector3.Dot(ref point, ref Perpendicular, out distance);
                 return distance < EdgeDistance; // +1; //TODO: Bias this a little?
             }
         }

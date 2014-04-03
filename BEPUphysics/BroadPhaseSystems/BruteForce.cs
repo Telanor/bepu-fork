@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using SharpDX;
 
 namespace BEPUphysics.BroadPhaseSystems
 {
@@ -33,7 +32,7 @@ namespace BEPUphysics.BroadPhaseSystems
             {
                 for (int j = i + 1; j < entries.Count; j++)
                 {
-                    if (entries[i].boundingBox.Intersects(ref entries[j].boundingBox))
+                    if (entries[i].boundingBox.Intersects(entries[j].boundingBox))
                         base.TryToAddOverlap(entries[i], entries[j]);
                 }
             }

@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BEPUphysics.BroadPhaseEntries;
-using SharpDX;
-using BEPUphysics.DataStructures;
-using BEPUphysics.ResourceManagement;
-using System.Diagnostics;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
+using BEPUutilities.DataStructures;
+using BEPUutilities.ResourceManagement;
 
 namespace BEPUphysics.BroadPhaseSystems.Hierarchies
 {
@@ -100,9 +96,12 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
 
         internal override void GetOverlaps(ref BoundingSphere boundingSphere, IList<BroadPhaseEntry> outputOverlappedElements)
         {
-            if (childA.BoundingBox.Intersects(ref boundingSphere))
+            bool intersects;
+            childA.BoundingBox.Intersects(ref boundingSphere, out intersects);
+            if (intersects)
                 childA.GetOverlaps(ref boundingSphere, outputOverlappedElements);
-            if (childB.BoundingBox.Intersects(ref boundingSphere))
+            childB.BoundingBox.Intersects(ref boundingSphere, out intersects);
+            if (intersects)
                 childB.GetOverlaps(ref boundingSphere, outputOverlappedElements);
         }
 
@@ -197,20 +196,20 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
 
             //Use the path which produces the smallest 'volume.'
             BoundingBox mergedA, mergedB;
-            BoundingBoxEx.Merge(ref childA.BoundingBox, ref node.BoundingBox, out mergedA);
-            BoundingBoxEx.Merge(ref childB.BoundingBox, ref node.BoundingBox, out mergedB);
+            BoundingBox.CreateMerged(ref childA.BoundingBox, ref node.BoundingBox, out mergedA);
+            BoundingBox.CreateMerged(ref childB.BoundingBox, ref node.BoundingBox, out mergedB);
 
             Vector3 offset;
             float originalAVolume, originalBVolume;
-            Vector3.Subtract(ref childA.BoundingBox.Maximum, ref childA.BoundingBox.Minimum, out offset);
+            Vector3.Subtract(ref childA.BoundingBox.Max, ref childA.BoundingBox.Min, out offset);
             originalAVolume = offset.X * offset.Y * offset.Z;
-            Vector3.Subtract(ref childB.BoundingBox.Maximum, ref childB.BoundingBox.Minimum, out offset);
+            Vector3.Subtract(ref childB.BoundingBox.Max, ref childB.BoundingBox.Min, out offset);
             originalBVolume = offset.X * offset.Y * offset.Z;
 
             float mergedAVolume, mergedBVolume;
-            Vector3.Subtract(ref mergedA.Maximum, ref mergedA.Minimum, out offset);
+            Vector3.Subtract(ref mergedA.Max, ref mergedA.Min, out offset);
             mergedAVolume = offset.X * offset.Y * offset.Z;
-            Vector3.Subtract(ref mergedB.Maximum, ref mergedB.Minimum, out offset);
+            Vector3.Subtract(ref mergedB.Max, ref mergedB.Min, out offset);
             mergedBVolume = offset.X * offset.Y * offset.Z;
 
             //Could use factor increase or absolute difference
@@ -292,9 +291,9 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             }
             childA.Refit();
             childB.Refit();
-            BoundingBoxEx.Merge(ref childA.BoundingBox, ref childB.BoundingBox, out BoundingBox);
+            BoundingBox.CreateMerged(ref childA.BoundingBox, ref childB.BoundingBox, out BoundingBox);
             //float DEBUGlastVolume = currentVolume;
-            currentVolume = (BoundingBox.Maximum.X - BoundingBox.Minimum.X) * (BoundingBox.Maximum.Y - BoundingBox.Minimum.Y) * (BoundingBox.Maximum.Z - BoundingBox.Minimum.Z);
+            currentVolume = (BoundingBox.Max.X - BoundingBox.Min.X) * (BoundingBox.Max.Y - BoundingBox.Min.Y) * (BoundingBox.Max.Z - BoundingBox.Min.Z);
             //if (Math.Abs(currentVolume - DEBUGlastVolume) > .000001 * (DEBUGlastVolume + currentVolume))
             //    Debug.WriteLine(":Break>:)");
         }
@@ -315,9 +314,9 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             var leafNodes = nodeListPool.Take();
             oldChildA.RetrieveNodes(leafNodes);
             oldChildB.RetrieveNodes(leafNodes);
-            for (int i = 0; i < leafNodes.count; i++)
+            for (int i = 0; i < leafNodes.Count; i++)
                 leafNodes.Elements[i].Refit();
-            Reconstruct(leafNodes, 0, leafNodes.count);
+            Reconstruct(leafNodes, 0, leafNodes.Count);
             leafNodes.Clear();
             nodeListPool.GiveBack(leafNodes);
 
@@ -329,13 +328,13 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             //It is known that we have 2 children; this is safe.
             //This is because this is only an internal node if the parent figured out it involved more than 2 leaf nodes, OR
             //this node was the initiator of the revalidation (in which case, it was an internal node with 2+ children).
-            BoundingBoxEx.Merge(ref leafNodes.Elements[begin].BoundingBox, ref leafNodes.Elements[begin + 1].BoundingBox, out BoundingBox);
+            BoundingBox.CreateMerged(ref leafNodes.Elements[begin].BoundingBox, ref leafNodes.Elements[begin + 1].BoundingBox, out BoundingBox);
             for (int i = begin + 2; i < end; i++)
             {
-                BoundingBoxEx.Merge(ref BoundingBox, ref leafNodes.Elements[i].BoundingBox, out BoundingBox);
+                BoundingBox.CreateMerged(ref BoundingBox, ref leafNodes.Elements[i].BoundingBox, out BoundingBox);
             }
             Vector3 offset;
-            Vector3.Subtract(ref BoundingBox.Maximum, ref BoundingBox.Minimum, out offset);
+            Vector3.Subtract(ref BoundingBox.Max, ref BoundingBox.Min, out offset);
             currentVolume = offset.X * offset.Y * offset.Z;
             maximumVolume = currentVolume * MaximumVolumeScale;
 
@@ -343,17 +342,17 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
             if (offset.X > offset.Y && offset.X > offset.Z)
             {
                 //Maximum variance axis is X.
-                Array.Sort<LeafNode>(leafNodes.Elements, begin, end - begin, xComparer);
+                Array.Sort(leafNodes.Elements, begin, end - begin, xComparer);
             }
             else if (offset.Y > offset.Z)
             {
                 //Maximum variance axis is Y.  
-                Array.Sort<LeafNode>(leafNodes.Elements, begin, end - begin, yComparer);
+                Array.Sort(leafNodes.Elements, begin, end - begin, yComparer);
             }
             else
             {
                 //Maximum variance axis is Z.
-                Array.Sort<LeafNode>(leafNodes.Elements, begin, end - begin, zComparer);
+                Array.Sort(leafNodes.Elements, begin, end - begin, zComparer);
             }
 
             //Find the median index.
@@ -432,8 +431,8 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
                 childA.PostRefit(splitDepth, currentDepth + 1);
                 childB.PostRefit(splitDepth, currentDepth + 1);
             }
-            BoundingBoxEx.Merge(ref childA.BoundingBox, ref childB.BoundingBox, out BoundingBox);
-            currentVolume = (BoundingBox.Maximum.X - BoundingBox.Minimum.X) * (BoundingBox.Maximum.Y - BoundingBox.Minimum.Y) * (BoundingBox.Maximum.Z - BoundingBox.Minimum.Z);
+            BoundingBox.CreateMerged(ref childA.BoundingBox, ref childB.BoundingBox, out BoundingBox);
+            currentVolume = (BoundingBox.Max.X - BoundingBox.Min.X) * (BoundingBox.Max.Y - BoundingBox.Min.Y) * (BoundingBox.Max.Z - BoundingBox.Min.Z);
         }
 
         internal override void GetMultithreadedOverlaps(Node opposingNode, int splitDepth, int currentDepth, DynamicHierarchy owner, RawList<DynamicHierarchy.NodePair> multithreadingSourceOverlaps)
@@ -623,21 +622,21 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
         {
             public int Compare(LeafNode x, LeafNode y)
             {
-                return x.BoundingBox.Minimum.X < y.BoundingBox.Minimum.X ? -1 : 1;
+                return x.BoundingBox.Min.X < y.BoundingBox.Min.X ? -1 : 1;
             }
         }
         class YComparer : IComparer<LeafNode>
         {
             public int Compare(LeafNode x, LeafNode y)
             {
-                return x.BoundingBox.Minimum.Y < y.BoundingBox.Minimum.Y ? -1 : 1;
+                return x.BoundingBox.Min.Y < y.BoundingBox.Min.Y ? -1 : 1;
             }
         }
         class ZComparer : IComparer<LeafNode>
         {
             public int Compare(LeafNode x, LeafNode y)
             {
-                return x.BoundingBox.Minimum.Z < y.BoundingBox.Minimum.Z ? -1 : 1;
+                return x.BoundingBox.Min.Z < y.BoundingBox.Min.Z ? -1 : 1;
             }
         }
     }
@@ -735,9 +734,9 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
         internal override bool TryToInsert(LeafNode node, out Node treeNode)
         {
             var newTreeNode = InternalNode.nodePool.Take();
-            BoundingBoxEx.Merge(ref BoundingBox, ref node.BoundingBox, out newTreeNode.BoundingBox);
+            BoundingBox.CreateMerged(ref BoundingBox, ref node.BoundingBox, out newTreeNode.BoundingBox);
             Vector3 offset;
-            Vector3.Subtract(ref newTreeNode.BoundingBox.Maximum, ref newTreeNode.BoundingBox.Minimum, out offset);
+            Vector3.Subtract(ref newTreeNode.BoundingBox.Max, ref newTreeNode.BoundingBox.Min, out offset);
             newTreeNode.currentVolume = offset.X * offset.Y * offset.Z;
             //newTreeNode.maximumVolume = newTreeNode.currentVolume * InternalNode.MaximumVolumeScale;
             newTreeNode.childA = this;

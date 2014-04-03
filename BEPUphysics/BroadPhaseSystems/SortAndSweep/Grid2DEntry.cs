@@ -11,8 +11,8 @@ namespace BEPUphysics.BroadPhaseSystems.SortAndSweep
         internal void Initialize(BroadPhaseEntry entry)
         {
             this.item = entry;
-            Grid2DSortAndSweep.ComputeCell(ref entry.boundingBox.Minimum, out previousMin);
-            Grid2DSortAndSweep.ComputeCell(ref entry.boundingBox.Maximum, out previousMax);
+            Grid2DSortAndSweep.ComputeCell(ref entry.boundingBox.Min, out previousMin);
+            Grid2DSortAndSweep.ComputeCell(ref entry.boundingBox.Max, out previousMax);
         }
 
 

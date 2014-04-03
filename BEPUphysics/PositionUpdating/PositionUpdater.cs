@@ -1,5 +1,5 @@
 ﻿using System;
-using BEPUphysics.Threading;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics.PositionUpdating
 {
@@ -24,10 +24,10 @@ namespace BEPUphysics.PositionUpdating
             }
         }
 
-        protected PositionUpdater(TimeStepSettings timeStepSettings, IThreadManager threadManager)
+        protected PositionUpdater(TimeStepSettings timeStepSettings, IParallelLooper parallelLooper)
             :this(timeStepSettings)
         {
-            ThreadManager = threadManager;
+            ParallelLooper = parallelLooper;
             AllowMultithreading = true;
         }
 

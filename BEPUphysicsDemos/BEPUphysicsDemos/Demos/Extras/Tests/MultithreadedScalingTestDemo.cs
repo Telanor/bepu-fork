@@ -1,13 +1,13 @@
 ﻿using BEPUphysics;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
+using BEPUutilities;
 using BEPUphysics.NarrowPhaseSystems;
 using BEPUphysics.UpdateableSystems.ForceFields;
 using BEPUphysicsDemos.SampleCode;
 using System.Diagnostics;
 using System;
-using BEPUphysics.Threading;
-using SharpDX;
+using BEPUutilities.Threading;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -42,16 +42,16 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             for (int i = 0; i < reruns; i++)
             {
                 GC.Collect();
-                var threadManager = new SpecializedThreadManager();
+                var looper = new ParallelLooper();
 
 
 
                 //Try different thread counts.
                 for (int j = 0; j < coreCountMax; j++)
                 {
-                    threadManager.AddThread();
+                    looper.AddThread();
                     for (int k = 0; k < simulationBuilders.Length; k++)
-                        testResults[j, k] = RunTest(threadManager, simulationBuilders[k]);
+                        testResults[j, k] = RunTest(looper, simulationBuilders[k]);
                     GC.Collect();
 
                 }
@@ -105,9 +105,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             for (int k = 0; k < 250; k++)
 #endif
             {
-                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
+                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
                 var toAdd = new Box(position, 1, 1, 1, 1);
                 toAdd.ActivityInformation.IsAlwaysActive = true;
 
@@ -212,7 +212,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 #endif
         }
 
-        double RunTest(IThreadManager threadManager, Func<Space, int> simulationBuilder)
+        double RunTest(IParallelLooper threadManager, Func<Space, int> simulationBuilder)
         {
 
             Space space = new Space(threadManager);
@@ -247,8 +247,8 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             base.DrawUI();
             //Game.DataTextDrawer.Draw("Time steps elapsed: ", timeStepsElapsed, new Vector2(600, 600));
             //return;
-            var origin = new Microsoft.Xna.Framework.Vector2(100, 50);
-            var spacing = new Microsoft.Xna.Framework.Vector2(80, 50);
+            Microsoft.Xna.Framework.Vector2 origin = new Microsoft.Xna.Framework.Vector2(100, 50);
+            Microsoft.Xna.Framework.Vector2 spacing = new Microsoft.Xna.Framework.Vector2(80, 50);
             //Draw the horizontal core counts.
             for (int i = 0; i < testResults.GetLength(0); i++)
             {

@@ -1,16 +1,16 @@
 ﻿using BEPUphysics.Entities;
-using SharpDX;
 using BEPUphysics.CollisionTests;
 using BEPUphysics.Settings;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using System;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.Constraints.Collision
 {
     /// <summary>
     /// Computes the forces necessary to keep two entities from going through each other at a contact point.
     /// </summary>
-    public class ContactPenetrationConstraint : EntitySolverUpdateable
+    public class ContactPenetrationConstraint : SolverUpdateable
     {
         internal Contact contact;
 
@@ -23,7 +23,7 @@ namespace BEPUphysics.Constraints.Collision
         internal float angularAX, angularAY, angularAZ;
         internal float angularBX, angularBY, angularBZ;
 
-
+        private float softness;
         private float bias;
         private float linearAX, linearAY, linearAZ;
         private Entity entityA, entityB;
@@ -172,35 +172,52 @@ namespace BEPUphysics.Constraints.Collision
             else
                 entryB = 0;
 
-            velocityToImpulse = -1 / (entryA + entryB); //Softness?
+            //If we used a single fixed softness value, then heavier objects will tend to 'squish' more than light objects.
+            //In the extreme case, very heavy objects could simply fall through the ground by force of gravity.
+            //To see why this is the case, consider that a given dt, softness, and bias factor correspond to an equivalent spring's damping and stiffness coefficients.
+            //Imagine trying to hang objects of different masses on the fixed-strength spring: obviously, heavier ones will pull it further down.
+
+            //To counteract this, scale the softness value based on the effective mass felt by the constraint.
+            //Larger effective masses should correspond to smaller softnesses so that the spring has the same positional behavior.
+            //Fortunately, we're already computing the necessary values: the raw, unsoftened effective mass inverse shall be used to compute the softness.
+
+            float effectiveMassInverse = entryA + entryB;
+            float updateRate = 1 / dt;
+            softness = CollisionResponseSettings.Softness * effectiveMassInverse * updateRate;
+            velocityToImpulse = -1 / (softness + effectiveMassInverse);
 
 
             //Bounciness and bias (penetration correction)
             if (contact.PenetrationDepth >= 0)
             {
-                bias = Math.Min(
-                    Math.Max(0, contact.PenetrationDepth - CollisionDetectionSettings.AllowedPenetration) *
-                    CollisionResponseSettings.PenetrationRecoveryStiffness / dt,
-                    CollisionResponseSettings.MaximumPenetrationCorrectionSpeed);
+                bias = MathHelper.Min(
+                    MathHelper.Max(0, contact.PenetrationDepth - CollisionDetectionSettings.AllowedPenetration) *
+                    CollisionResponseSettings.PenetrationRecoveryStiffness * updateRate,
+                    CollisionResponseSettings.MaximumPenetrationRecoverySpeed);
 
                 if (contactManifoldConstraint.materialInteraction.Bounciness > 0)
                 {
                     //Target a velocity which includes a portion of the incident velocity.
-                    float relativeVelocity = -RelativeVelocity;
-                    if (relativeVelocity > CollisionResponseSettings.BouncinessVelocityThreshold)
-                        bias = Math.Max(relativeVelocity * contactManifoldConstraint.materialInteraction.Bounciness, bias);
+                    float bounceVelocity = -RelativeVelocity;
+                    if (bounceVelocity > 0)
+                    {
+                        var lowThreshold = CollisionResponseSettings.BouncinessVelocityThreshold * 0.3f;
+                        var velocityFraction = MathHelper.Clamp((bounceVelocity - lowThreshold) / (CollisionResponseSettings.BouncinessVelocityThreshold - lowThreshold + Toolbox.Epsilon), 0, 1);
+                        var bouncinessVelocity = velocityFraction * bounceVelocity * contactManifoldConstraint.materialInteraction.Bounciness;
+                        bias = MathHelper.Max(bouncinessVelocity, bias);
+                    }
                 }
             }
             else
             {
                 //The contact is actually separated right now.  Allow the solver to target a position that is just barely in collision.
                 //If the solver finds that an accumulated negative impulse is required to hit this target, then no work will be done.
-                bias = contact.PenetrationDepth / dt;
+                bias = contact.PenetrationDepth * updateRate;
 
                 //This implementation is going to ignore bounciness for now.
                 //Since it's not being used for CCD, these negative-depth contacts
                 //only really occur in situations where no bounce should occur.
-                
+
                 //if (contactManifoldConstraint.materialInteraction.Bounciness > 0)
                 //{
                 //    //Target a velocity which includes a portion of the incident velocity.
@@ -211,7 +228,7 @@ namespace BEPUphysics.Constraints.Collision
                 //        bias = relativeVelocity * contactManifoldConstraint.materialInteraction.Bounciness + bias;
                 //}
             }
- 
+
 
         }
 
@@ -262,13 +279,13 @@ namespace BEPUphysics.Constraints.Collision
         {
 
             //Compute relative velocity
-            float lambda = (RelativeVelocity - bias) * velocityToImpulse; //convert to impulse
+            float lambda = (RelativeVelocity - bias + softness * accumulatedImpulse) * velocityToImpulse;
 
             //Clamp accumulated impulse
             float previousAccumulatedImpulse = accumulatedImpulse;
-            accumulatedImpulse = Math.Max(0, accumulatedImpulse + lambda);
+            accumulatedImpulse = MathHelper.Max(0, accumulatedImpulse + lambda);
             lambda = accumulatedImpulse - previousAccumulatedImpulse;
- 
+
 
             //Apply the impulse
 #if !WINDOWS
@@ -303,7 +320,7 @@ namespace BEPUphysics.Constraints.Collision
             return Math.Abs(lambda);
         }
 
-        protected internal override void CollectInvolvedEntities(DataStructures.RawList<Entity> outputInvolvedEntities)
+        protected internal override void CollectInvolvedEntities(RawList<Entity> outputInvolvedEntities)
         {
             //This should never really have to be called.
             if (entityA != null)

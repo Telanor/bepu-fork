@@ -1,27 +1,25 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using BEPUphysics.Entities;
-using BEPUphysics.DataStructures;
-using BEPUphysics.SolverSystems;
+using BEPUutilities.DataStructures;
 
 namespace BEPUphysics.Constraints.SolverGroups
 {
     /// <summary>
     /// Superclass of constraints that are composed of multiple subconstraints.
     /// </summary>
-    public abstract class SolverGroup : EntitySolverUpdateable
+    public abstract class SolverGroup : SolverUpdateable
     {
-        internal readonly RawList<EntitySolverUpdateable> solverUpdateables = new RawList<EntitySolverUpdateable>();
+        internal readonly RawList<SolverUpdateable> solverUpdateables = new RawList<SolverUpdateable>();
 
 
         /// <summary>
         /// Gets the solver updateables managed by this solver group.
         /// </summary>
-        public ReadOnlyList<EntitySolverUpdateable> SolverUpdateables
+        public ReadOnlyList<SolverUpdateable> SolverUpdateables
         {
             get
             {
-                return new ReadOnlyList<EntitySolverUpdateable>(solverUpdateables);
+                return new ReadOnlyList<SolverUpdateable>(solverUpdateables);
             }
         }
 
@@ -33,9 +31,9 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// </summary>
         protected internal override void CollectInvolvedEntities(RawList<Entity> outputInvolvedEntities)
         {
-            foreach (EntitySolverUpdateable item in solverUpdateables)
+            foreach (SolverUpdateable item in solverUpdateables)
             {
-                for (int i = 0; i < item.involvedEntities.count; i++)
+                for (int i = 0; i < item.involvedEntities.Count; i++)
                 {
                     if (!outputInvolvedEntities.Contains(item.involvedEntities.Elements[i]))
                     {
@@ -44,6 +42,7 @@ namespace BEPUphysics.Constraints.SolverGroups
                 }
             }
         }
+
 
         /// <summary>
         /// Sets the activity state of the constraint based on the activity state of its connections.
@@ -55,7 +54,7 @@ namespace BEPUphysics.Constraints.SolverGroups
             if (isActive)
             {
                 isActiveInSolver = false;
-                for (int i = 0; i < solverUpdateables.count; i++)
+                for (int i = 0; i < solverUpdateables.Count; i++)
                 {
                     var item = solverUpdateables.Elements[i];
                     item.UpdateSolverActivity();
@@ -68,7 +67,7 @@ namespace BEPUphysics.Constraints.SolverGroups
             }
         }
 
-        protected void UpdateUpdateable(EntitySolverUpdateable item, float dt)
+        protected void UpdateUpdateable(SolverUpdateable item, float dt)
         {
             item.SolverSettings.currentIterations = 0;
             item.SolverSettings.iterationsAtZeroImpulse = 0;
@@ -76,7 +75,7 @@ namespace BEPUphysics.Constraints.SolverGroups
                 item.Update(dt);
         }
 
-        protected void ExclusiveUpdateUpdateable(EntitySolverUpdateable item)
+        protected void ExclusiveUpdateUpdateable(SolverUpdateable item)
         {
             if (item.isActiveInSolver)
                 item.ExclusiveUpdate();
@@ -88,7 +87,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         ///<param name="dt">Timestep duration.</param>
         public override void Update(float dt)
         {
-            for (int i = 0; i < solverUpdateables.count; i++)
+            for (int i = 0; i < solverUpdateables.Count; i++)
             {
                 UpdateUpdateable(solverUpdateables.Elements[i], dt);
             }
@@ -103,7 +102,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// </summary>
         public override void ExclusiveUpdate()
         {
-            for (int i = 0; i < solverUpdateables.count; i++)
+            for (int i = 0; i < solverUpdateables.Count; i++)
             {
                 ExclusiveUpdateUpdateable(solverUpdateables.Elements[i]);
             }
@@ -115,7 +114,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// </summary>
         /// <param name="item"></param>
         /// <param name="activeConstraints"> </param>
-        protected void SolveUpdateable(EntitySolverUpdateable item, ref int activeConstraints)
+        protected void SolveUpdateable(SolverUpdateable item, ref int activeConstraints)
         {
             if (item.isActiveInSolver)
             {
@@ -123,12 +122,12 @@ namespace BEPUphysics.Constraints.SolverGroups
 
                 subSolverSettings.currentIterations++;
                 if (subSolverSettings.currentIterations <= solver.iterationLimit &&
-                    subSolverSettings.currentIterations <= subSolverSettings.maximumIterations)
+                    subSolverSettings.currentIterations <= subSolverSettings.maximumIterationCount)
                 {
                     if (item.SolveIteration() < subSolverSettings.minimumImpulse)
                     {
                         subSolverSettings.iterationsAtZeroImpulse++;
-                        if (subSolverSettings.iterationsAtZeroImpulse > subSolverSettings.minimumIterations)
+                        if (subSolverSettings.iterationsAtZeroImpulse > subSolverSettings.minimumIterationCount)
                             item.isActiveInSolver = false;
                         else
                         {
@@ -157,7 +156,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         public override float SolveIteration()
         {
             int activeConstraints = 0;
-            for (int i = 0; i < solverUpdateables.count; i++)
+            for (int i = 0; i < solverUpdateables.Count; i++)
             {
                 SolveUpdateable(solverUpdateables.Elements[i], ref activeConstraints);
             }
@@ -171,7 +170,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// </summary>
         /// <param name="solverUpdateable">Solver updateable to add.</param>
         /// <exception cref="InvalidOperationException">Thrown when the SolverUpdateable to add to the SolverGroup already belongs to another SolverGroup or to a Space.</exception>
-        protected void Add(EntitySolverUpdateable solverUpdateable)
+        protected void Add(SolverUpdateable solverUpdateable)
         {
             if (solverUpdateable.solver == null)
             {
@@ -198,7 +197,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// </summary>
         /// <param name="solverUpdateable">Solver updateable to remove.</param>
         /// <exception cref="InvalidOperationException">Thrown when the SolverUpdateable to remove from the SolverGroup doesn't actually belong to this SolverGroup.</exception>
-        protected void Remove(EntitySolverUpdateable solverUpdateable)
+        protected void Remove(SolverUpdateable solverUpdateable)
         {
             if (solverUpdateable.SolverGroup == this)
             {
@@ -217,7 +216,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// Called after the object is added to a space.
         /// </summary>
         /// <param name="newSpace"></param>
-        public override void OnAdditionToSpace(ISpace newSpace)
+        public override void OnAdditionToSpace(Space newSpace)
         {
             for (int i = 0; i < solverUpdateables.Count; i++)
             {
@@ -228,7 +227,7 @@ namespace BEPUphysics.Constraints.SolverGroups
         /// <summary>
         /// Called before an object is removed from its space.
         /// </summary>
-        public override void OnRemovalFromSpace(ISpace oldSpace)
+        public override void OnRemovalFromSpace(Space oldSpace)
         {
             for (int i = 0; i < solverUpdateables.Count; i++)
             {
@@ -245,10 +244,10 @@ namespace BEPUphysics.Constraints.SolverGroups
             {
                 return solver;
             }
-            internal set
+            protected internal set
             {
                 base.Solver = value;
-                for (int i = 0; i < solverUpdateables.count; i++)
+                for (int i = 0; i < solverUpdateables.Count; i++)
                 {
                     solverUpdateables.Elements[i].Solver = value;
                 }

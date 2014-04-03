@@ -1,10 +1,11 @@
 ﻿using BEPUphysics.BroadPhaseSystems.Hierarchies;
-using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
+using BEPUutilities.DataStructures;
+using ConversionHelper;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -33,10 +34,10 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             RawList<Entity> entities = new RawList<Entity>();
             for (int k = 0; k < 1000; k++)
             {
-                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
-                toAdd = new Box(position, 1, 1, 1, 1);
+                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
+                toAdd = new Box(MathConverter.Convert(position), 1, 1, 1, 1);
 
                 entities.Add(toAdd);
 
@@ -88,17 +89,17 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             base.DrawUI();
             //Game.DataTextDrawer.Draw("Time steps elapsed: ", timeStepsElapsed, new Vector2(600, 600));
             //return;
-            var origin = new Microsoft.Xna.Framework.Vector2(100, 50);
-            var spacing = new Microsoft.Xna.Framework.Vector2(80, 50);
+            Vector2 origin = new Vector2(100, 50);
+            Vector2 spacing = new Vector2(80, 50);
             //Draw the horizontal core counts.
             for (int i = 0; i < testResults.GetLength(0); i++)
             {
-                Game.DataTextDrawer.Draw(i + 1, origin + new Microsoft.Xna.Framework.Vector2(spacing.X * i, -30));
+                Game.DataTextDrawer.Draw(i + 1, origin + new Vector2(spacing.X * i, -30));
             }
 
             for (int i = 0; i < testResults.GetLength(0); i++)
             {
-                Game.DataTextDrawer.Draw(testResults[i] *1e3, 1, origin + new Microsoft.Xna.Framework.Vector2(spacing.X * i, 0));
+                Game.DataTextDrawer.Draw(testResults[i] *1e3, 1, origin + new Vector2(spacing.X * i, 0));
             }
 
 

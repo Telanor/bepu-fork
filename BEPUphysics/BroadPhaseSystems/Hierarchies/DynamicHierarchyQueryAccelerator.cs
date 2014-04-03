@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using BEPUphysics.BroadPhaseEntries;
-using SharpDX;
+using BEPUutilities;
+ 
 
 namespace BEPUphysics.BroadPhaseSystems.Hierarchies
 {
@@ -45,8 +46,8 @@ namespace BEPUphysics.BroadPhaseSystems.Hierarchies
         ///// <param name="entries">Entries of the space which intersect the frustum.</param>
         //public void GetEntries(BoundingFrustum frustum, IList<BroadPhaseEntry> entries)
         //{
-            //if (hierarchy.root != null)
-            //    hierarchy.root.GetOverlaps(ref frustum, entries);
+        //    if (hierarchy.root != null)
+        //        hierarchy.root.GetOverlaps(ref frustum, entries);
 
         //}
 

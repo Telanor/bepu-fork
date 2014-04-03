@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
-using BEPUphysics.Collidables;
+using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Constraints.TwoEntity.Joints;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 using Microsoft.Xna.Framework.Input;
 using BEPUphysics.CollisionRuleManagement;
 using BEPUphysics.Materials;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras
 {
@@ -35,9 +33,7 @@ namespace BEPUphysicsDemos.Demos.Extras
         public ReverseTrikeDemo(DemosGame game)
             : base(game)
         {
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 2, 15);
-            game.Camera.Yaw = 0;
-            game.Camera.Pitch = 0;
+            game.Camera.Position = new Vector3(0, 2, 15);
 
             Space.Add(new Box(new Vector3(0, -5, 0), 20, 1, 20));
 
@@ -49,20 +45,20 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             var wheel = new Cylinder(body.Position + new Vector3(-1.3f, 0, -1.5f), .2f, .5f, 4);
             wheel.Material = new Material(1.5f, 1.5f, 0);
-            wheel.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2);
+            wheel.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2);
 
             //Preventing the occasional pointless collision pair can speed things up.
             CollisionRules.AddRule(body, wheel, CollisionRule.NoBroadPhase);
 
             //Connect the wheel to the body.
             var ballSocketJoint = new BallSocketJoint(body, wheel, wheel.Position);
-            var swivelHingeAngularJoint = new SwivelHingeAngularJoint(body, wheel, Vector3.UnitY, Vector3.UnitX);
+            var swivelHingeAngularJoint = new SwivelHingeAngularJoint(body, wheel, Vector3.Up, Vector3.Right);
             //Motorize the wheel.
-            drivingMotor1 = new RevoluteMotor(body, wheel, -Vector3.UnitX);
+            drivingMotor1 = new RevoluteMotor(body, wheel, Vector3.Left);
             drivingMotor1.Settings.VelocityMotor.Softness = .2f;
             //Let it roll when the user isn't giving specific commands.
             drivingMotor1.IsActive = false;
-            steeringMotor1 = new RevoluteMotor(body, wheel, Vector3.UnitY);
+            steeringMotor1 = new RevoluteMotor(body, wheel, Vector3.Up);
             steeringMotor1.Settings.Mode = MotorMode.Servomechanism;
             //The constructor makes a guess about how to set up the constraint.
             //It can't always be right since it doesn't have all the information;
@@ -81,8 +77,8 @@ namespace BEPUphysicsDemos.Demos.Extras
             //The current world test axis is dotted against the two plane axes (Right and Forward here).
             //This gives an x and y value.  These can be plugged into Atan2 just like when
             //you compute an angle on a normal 2d graph.
-            steeringMotor1.Basis.SetWorldAxes(Vector3.UnitY, Vector3.UnitX);
-            steeringMotor1.TestAxis = Vector3.UnitX;
+            steeringMotor1.Basis.SetWorldAxes(Vector3.Up, Vector3.Right);
+            steeringMotor1.TestAxis = Vector3.Right;
 
 
             //Add the wheel and connection to the space.
@@ -98,7 +94,7 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             wheel = new Cylinder(body.Position + new Vector3(1.3f, 0, -1.5f), .2f, .5f, 4);
             wheel.Material = new Material(1.5f, 1.5f, 0);
-            wheel.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2);
+            wheel.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2);
 
 
             //Preventing the occasional pointless collision pair can speed things up.
@@ -106,17 +102,17 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             //Connect the wheel to the body.
             ballSocketJoint = new BallSocketJoint(body, wheel, wheel.Position);
-            swivelHingeAngularJoint = new SwivelHingeAngularJoint(body, wheel, Vector3.UnitY, Vector3.UnitX);
+            swivelHingeAngularJoint = new SwivelHingeAngularJoint(body, wheel, Vector3.Up, Vector3.Right);
             //Motorize the wheel.
-            drivingMotor2 = new RevoluteMotor(body, wheel, -Vector3.UnitX);
+            drivingMotor2 = new RevoluteMotor(body, wheel, Vector3.Left);
             drivingMotor2.Settings.VelocityMotor.Softness = .2f;
             //Let it roll when the user isn't giving specific commands.
             drivingMotor2.IsActive = false;
-            steeringMotor2 = new RevoluteMotor(body, wheel, Vector3.UnitY);
+            steeringMotor2 = new RevoluteMotor(body, wheel, Vector3.Up);
             steeringMotor2.Settings.Mode = MotorMode.Servomechanism;
             //Configure the motor.  See wheel 1 for more description.
-            steeringMotor2.Basis.SetWorldAxes(Vector3.UnitY, Vector3.UnitX);
-            steeringMotor2.TestAxis = Vector3.UnitX;
+            steeringMotor2.Basis.SetWorldAxes(Vector3.Up, Vector3.Right);
+            steeringMotor2.TestAxis = Vector3.Right;
 
 
             //Add the wheel and connection to the space.
@@ -132,7 +128,7 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             wheel = new Cylinder(body.Position + new Vector3(0, -.3f, 1.5f), .2f, .5f, 4);
             wheel.Material = new Material(1.5f, 1.5f, 0);
-            wheel.Orientation = Quaternion.RotationAxis(-Vector3.UnitZ, MathHelper.PiOver2);
+            wheel.Orientation = Quaternion.CreateFromAxisAngle(Vector3.Forward, MathHelper.PiOver2);
 
             //Preventing the occasional pointless collision pair can speed things up.
             CollisionRules.AddRule(body, wheel, CollisionRule.NoBroadPhase);
@@ -143,7 +139,7 @@ namespace BEPUphysicsDemos.Demos.Extras
             //This lets it roll, but prevents flopping around like the wheels of a grocery cart.
             //Could have used a RevoluteJoint solver group here, but this shows it's possible to do
             //the same things without using the combo-constraints.
-            var revoluteAngularJoint = new RevoluteAngularJoint(body, wheel, Vector3.UnitX);
+            var revoluteAngularJoint = new RevoluteAngularJoint(body, wheel, Vector3.Right);
 
             //Add the wheel and connection to the space.
             Space.Add(wheel);
@@ -152,8 +148,8 @@ namespace BEPUphysicsDemos.Demos.Extras
 
             #endregion
 
-            int xLength = 256;
-            int zLength = 256;
+            int xLength = 180;
+            int zLength = 180;
 
             float xSpacing = 8f;
             float zSpacing = 8f;

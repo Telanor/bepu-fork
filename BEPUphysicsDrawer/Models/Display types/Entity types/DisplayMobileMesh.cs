@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using BEPUphysics.Collidables;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using BEPUphysics.CollisionShapes;
-using BEPUphysics.Collidables.MobileCollidables;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
 using ConversionHelper;
 
 namespace BEPUphysicsDrawer.Models
@@ -19,7 +18,7 @@ namespace BEPUphysicsDrawer.Models
             var tempVertices = new VertexPositionNormalTexture[shape.TriangleMesh.Data.Vertices.Length];
             for (int i = 0; i < shape.TriangleMesh.Data.Vertices.Length; i++)
             {
-                SharpDX.Vector3 position;
+                BEPUutilities.Vector3 position;
                 shape.TriangleMesh.Data.GetVertexPosition(i, out position);
                 tempVertices[i] = new VertexPositionNormalTexture(
                     MathConverter.Convert(position),

@@ -1,33 +1,13 @@
 ﻿using BEPUphysics.BroadPhaseEntries;
-using BEPUphysics.Collidables;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.PositionUpdating;
-using Microsoft.Xna.Framework.Input;
+using BEPUutilities.DataStructures;
 using System.Diagnostics;
-using System.Collections.Generic;
 using System;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.DataStructures;
-using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.Collidables.MobileCollidables;
-using BEPUphysics.CollisionShapes;
-using BEPUphysics.Settings;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
+using BEPUutilities;
 using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.BroadPhaseSystems;
-using BEPUphysics.Constraints;
-using BEPUphysics.CollisionTests.CollisionAlgorithms.GJK;
-using BEPUphysics.Constraints.SolverGroups;
-using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.CollisionTests;
-using BEPUphysics;
-using BEPUphysics.EntityStateManagement;
-using BEPUphysics.ResourceManagement;
 using BEPUphysics.BroadPhaseSystems.Hierarchies;
 using BEPUphysics.BroadPhaseSystems.SortAndSweep;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -57,9 +37,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             BoundingBox box = new BoundingBox(new Vector3(-50, -50, -50), new Vector3(50, 50, 50));
 
             //DynamicHierarchyOld dhOld = new DynamicHierarchyOld(Space.ThreadManager);
-            DynamicHierarchy dh = new DynamicHierarchy(Space.ThreadManager);
-            SortAndSweep1D sas1d = new SortAndSweep1D(Space.ThreadManager);
-            Grid2DSortAndSweep grid2DSAS = new Grid2DSortAndSweep(Space.ThreadManager);
+            DynamicHierarchy dh = new DynamicHierarchy(Space.ParallelLooper);
+            SortAndSweep1D sas1d = new SortAndSweep1D(Space.ParallelLooper);
+            Grid2DSortAndSweep grid2DSAS = new Grid2DSortAndSweep(Space.ParallelLooper);
             //DynamicHierarchy dh = new DynamicHierarchy();
             //DynamicHierarchy4 dh4 = new DynamicHierarchy4();
             //SortAndSweep1D sas1d = new SortAndSweep1D();
@@ -72,9 +52,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             RawList<Entity> entities = new RawList<Entity>();
             for (int k = 0; k < 100; k++)
             {
-                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
+                Vector3 position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
                 toAdd = new Box(position, 1, 1, 1, 1);
                 toAdd.CollisionInformation.CollisionRules.Personal = CollisionRule.NoNarrowPhasePair;
                 toAdd.CollisionInformation.UpdateBoundingBox(0);
@@ -182,9 +162,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     {
                         rays.Add(new Ray()
                         {
-                            Position = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                               (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                               (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z)),
+                            Position = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                               (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                               (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z)),
                             Direction = Vector3.Normalize(new Vector3((float)(rand.NextDouble() - .5), (float)(rand.NextDouble() - .5), (float)(rand.NextDouble() - .5)))
                         });
                     }
@@ -231,13 +211,13 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                     Vector3 offset = new Vector3(boundingBoxSize / 2, boundingBoxSize / 2, boundingBoxSize / 2);
                     for (int i = 0; i < numRuns; i++)
                     {
-                        Vector3 center = new Vector3((float)(rand.NextDouble() * (box.Maximum.X - box.Minimum.X) + box.Minimum.X),
-                                                     (float)(rand.NextDouble() * (box.Maximum.Y - box.Minimum.Y) + box.Minimum.Y),
-                                                     (float)(rand.NextDouble() * (box.Maximum.Z - box.Minimum.Z) + box.Minimum.Z));
+                        Vector3 center = new Vector3((float)(rand.NextDouble() * (box.Max.X - box.Min.X) + box.Min.X),
+                                                     (float)(rand.NextDouble() * (box.Max.Y - box.Min.Y) + box.Min.Y),
+                                                     (float)(rand.NextDouble() * (box.Max.Z - box.Min.Z) + box.Min.Z));
                         boundingBoxes.Add(new BoundingBox()
                         {
-                            Minimum = center - offset,
-                            Maximum = center + offset
+                            Min = center - offset,
+                            Max = center + offset
                         });
                     }
 

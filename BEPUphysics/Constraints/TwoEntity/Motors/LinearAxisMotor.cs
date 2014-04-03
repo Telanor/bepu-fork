@@ -1,7 +1,7 @@
 ﻿using System;
 using BEPUphysics.Entities;
-using SharpDX;
-using BEPUphysics.MathExtensions;
+
+using BEPUutilities;
 
 namespace BEPUphysics.Constraints.TwoEntity.Motors
 {
@@ -69,7 +69,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             {
                 worldAnchorA = value;
                 worldOffsetA = worldAnchorA - connectionA.position;
-                Matrix3X3.TransformTranspose(ref worldOffsetA, ref connectionA.orientationMatrix, out localAnchorA);
+                Matrix3x3.TransformTranspose(ref worldOffsetA, ref connectionA.orientationMatrix, out localAnchorA);
             }
         }
 
@@ -83,7 +83,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             {
                 worldAnchorB = value;
                 worldOffsetB = worldAnchorB - connectionB.position;
-                Matrix3X3.TransformTranspose(ref worldOffsetB, ref connectionB.orientationMatrix, out localAnchorB);
+                Matrix3x3.TransformTranspose(ref worldOffsetB, ref connectionB.orientationMatrix, out localAnchorB);
             }
         }
 
@@ -97,7 +97,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 worldAxis = Vector3.Normalize(value);
-                Matrix3X3.TransformTranspose(ref worldAxis, ref connectionA.orientationMatrix, out localAxis);
+                Matrix3x3.TransformTranspose(ref worldAxis, ref connectionA.orientationMatrix, out localAxis);
             }
         }
 
@@ -110,7 +110,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 localAxis = Vector3.Normalize(value);
-                Matrix3X3.Transform(ref localAxis, ref connectionA.orientationMatrix, out worldAxis);
+                Matrix3x3.Transform(ref localAxis, ref connectionA.orientationMatrix, out worldAxis);
             }
         }
 
@@ -123,7 +123,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 localAnchorA = value;
-                Matrix3X3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out worldOffsetA);
+                Matrix3x3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out worldOffsetA);
                 worldAnchorA = connectionA.position + worldOffsetA;
             }
         }
@@ -137,7 +137,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             set
             {
                 localAnchorB = value;
-                Matrix3X3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out worldOffsetB);
+                Matrix3x3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out worldOffsetB);
                 worldAnchorB = connectionB.position + worldOffsetB;
             }
         }
@@ -150,10 +150,10 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             get { return worldOffsetA; }
             set
             {
-                worldOffsetA = value; 
+                worldOffsetA = value;
                 worldAnchorA = connectionA.position + worldOffsetA;
-                Matrix3X3.TransformTranspose(ref worldOffsetA, ref connectionA.orientationMatrix, out localAnchorA); //Looks weird, but localAnchorA is "localOffsetA."
-                
+                Matrix3x3.TransformTranspose(ref worldOffsetA, ref connectionA.orientationMatrix, out localAnchorA); //Looks weird, but localAnchorA is "localOffsetA."
+
             }
         }
 
@@ -167,7 +167,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             {
                 worldOffsetB = value;
                 worldAnchorB = connectionB.position + worldOffsetB;
-                Matrix3X3.TransformTranspose(ref worldOffsetB, ref connectionB.orientationMatrix, out localAnchorB);//Looks weird, but localAnchorB is "localOffsetB."
+                Matrix3x3.TransformTranspose(ref worldOffsetB, ref connectionB.orientationMatrix, out localAnchorB);//Looks weird, but localAnchorB is "localOffsetB."
             }
         }
 
@@ -189,12 +189,12 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             get
             {
                 float lambda, dot;
-                Vector3Ex.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
-                Vector3Ex.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
+                Vector3.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
+                Vector3.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
                 lambda += dot;
-                Vector3Ex.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
+                Vector3.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
                 lambda += dot;
-                Vector3Ex.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
+                Vector3.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
                 lambda += dot;
                 return lambda;
             }
@@ -278,12 +278,12 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
         {
             //Compute the current relative velocity.
             float lambda, dot;
-            Vector3Ex.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
-            Vector3Ex.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
+            Vector3.Dot(ref jLinearA, ref connectionA.linearVelocity, out lambda);
+            Vector3.Dot(ref jAngularA, ref connectionA.angularVelocity, out dot);
             lambda += dot;
-            Vector3Ex.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
+            Vector3.Dot(ref jLinearB, ref connectionB.linearVelocity, out dot);
             lambda += dot;
-            Vector3Ex.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
+            Vector3.Dot(ref jAngularB, ref connectionB.angularVelocity, out dot);
             lambda += dot;
 
             //Add in the constraint space bias velocity
@@ -320,13 +320,14 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
         public override void Update(float dt)
         {
             //Compute the 'pre'-jacobians
-            Matrix3X3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out worldOffsetA);
-            Matrix3X3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out worldOffsetB);
+            Matrix3x3.Transform(ref localAnchorA, ref connectionA.orientationMatrix, out worldOffsetA);
+            Matrix3x3.Transform(ref localAnchorB, ref connectionB.orientationMatrix, out worldOffsetB);
             Vector3.Add(ref worldOffsetA, ref connectionA.position, out worldAnchorA);
             Vector3.Add(ref worldOffsetB, ref connectionB.position, out worldAnchorB);
             Vector3.Subtract(ref worldAnchorB, ref connectionA.position, out rA);
-            Matrix3X3.Transform(ref localAxis, ref connectionA.orientationMatrix, out worldAxis);
+            Matrix3x3.Transform(ref localAxis, ref connectionA.orientationMatrix, out worldAxis);
 
+            float updateRate = 1 / dt;
             if (settings.mode == MotorMode.Servomechanism)
             {
                 //Compute error
@@ -339,23 +340,23 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
                 separation.Y = worldAnchorB.Y - worldAnchorA.Y;
                 separation.Z = worldAnchorB.Z - worldAnchorA.Z;
 
-                Vector3Ex.Dot(ref separation, ref worldAxis, out error);
+                Vector3.Dot(ref separation, ref worldAxis, out error);
 
                 //Compute error
                 error = error - settings.servo.goal;
 
 
                 //Compute bias
-                float absErrorOverDt = Math.Abs(error / dt);
+                float absErrorOverDt = Math.Abs(error * updateRate);
                 float errorReduction;
-                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, out errorReduction, out usedSoftness);
-                biasVelocity = Math.Sign(error) * Math.Min(settings.servo.baseCorrectiveSpeed, absErrorOverDt) + error * errorReduction;
+                settings.servo.springSettings.ComputeErrorReductionAndSoftness(dt, updateRate, out errorReduction, out usedSoftness);
+                biasVelocity = Math.Sign(error) * MathHelper.Min(settings.servo.baseCorrectiveSpeed, absErrorOverDt) + error * errorReduction;
                 biasVelocity = MathHelper.Clamp(biasVelocity, -settings.servo.maxCorrectiveVelocity, settings.servo.maxCorrectiveVelocity);
             }
             else
             {
                 biasVelocity = -settings.velocityMotor.goalVelocity;
-                usedSoftness = settings.velocityMotor.softness / dt;
+                usedSoftness = settings.velocityMotor.softness * updateRate;
                 error = 0;
             }
 
@@ -372,16 +373,16 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             Vector3 intermediate;
             if (connectionA.isDynamic)
             {
-                Matrix3X3.Transform(ref jAngularA, ref connectionA.inertiaTensorInverse, out intermediate);
-                Vector3Ex.Dot(ref intermediate, ref jAngularA, out entryA);
+                Matrix3x3.Transform(ref jAngularA, ref connectionA.inertiaTensorInverse, out intermediate);
+                Vector3.Dot(ref intermediate, ref jAngularA, out entryA);
                 entryA += connectionA.inverseMass;
             }
             else
                 entryA = 0;
             if (connectionB.isDynamic)
             {
-                Matrix3X3.Transform(ref jAngularB, ref connectionB.inertiaTensorInverse, out intermediate);
-                Vector3Ex.Dot(ref intermediate, ref jAngularB, out entryB);
+                Matrix3x3.Transform(ref jAngularB, ref connectionB.inertiaTensorInverse, out intermediate);
+                Vector3.Dot(ref intermediate, ref jAngularB, out entryB);
                 entryB += connectionB.inverseMass;
             }
             else
@@ -392,7 +393,7 @@ namespace BEPUphysics.Constraints.TwoEntity.Motors
             ComputeMaxForces(settings.maximumForce, dt);
 
 
-            
+
         }
 
         /// <summary>

@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using BEPUphysics;
-using BEPUphysics.Collidables;
+using BEPUphysics.BroadPhaseEntries;
+using BEPUphysics.BroadPhaseEntries.MobileCollidables;
+using BEPUphysics.CollisionShapes.ConvexShapes;
 using BEPUphysics.DataStructures;
 using BEPUphysics.Entities;
 using BEPUphysics.UpdateableSystems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using BEPUphysics.CollisionShapes;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using BEPUphysics.Collidables.MobileCollidables;
+using Matrix = BEPUutilities.Matrix;
 
 namespace BEPUphysicsDrawer.Models
 {
@@ -65,9 +64,9 @@ namespace BEPUphysicsDrawer.Models
             shapeMeshGetters.Add(typeof(ConvexCollidable<ConeShape>), DisplayCone.GetShapeMeshData);
             shapeMeshGetters.Add(typeof(ConvexCollidable<TriangleShape>), DisplayTriangle.GetShapeMeshData);
             shapeMeshGetters.Add(typeof(ConvexCollidable<ConvexHullShape>), DisplayConvexHull.GetShapeMeshData);
-            shapeMeshGetters.Add(typeof(ConvexCollidable<MinkowskiSumShape>), DisplayMinkowskiSum.GetShapeMeshData);
-            shapeMeshGetters.Add(typeof(ConvexCollidable<WrappedShape>), DisplayWrappedBody.GetShapeMeshData);
-            shapeMeshGetters.Add(typeof(ConvexCollidable<TransformableShape>), DisplayTransformable.GetShapeMeshData);
+            shapeMeshGetters.Add(typeof(ConvexCollidable<MinkowskiSumShape>), DisplayConvex.GetShapeMeshData);
+            shapeMeshGetters.Add(typeof(ConvexCollidable<WrappedShape>), DisplayConvex.GetShapeMeshData);
+            shapeMeshGetters.Add(typeof(ConvexCollidable<TransformableShape>), DisplayConvex.GetShapeMeshData);
             shapeMeshGetters.Add(typeof(CompoundCollidable), DisplayCompoundBody.GetShapeMeshData);
             shapeMeshGetters.Add(typeof(MobileMeshCollidable), DisplayMobileMesh.GetShapeMeshData);
 

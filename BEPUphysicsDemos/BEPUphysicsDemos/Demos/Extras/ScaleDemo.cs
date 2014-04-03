@@ -1,14 +1,12 @@
-﻿using BEPUphysics.Collidables;
+﻿using BEPUphysics.BroadPhaseEntries;
 using BEPUphysics.Entities;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.CollisionShapes.ConvexShapes;
-using SharpDX;
+using BEPUutilities;
 
 namespace BEPUphysicsDemos.Demos.Extras
 {
     /// <summary>
-    /// A nice driveble landscape.
+    /// Demonstrates tuning settings for handling different world scales.
     /// </summary>
     public class ScaleDemo : StandardDemo
     {
@@ -20,17 +18,8 @@ namespace BEPUphysicsDemos.Demos.Extras
             : base(game)
         {
             //Pick a scale!
-            //Beware: If you go too far (say, 0.01 or 100), numerical issues will start to crop up.
-            //There are two reasons: 
-            //1) Limited numerical precision in 32 bit floats. There are far fewer discrete values between 100,000 and 100,001 than there are between 10 and 11.
-            //This manifests most noticeably in general case collision detection.
-            //2) Numerical tolerances that are not adjusted by the ConfigurationHelper.ApplyScale method below.
-            //These other tolerances are defined as constants in the engine as they aren't usually the limiting factor, but you can still
-            //go into the source code and change them if you want.  The most used ones are the Epsilon and BigEpsilon in the Toolbox class.
-            //Some other systems have custom epsilons as well, though they are typically far smaller.
-            //Note that extremely large scales can force various epsilon-reliant systems to do more work than necessary, resulting in slightly lower performance.
-            //On the flip side, extremely small scales may cause exits too quickly, resulting in odd behavior.
-            float scale = 1f;
+            //Beware: If you go too far (particularly 0.01 and lower) issues could start to crop up.
+            float scale = 1;
 
             //Load in mesh data and create the collision mesh.
             //The 'mesh' will be a supergiant triangle.
@@ -41,7 +30,7 @@ namespace BEPUphysicsDemos.Demos.Extras
             int[] indices;
             vertices = new Vector3[] { new Vector3(-10000, 0, -10000), new Vector3(-10000, 0, 20000), new Vector3(20000, 0, -10000) };
             indices = new int[] { 2, 1, 0 };
-            var staticMesh = new StaticMesh(vertices, indices, new AffineTransform(Matrix3X3.CreateFromAxisAngle(Vector3.UnitY, MathHelper.Pi), new Vector3(0, 0, 0)));
+            var staticMesh = new StaticMesh(vertices, indices, new AffineTransform(Matrix3x3.CreateFromAxisAngle(Vector3.Up, MathHelper.Pi), new Vector3(0, 0, 0)));
             staticMesh.Sidedness = TriangleSidedness.Counterclockwise;
 
             Space.Add(staticMesh);
@@ -112,7 +101,9 @@ namespace BEPUphysicsDemos.Demos.Extras
 
 
 
-            game.Camera.Position = scale * new Microsoft.Xna.Framework.Vector3(0, 4, 10);
+            game.Camera.Position = scale * new Vector3(0, 4, 10);
+            originalCameraSpeed = freeCameraControlScheme.Speed;
+            freeCameraControlScheme.Speed *= scale;
 
 
         }
@@ -126,7 +117,12 @@ namespace BEPUphysicsDemos.Demos.Extras
             get { return "Scale Demo"; }
         }
 
-
+        private float originalCameraSpeed;
+        public override void CleanUp()
+        {
+            freeCameraControlScheme.Speed = originalCameraSpeed;
+            base.CleanUp();
+        }
 
     }
 }

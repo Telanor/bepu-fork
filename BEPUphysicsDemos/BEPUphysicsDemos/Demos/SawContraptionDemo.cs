@@ -3,9 +3,7 @@ using System;
 using BEPUphysics.Constraints.SolverGroups;
 using BEPUphysics.Constraints.TwoEntity.Motors;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using SharpDX;
-
+using BEPUutilities;
 namespace BEPUphysicsDemos.Demos
 {
     /// <summary>
@@ -31,7 +29,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(pistonBox2);
 
             //Connect the piston entities to the base with a revolute joint that acts like an axis joint
-            var axisJoint = new RevoluteJoint(pistonGroundAttachment, pistonBox1, (pistonGroundAttachment.Position + pistonBox1.Position) / 2, -Vector3.UnitZ);
+            var axisJoint = new RevoluteJoint(pistonGroundAttachment, pistonBox1, (pistonGroundAttachment.Position + pistonBox1.Position) / 2, Vector3.Forward);
 
             //Keep the axis from rotating too far so that the saw blade won't just continually ram into the ground. 
             //The limit's 'basis' and test axis used to determine the position of the limits and the current angle of the constraint
@@ -42,7 +40,7 @@ namespace BEPUphysicsDemos.Demos
             axisJoint.Limit.MaximumAngle = MathHelper.PiOver2;
             Space.Add(axisJoint);
 
-            var piston = new PrismaticJoint(pistonBox1, pistonBox2, pistonBox1.Position, Vector3.UnitY, pistonBox2.Position);
+            var piston = new PrismaticJoint(pistonBox1, pistonBox2, pistonBox1.Position, Vector3.Up, pistonBox2.Position);
             //Set up the piston limits.
             piston.Limit.IsActive = true; //By default, the limit and motor are both inactive.
             piston.Limit.Minimum = 2;
@@ -58,9 +56,9 @@ namespace BEPUphysicsDemos.Demos
             //This piston, by default, moves at a constant speed, but...
             piston.Motor.Settings.Servo.BaseCorrectiveSpeed = 1;
             //... if the stiffness constant is changed to a positive value, it can also act like a spring.
-            piston.Motor.Settings.Servo.SpringSettings.StiffnessConstant = 0;
+            piston.Motor.Settings.Servo.SpringSettings.Stiffness = 0;
             //For a non-springy constraint like the piston, the dampingConstant can also be thought of as inverse 'softness.'
-            piston.Motor.Settings.Servo.SpringSettings.DampingConstant = 1000;
+            piston.Motor.Settings.Servo.SpringSettings.Damping = 1000;
 
             //Add the piston to the space.
             Space.Add(piston);
@@ -70,7 +68,7 @@ namespace BEPUphysicsDemos.Demos
             Space.Add(blade);
 
             //Connect the saw to the piston with a second axis joint.
-            axisJoint = new RevoluteJoint(pistonBox2, blade, (pistonBox2.Position + blade.Position) / 2, -Vector3.UnitZ);
+            axisJoint = new RevoluteJoint(pistonBox2, blade, (pistonBox2.Position + blade.Position) / 2, Vector3.Forward);
             //Revolute joints can be used to make axis joints (as it is here), but you can also use them to make hinges.
             Space.Add(axisJoint);
 
@@ -89,7 +87,7 @@ namespace BEPUphysicsDemos.Demos
             }
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 2, 20);
+            game.Camera.Position = new Vector3(0, 2, 20);
         }
 
         /// <summary>

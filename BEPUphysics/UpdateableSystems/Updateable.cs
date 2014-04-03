@@ -26,18 +26,18 @@ namespace BEPUphysics.UpdateableSystems
             }
         }
 
-        private bool isSequentiallyUpdated = true;
+        private bool isUpdatedSequentially = true;
         /// <summary>
         /// Gets and sets whether or not the updateable should be updated sequentially even in a multithreaded space.
-        /// If this is true, the updateable can make use of the space's ThreadManager for internal multithreading.
+        /// If this is true, the updateable can make use of the space's ParallelLooper for internal multithreading.
         /// </summary>
         public bool IsUpdatedSequentially
         {
-            get { return isSequentiallyUpdated; }
+            get { return isUpdatedSequentially; }
             set
             {
-                bool oldValue = isSequentiallyUpdated;
-                isSequentiallyUpdated = value;
+                bool oldValue = isUpdatedSequentially;
+                isUpdatedSequentially = value;
                 if (value != oldValue)
                     for (int i = 0; i < managers.Count; i++)
                     {
@@ -61,7 +61,7 @@ namespace BEPUphysics.UpdateableSystems
         /// Called after the object is added to a space.
         /// </summary>
         /// <param name="newSpace">Space to which the object was added.</param>
-        public virtual void OnAdditionToSpace(ISpace newSpace)
+        public virtual void OnAdditionToSpace(Space newSpace)
         {
         }
 
@@ -70,12 +70,12 @@ namespace BEPUphysics.UpdateableSystems
         /// Called before an object is removed from its space.
         /// </summary>
         /// <param name="oldSpace">Space from which the object was removed.</param>
-        public virtual void OnRemovalFromSpace(ISpace oldSpace)
+        public virtual void OnRemovalFromSpace(Space oldSpace)
         {
         }
 
-        private ISpace space;
-        ISpace ISpaceObject.Space
+        private Space space;
+        Space ISpaceObject.Space
         {
             get
             {
@@ -90,7 +90,7 @@ namespace BEPUphysics.UpdateableSystems
         ///<summary>
         /// Space that owns the updateable.
         ///</summary>
-        public ISpace Space
+        public Space Space
         {
             get
             {

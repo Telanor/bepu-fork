@@ -1,5 +1,5 @@
 ﻿using System;
-using BEPUphysics.Threading;
+using BEPUutilities.Threading;
 
 namespace BEPUphysics
 {
@@ -19,9 +19,9 @@ namespace BEPUphysics
         public bool AllowMultithreading { get; set; }
 
         ///<summary>
-        /// Gets or sets the thread manager used by the stage.
+        /// Gets or sets the multithreaded loop provider used by the stage.
         ///</summary>
-        public IThreadManager ThreadManager { get; set; }
+        public IParallelLooper ParallelLooper { get; set; }
 
         ///<summary>
         /// Fires when the processing stage begins working.
@@ -37,9 +37,33 @@ namespace BEPUphysics
         {
             get
             {
-                return AllowMultithreading && ThreadManager != null && ThreadManager.ThreadCount > 1;
+                return AllowMultithreading && ParallelLooper != null && ParallelLooper.ThreadCount > 1;
             }
         }
+
+#if PROFILE
+        /// <summary>
+        /// Gets the time elapsed in the previous execution of this stage, not including any hooked Starting or Finishing events.
+        /// </summary>
+        public double Time
+        {
+            get
+            {
+                return (end - start) / (double)Stopwatch.Frequency;
+            }
+        }
+
+        long start, end;
+
+        private void StartClock()
+        {
+            start = Stopwatch.GetTimestamp();
+        }
+        private void StopClock()
+        {
+            end = Stopwatch.GetTimestamp();
+        }
+#endif
 
         ///<summary>
         /// Runs the processing stage.
@@ -50,6 +74,9 @@ namespace BEPUphysics
                 return;
             if (Starting != null)
                 Starting();
+#if PROFILE
+            StartClock();
+#endif
             if (ShouldUseMultithreading)
             {
                 UpdateMultithreaded();
@@ -58,6 +85,9 @@ namespace BEPUphysics
             {
                 UpdateSingleThreaded();
             }
+#if PROFILE
+            StopClock();
+#endif
             if (Finishing != null)
                 Finishing();
         }

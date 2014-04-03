@@ -1,16 +1,8 @@
 ﻿using System;
-using BEPUphysics.Collidables;
 using BEPUphysics.Entities.Prefabs;
-using BEPUphysics.MathExtensions;
-using BEPUphysics.Settings;
-using BEPUphysics.CollisionTests.CollisionAlgorithms;
-using BEPUphysics.CollisionRuleManagement;
-using BEPUphysics.NarrowPhaseSystems.Pairs;
-using BEPUphysics.CollisionTests.Manifolds;
+using BEPUutilities;
 using System.Diagnostics;
-using BEPUphysics.BroadPhaseSystems.SortAndSweep;
 using BEPUphysics.NarrowPhaseSystems;
-using SharpDX;
 
 namespace BEPUphysicsDemos.Demos.Extras.Tests
 {
@@ -30,9 +22,9 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             Space.Add(new Box(new Vector3(0, 0, 0), 1000, 10, 1000));
             //MotionSettings.DefaultPositionUpdateMode = BEPUphysics.PositionUpdating.PositionUpdateMode.Continuous;
 
-            NarrowPhaseHelper.Factories.SphereSphere.EnsureCount(15000);
-            NarrowPhaseHelper.Factories.BoxSphere.EnsureCount(3000);
-            NarrowPhaseHelper.Factories.BoxBox.EnsureCount(35000);
+            NarrowPhaseHelper.Factories.SphereSphere.EnsureCount(35000);
+            NarrowPhaseHelper.Factories.BoxSphere.EnsureCount(5000);
+            //NarrowPhaseHelper.Factories.BoxBox.EnsureCount(35000);
             //Space.BroadPhase = new Grid2DSortAndSweep(Space.ThreadManager);
 
             ConfigurationHelper.ApplySuperSpeedySettings(Space);
@@ -71,7 +63,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
                             new Vector3(i * 3 + j * .2f,
                                 20 + j * 3f,
                                 k * 3 + j * .2f);
-                        var e = new Sphere(position, 1, 1) { Tag = "noDisplayObject" };
+                        var e = new Sphere(position, 1, 1);// { Tag = "noDisplayObject" };
                         //var e = new Box(position, 1, 1, 1, 1) { Tag = "noDisplayObject" };
                         e.ActivityInformation.IsAlwaysActive = true;
                         Space.Add(e);
@@ -83,12 +75,12 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
 
 
-            game.Camera.Position = new Microsoft.Xna.Framework.Vector3(0, 30, 20);
+            game.Camera.Position = new Vector3(0, 30, 20);
 
             //Pre-simulate.
             for (int i = 0; i < 30; i++)
             {
-                Space.Update();
+                //Space.Update();
             }
 
             int numRuns = 500;
@@ -96,7 +88,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
             double startTime = Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
             for (int i = 0; i < numRuns; i++)
             {
-                Space.Update();
+                //Space.Update();
             }
 
             double endTime = Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
@@ -107,7 +99,7 @@ namespace BEPUphysicsDemos.Demos.Extras.Tests
 
         public override void DrawUI()
         {
-            Game.DataTextDrawer.Draw("Simulation time: ", time, 5, new Microsoft.Xna.Framework.Vector2(50, 50));
+            //Game.DataTextDrawer.Draw("Simulation time: ", time, 5, new Vector2(50, 50));
             base.DrawUI();
         }
 

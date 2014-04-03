@@ -1,6 +1,6 @@
-﻿using SharpDX;
+﻿ 
 using System;
-using BEPUphysics.MathExtensions;
+using BEPUutilities;
 
 namespace BEPUphysics.EntityStateManagement
 {
@@ -25,7 +25,7 @@ namespace BEPUphysics.EntityStateManagement
             get
             {
                 Matrix toReturn;
-                Matrix.RotationQuaternion(ref Orientation, out toReturn);
+                Matrix.CreateFromQuaternion(ref Orientation, out toReturn);
                 return toReturn;
             }
         }
@@ -37,8 +37,8 @@ namespace BEPUphysics.EntityStateManagement
             get
             {
                 Matrix toReturn;
-                Matrix.RotationQuaternion(ref Orientation, out toReturn);
-                MatrixEx.SetTranslation(ref toReturn, Position);
+                Matrix.CreateFromQuaternion(ref Orientation, out toReturn);
+                toReturn.Translation = Position;
                 return toReturn;
             }
         }
